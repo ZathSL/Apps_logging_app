@@ -346,11 +346,34 @@
 <div class="viewcode-block" id="ProducerEntry">
 <a class="viewcode-back" href="../../../modules/apps_logging_app.producers.html#apps_logging_app.producers.registry.ProducerEntry">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ProducerEntry</span><span class="p">(</span><span class="n">Generic</span><span class="p">[</span><span class="n">C</span><span class="p">]):</span>
+
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A registry entry for a producer class.</span>
+
+<span class="sd">    This class binds a producer type to its configuration model and</span>
+<span class="sd">    producer class, allowing dynamic creation of producer instances</span>
+<span class="sd">    via the ProducerFactory.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    config_model : Type[C]</span>
+<span class="sd">        The Pydantic model class used to validate and parse the producer configuration.</span>
+<span class="sd">    producer_class : Type[BaseProducer]</span>
+<span class="sd">        The concrete producer class that will be instantiated.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="n">config_model</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">C</span><span class="p">]</span>
     <span class="n">producer_class</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">BaseProducer</span><span class="p">]</span></div>
 
 
 <span class="n">PRODUCER_REGISTRY</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ProducerEntry</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">A global registry that maps producer types (str) to their corresponding ``ProducerEntry`` objects.</span>
+
+<span class="sd">This registry is used by factories like ``ProducerFactory`` to look up and create producer</span>
+<span class="sd">instances based on their type.</span>
+<span class="sd">&quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="register_producer">
 <a class="viewcode-back" href="../../../modules/apps_logging_app.producers.html#apps_logging_app.producers.registry.register_producer">[docs]</a>

@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 import time
-from pydantic import BaseModel, field_validator, validator
+from pydantic import BaseModel, field_validator, model_validator
 from typing import List, Optional, Pattern, Dict, Any, Tuple
 from pathlib import Path
 import logging
@@ -13,6 +13,53 @@ from threading import Thread, Event
 from ..utils import get_file_id
 
 class PathFileConfig(BaseModel):
+
+    """
+    Configuration model for a monitored file path.
+
+    ``PathFileConfig`` defines a file that is monitored by an agent. It stores
+    both static configuration (file path and logical name) and runtime state
+    (read cursor and file identifier) required to read files incrementally
+    and to correctly handle file rotations.
+
+    Each file configuration is referenced by name from
+    :class:`RegexPatternConfig` to associate regex patterns with specific
+    input files.
+
+    **Responsibilities:**
+
+    - Identify a monitored file via a logical name
+    - Store the filesystem path of the file
+    - Track the current read position (cursor) between polling cycles
+    - Detect file rotations using a file identifier
+
+    **Runtime behavior:**
+
+    - The ``cursor`` field represents the byte offset of the last read
+      position and is updated after each read operation
+    - The ``id`` field stores a file identifier (e.g. inode or platform-
+      specific file ID) and is used to detect file rotations
+
+    **Validation rules:**
+
+    - ``name`` must not be ``None``
+    - ``path`` must be a valid existing :class:`pathlib.Path`
+    - ``id`` must be an integer when provided
+
+    :param name: Logical name of the monitored file, used for cross-referencing
+                 by regex configurations
+    :type name: str
+
+    :param path: Filesystem path of the file to be monitored
+    :type path: pathlib.Path
+
+    :param cursor: Byte offset indicating the current read position in the file
+    :type cursor: int, optional
+
+    :param id: File identifier used to detect file rotations
+    :type id: int, optional
+    """
+
     name: str
     path: Path
     cursor: int = 0
@@ -20,12 +67,27 @@ class PathFileConfig(BaseModel):
     
     @field_validator('name')
     def validate_name(cls, value):
+        """
+        Validate the name field of the PathFileConfig model.
+
+        :param value: The value of the name field.
+        :raises ValueError: If the name is None.
+        :return: The validated name value.
+        """
         if value is None:
             raise ValueError("Name cannot be None")
         return value
     
     @field_validator('path')
     def validate_path(cls, value):
+        """
+        Validate the path field of the PathFileConfig model.
+
+        :param value: The value of the path field.
+        :raises ValueError: If the path is None, not a Path object, or does not exist.
+        :return: The validated path value.
+        """
+
         if value is None:
             raise ValueError("Path cannot be None")
         if not isinstance(value, Path):
@@ -36,97 +98,381 @@ class PathFileConfig(BaseModel):
     
     @field_validator('id')
     def validate_inode(cls, value):
+        """
+        Validate the id field of the PathFileConfig model.
+
+        :param value: The value of the id field.
+        :raises ValueError: If the id is not None and not an integer.
+        :return: The validated id value.
+        """
         if value is not None and type(value) is not int:
             raise ValueError("id must be an integer")
         return value
     
 
 class RegexPatternConfig(BaseModel):
+
+    """
+    Configuration model for a regex-based data extraction pattern.
+
+    ``RegexPatternConfig`` defines how data is extracted from a specific input
+    file using a regular expression. It is used by
+    :class:`DataConnectionConfig` to match log lines and extract named capture
+    groups that will later be transformed, enriched, and forwarded to
+    producers.
+
+    The regular expression is expected to use **named capture groups**
+    (``?P<name>``), which are automatically converted into a dictionary
+    and stored as extracted data at runtime.
+
+    The regex pattern may be provided either as a compiled ``re.Pattern``
+    or as a string. When provided as a string, it is automatically compiled
+    during model validation.
+
+    **Responsibilities:**
+
+    - Bind a regex pattern to a specific configured file
+    - Define how log lines are matched and parsed
+    - Provide structured data extraction via named capture groups
+
+    **Validation and preprocessing:**
+
+    - If ``regex_pattern`` is provided as a string, it is compiled using
+      :func:`re.compile` before model creation
+
+    :param path_file_name: Name of the file configuration this regex applies to
+    :type path_file_name: str
+
+    :param regex_pattern: Regular expression used to match and extract data
+                          from log lines
+    :type regex_pattern: re.Pattern[str]
+    """
+
     path_file_name: str
     regex_pattern: Pattern[str]
-
-    @validator('path_file_name')
-    def validate_path_file_name(cls, value, values):
-        agent_config = values.get('agent_config')
-        if agent_config and value not in [pf.name for pf in agent_config.path_file]:
-            raise ValueError(f"Path file {value} not found in agent config")
-        return value
     
     @field_validator('regex_pattern', mode='before')
     def compile_regex(cls, v):
+        """
+        Compile a regex pattern from a string.
+
+        This validator is executed before the model is created.
+
+        If the value is a string, it is compiled into a regex pattern
+        using the re.compile function. If the value is not a string, it
+        is returned unchanged.
+
+        :param v: The value of the regex_pattern field.
+        :return: The compiled regex pattern or the original value if it is not a string.
+        """
         if isinstance(v, str):
             return re.compile(v)
         return v
 
 
 class QueryConfig(BaseModel):
+
+    """
+    Configuration model for a database query.
+
+    ``QueryConfig`` defines how an agent executes a query against a specific
+    data source in order to enrich data previously extracted from input files.
+    It is typically referenced by a :class:`DataConnectionConfig` as a
+    destination configuration.
+
+    The query is executed at runtime using the database type and name to
+    resolve the appropriate database instance from the database factory.
+
+    **Responsibilities:**
+
+    - Define the database type used to execute the query
+    - Identify the target database instance
+    - Store the query string to be executed
+    - Provide a reusable query definition for data enrichment
+
+    **Validation rules:**
+
+    - ``type`` must not be ``None``
+    - ``name`` must not be ``None``
+    - ``query`` must not be ``None``
+
+    :param type: Type of the database backend (used to resolve the database
+                 implementation at runtime)
+    :type type: str
+
+    :param name: Name of the database instance to be used for query execution
+    :type name: str
+
+    :param query: Query string to be executed against the database
+    :type query: str
+    """
+
     type: str
     name: str
     query: str
 
     @field_validator('type')
     def validate_type(cls, value):
+        """
+        Validate the type field of the QueryConfig model.
+
+        :param value: The value of the type field.
+        :raises ValueError: If the type is None.
+        :return: The validated type value.
+        """
         if value is None:
             raise ValueError("Type cannot be None")
         return value
     
     @field_validator('name')
     def validate_name(cls, value):
+        """
+        Validate the name field of the QueryConfig model.
+
+        :param value: The value of the name field.
+        :raises ValueError: If the name is None.
+        :return: The validated name value.
+        """
         if value is None:
             raise ValueError("Name cannot be None")
         return value
     
     @field_validator('query')
     def validate_query(cls, value):
+        """
+        Validate the query field of the QueryConfig model.
+
+        :param value: The value of the query field.
+        :raises ValueError: If the query is None.
+        :return: The validated query value.
+        """
         if value is None:
             raise ValueError("Query cannot be None")
         return value
 
 class DataConnectionConfig(BaseModel):
+
+    """
+    Configuration model for a data connection.
+
+    ``DataConnectionConfig`` defines a single data flow within a producer
+    connection. It describes how data is extracted from a source (typically
+    via a regular expression), optionally enriched using a database query,
+    and finally forwarded to a producer.
+
+    A data connection can operate in two modes:
+
+    - **Extraction only**: data is extracted from log lines using a regex
+      defined in :class:`RegexPatternConfig`
+    - **Extraction + enrichment**: extracted data is used as input for a
+      database query defined in :class:`QueryConfig`
+
+    The resulting data is wrapped into a working data connection at runtime
+    and managed until it expires.
+
+    **Responsibilities:**
+
+    - Define the logical name of the data connection
+    - Specify whether the produced message represents an error condition
+    - Configure the source of extracted data (regex-based)
+    - Configure an optional destination query for data enrichment
+    - Control the expiration time of the produced data
+
+    **Validation rules:**
+
+    - ``name`` must not be ``None``
+    - ``is_error`` must be a boolean
+    - ``expired_time`` must be an integer when provided
+
+    :param name: Logical name of the data connection
+    :type name: str
+
+    :param is_error: Indicates whether the produced message should be treated
+                     as an error by the producer
+    :type is_error: bool
+
+    :param source_ref: Configuration defining how data is extracted from input
+                       lines using a regular expression
+    :type source_ref: RegexPatternConfig, optional
+
+    :param destination_ref: Optional configuration defining a database query
+                            used to enrich extracted data
+    :type destination_ref: QueryConfig, optional
+
+    :param expired_time_int: Time-to-live of the data connection, expressed in
+                         minutes from creation time
+    :type expired_time_int: int, optional
+    """
+
     name: str
     is_error: bool
     source_ref: RegexPatternConfig = None
     destination_ref: Optional[QueryConfig] = None
-    expired_time: Optional[int] = 0
+    expired_time_int: Optional[int] = 0
 
     @field_validator('name')
     def validate_name(cls, value):
+        """
+        Validate the name field of the DataConnectionConfig model.
+
+        :param value: The value of the name field.
+        :raises ValueError: If the name is None.
+        :return: The validated name value.
+        """
         if value is None:
             raise ValueError("Name cannot be None")
         return value
 
     @field_validator('is_error')
     def validate_is_error(cls, value):
+        """
+        Validate the is_error field of the DataConnectionConfig model.
+
+        :param value: The value of the is_error field.
+        :raises ValueError: If the is_error is not a boolean.
+        :return: The validated is_error value.
+        """
         if type(value) is not bool:
             raise ValueError("is_error must be a boolean")
         return value
     
-    @field_validator('expired_time')
+    @field_validator('expired_time_int')
     def validate_expired_time(cls, value):
+        """
+        Validate the expired_time_int field of the DataConnectionConfig model.
+
+        :param value: The value of the expired_time_int field.
+        :raises ValueError: If the expired_time_int is not an integer.
+        :return: The validated expired_time_int value.
+        """
         if value is not None and type(value) is not int:
-            raise ValueError("expired_time must be an integer")
+            raise ValueError("expired_time_int must be an integer")
         return value
     
 class ProducerConnectionConfig(BaseModel):
+
+    """
+    Configuration model for a producer connection.
+
+    ``ProducerConnectionConfig`` defines how an agent connects to a specific
+    producer and which data connections are associated with it. A producer
+    represents the final destination of processed data, such as a message
+    broker, alerting system, or external service.
+
+    Each producer connection groups one or more
+    :class:`DataConnectionConfig` instances that describe how data is extracted,
+    optionally enriched, and forwarded to the producer.
+
+    This model is validated using **Pydantic** to ensure that the producer
+    identity is correctly defined before the agent starts.
+
+    **Responsibilities:**
+
+    - Define the producer type and name
+    - Group related data connections under a single producer
+    - Provide a structured configuration for message dispatching
+
+    **Validation rules:**
+
+    - ``type`` must not be ``None``
+    - ``name`` must not be ``None``
+
+    :param type: Logical type of the producer (used to resolve the producer
+                 implementation at runtime)
+    :type type: str
+
+    :param name: Unique name of the producer instance
+    :type name: str
+
+    :param data_connections: List of data connection configurations associated
+                             with this producer
+    :type data_connections: list[DataConnectionConfig]
+    """
+
     type: str
     name: str
     data_connections: List[DataConnectionConfig]
 
     @field_validator('type')
     def validate_type(cls, value):
+        """
+        Validate the type field of the ProducerConnectionConfig model.
+
+        :param value: The value of the type field.
+        :raises ValueError: If the type is None.
+        :return: The validated type value.
+        """
         if value is None:
             raise ValueError("Type cannot be None")
         return value
     
     @field_validator('name')
     def validate_name(cls, value):
+        """
+        Validate the name field of the ProducerConnectionConfig model.
+
+        :param value: The value of the name field.
+        :raises ValueError: If the name is None.
+        :return: The validated name value.
+        """
         if value is None:
             raise ValueError("Name cannot be None")
         return value
 
 
 class BaseAgentConfig(BaseModel):
-    # initial common configuration for all agents
+    
+    """
+    Base configuration model for all agents.
+
+    ``BaseAgentConfig`` defines the common configuration parameters required
+    to initialize and run an agent. It describes how the agent identifies
+    itself, which files it monitors, how often it processes data, and how
+    extracted data is routed to producers.
+
+    This model is implemented using **Pydantic** and includes both field-level
+    and model-level validation to ensure configuration consistency before the
+    agent starts running.
+
+    **Key responsibilities:**
+
+    - Define the agent identity (type and name)
+    - Configure file monitoring and buffering behavior
+    - Declare producer connections and their data flows
+    - Control the polling interval of the agent processing loop
+    - Validate cross-references between file configurations and regex sources
+
+    **Validation rules:**
+
+    - ``type`` and ``name`` must not be ``None``
+    - ``buffer_rows`` must be greater than zero
+    - ``pool_interval`` must be greater than zero
+    - Any ``path_file_name`` referenced by a regex source must exist in
+      ``path_files``
+
+    :param type: Logical type of the agent (used to select the agent
+                 implementation and producers)
+    :type type: str
+
+    :param name: Unique name of the agent instance
+    :type name: str
+
+    :param buffer_rows: Maximum number of lines read from each file per polling
+                        cycle
+    :type buffer_rows: int, optional
+
+    :param path_files: List of file path configurations monitored by the agent
+    :type path_files: list[PathFileConfig], optional
+
+    :param producer_connections: Definitions of producer connections and their
+                                 associated data connections
+    :type producer_connections: list[ProducerConnectionConfig]
+
+    :param pool_interval: Time in seconds to wait between consecutive polling
+                          cycles
+    :type pool_interval: float
+    """
+
     type: str # type of agent
     name: str
     buffer_rows: Optional[int] = 500
@@ -188,7 +534,81 @@ class BaseAgentConfig(BaseModel):
         return value
     
 
+    @model_validator(mode='after')
+    def validate_regex_path_references(self):
+        """
+        Validate the regex path references in the BaseAgentConfig model.
+
+        This validator checks if the path_file_name referenced in the data_connections
+        of the producer_connections exist in the path_files of the agent.
+
+        :raises ValueError: If the path_file_name referenced in the data_connections
+            does not exist in the path_files of the agent.
+        :return: The validated BaseAgentConfig model.
+        """
+        if not self.path_files:
+            return self
+
+        valid_names = {pf.name for pf in self.path_files}
+
+        for producer in self.producer_connections:
+            for dc in producer.data_connections:
+                if dc.source_ref:
+                    if dc.source_ref.path_file_name not in valid_names:
+                        raise ValueError(
+                            f"Invalid path_file_name '{dc.source_ref.path_file_name}'. "
+                            f"Valid values: {valid_names}"
+                        )
+        return self
+
 class BaseAgent(ABC):
+
+    """
+    Abstract base class for all agents.
+
+    The ``BaseAgent`` defines the common runtime behavior and lifecycle for
+    agents that monitor one or more files, extract data using regular
+    expressions, optionally enrich the extracted data via database queries,
+    and forward the resulting messages to producers.
+
+    The agent runs in a dedicated background thread and periodically executes
+    its processing loop until it is explicitly stopped.
+
+    **Main responsibilities:**
+
+    - Monitor configured file paths and detect file rotations
+    - Read log files incrementally using a cursor-based approach
+    - Match lines against configured regular expressions
+    - Create and manage :class:`WorkingDataConnection` instances
+    - Execute optional database queries associated with matched data
+    - Dispatch processed messages to configured producers
+    - Clean up expired working data connections
+
+    **Threading model:**
+
+    - Each agent runs a single daemon worker thread
+    - The worker thread periodically invokes the internal processing loop
+      based on the configured polling interval
+    - Thread termination is controlled via a stop event
+
+    **Extensibility:**
+
+    This class is abstract and must be subclassed.
+    Subclasses are required to implement the
+    :meth:`_data_connections_transformation_and_filtering` method in order to
+    apply domain-specific transformations and filtering logic to matched data.
+
+    **Lifecycle:**
+
+    1. The agent is initialized with a :class:`BaseAgentConfig`
+    2. A background worker thread is started automatically
+    3. The agent periodically processes input files and data connections
+    4. The agent can be stopped gracefully by calling :meth:`stop`
+
+    :param config: Configuration object defining agent behavior, file paths,
+                   producer connections, polling interval, and buffering rules
+    :type config: BaseAgentConfig
+    """
 
     def __init__(self, config: BaseAgentConfig):
         """
@@ -415,7 +835,7 @@ class BaseAgent(ABC):
                             database_name=data_connection.destination_ref.name if data_connection.destination_ref else None,
                             query=data_connection.destination_ref.query if data_connection.destination_ref else None,
                             is_error=data_connection.is_error,
-                            expired_time=datetime.now() + timedelta(minutes=data_connection.expired_time)
+                            expired_time=datetime.now() + timedelta(minutes=data_connection.expired_time_int)
                         )
                     else:
                         working_data_connection = WorkingDataConnection(
@@ -423,7 +843,7 @@ class BaseAgent(ABC):
                             producer_type=producer_connection.type,
                             producer_name=producer_connection.name,
                             is_error=data_connection.is_error,
-                            expired_time=datetime.now() + timedelta(minutes=data_connection.expired_time)
+                            expired_time=datetime.now() + timedelta(minutes=data_connection.expired_time_int)
                         )
                     if data_connection.source_ref and \
                         data_connection.source_ref.path_file_name == path_file.name and \

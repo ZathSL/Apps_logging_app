@@ -343,6 +343,44 @@
 <div class="viewcode-block" id="AgentFactory">
 <a class="viewcode-back" href="../../../modules/apps_logging_app.agents.html#apps_logging_app.agents.factory.AgentFactory">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">AgentFactory</span><span class="p">:</span>
+
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Factory class responsible for creating agent instances from configuration dictionaries.</span>
+
+<span class="sd">    ``AgentFactory`` provides a static method ``create`` that instantiates an agent</span>
+<span class="sd">    based on a given raw configuration dictionary. It validates the configuration</span>
+<span class="sd">    against the agent&#39;s expected config model, initializes required producers and</span>
+<span class="sd">    databases, and returns a fully configured agent instance.</span>
+
+<span class="sd">    **Responsibilities:**</span>
+
+<span class="sd">    - Validate the agent type from the configuration</span>
+<span class="sd">    - Instantiate the correct agent class</span>
+<span class="sd">    - Initialize associated producer connections</span>
+<span class="sd">    - Initialize associated database connections for data connections</span>
+
+<span class="sd">    **Methods:**</span>
+
+<span class="sd">    .. method:: create(raw_config: dict) -&gt; BaseAgent</span>
+
+<span class="sd">        Create an agent from a given configuration dictionary.</span>
+
+<span class="sd">        :param raw_config: A dictionary containing the configuration for the agent.</span>
+<span class="sd">        :type raw_config: dict</span>
+<span class="sd">        :return: An instance of the agent class configured according to ``raw_config``.</span>
+<span class="sd">        :rtype: BaseAgent</span>
+<span class="sd">        :raises ValueError: If the agent type is unknown or not registered in ``AGENT_REGISTRY``.</span>
+<span class="sd">        </span>
+<span class="sd">        **Behavior:**</span>
+<span class="sd">        </span>
+<span class="sd">        1. Retrieves the agent type from ``raw_config``.</span>
+<span class="sd">        2. Looks up the agent type in ``AGENT_REGISTRY``.</span>
+<span class="sd">        3. Validates the configuration using the agent&#39;s config model.</span>
+<span class="sd">        4. Creates all producers associated with the agent&#39;s ``producer_connections``.</span>
+<span class="sd">        5. Creates all databases referenced by data connections that have a ``destination_ref``.</span>
+<span class="sd">        6. Instantiates and returns the configured agent.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
 <div class="viewcode-block" id="AgentFactory.create">
 <a class="viewcode-back" href="../../../modules/apps_logging_app.agents.html#apps_logging_app.agents.factory.AgentFactory.create">[docs]</a>
     <span class="nd">@staticmethod</span>

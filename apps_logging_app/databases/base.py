@@ -10,6 +10,36 @@ from concurrent.futures import Future, ThreadPoolExecutor
 
 
 class QueryTask:
+
+    """
+    Represents a database query task to be executed asynchronously.
+
+    ``QueryTask`` encapsulates a SQL or database query along with optional
+    parameters and manages its execution state through a Future object.
+
+    :param query: The SQL or database query string to be executed.
+    :type query: str
+    :param params: Optional dictionary of parameters to be passed to the query.
+    :type params: Optional[Dict[str, Any]]
+
+    Attributes:
+        future (Future): A concurrent.futures.Future object that will hold
+                         the result or exception of the query once executed.
+        retries (int): Counter for the number of times the query has been
+                       retried due to failure. Defaults to 0.
+
+    Example Usage:
+
+    .. code-block:: python
+
+        task = QueryTask(
+            query="SELECT * FROM users WHERE id = %(user_id)s",
+            params={"user_id": 42}
+        )
+
+        future_result = task.future  # Will eventually contain query results
+    """
+
     def __init__(self, query: str, params: Optional[Dict[str, Any]] = None):
         """
         Initialize a QueryTask with a query and optional parameters.
@@ -25,6 +55,42 @@ class QueryTask:
         self.retries = 0
 
 class ConnectionConfig(BaseModel):
+
+    """
+    Configuration model for a single database connection.
+
+    ``ConnectionConfig`` defines the connection parameters required to
+    connect to a database instance, including host, port, and an optional
+    service name or database identifier.
+
+    :param host: Hostname or IP address of the database server.
+    :type host: str
+    :param port: Port number on which the database server is listening.
+                 Must be between 1 and 65535.
+    :type port: int
+    :param service_name: Optional service name, schema, or database name.
+    :type service_name: Optional[str]
+
+    Validators:
+        - host: Must be a non-empty valid hostname or IP address.
+        - port: Must be an integer between 1 and 65535.
+
+    Example Usage:
+
+    .. code-block:: python
+
+        primary_conn = ConnectionConfig(
+            host="localhost",
+            port=5432,
+            service_name="main_db"
+        )
+
+        replica_conn = ConnectionConfig(
+            host="replica.local",
+            port=5432
+        )
+    """
+
     host: str
     port: int
     service_name: Optional[str]
@@ -59,6 +125,60 @@ class ConnectionConfig(BaseModel):
         return v
 
 class BaseDatabaseConfig(BaseModel):
+
+    """
+    Configuration model for a database client.
+
+    ``BaseDatabaseConfig`` stores all the necessary connection and operational 
+    parameters to initialize a database client. This includes credentials, 
+    primary and replica connection details, retry policies, and concurrency settings.
+
+    :param type: Type of the database (e.g., "postgres", "mysql").
+    :type type: str
+    :param name: Unique name for the database configuration.
+    :type name: str
+    :param username: Username used to authenticate with the database.
+    :type username: str
+    :param password: Password used to authenticate with the database.
+    :type password: str
+    :param primary: Connection configuration for the primary database instance.
+    :type primary: ConnectionConfig
+    :param replica: Optional connection configuration for a replica database instance.
+    :type replica: Optional[ConnectionConfig]
+    :param max_retries: Maximum number of times to retry a failed connection.
+                        Defaults to 5.
+    :type max_retries: int
+    :param max_workers: Maximum number of worker threads for executing queries.
+                        Defaults to 10.
+    :type max_workers: int
+
+    Validators:
+        - type: Ensures the type is not None.
+        - name: Ensures the name is not None.
+        - username: Ensures the username is not None.
+        - password: Ensures the password is not None.
+        - max_retries: Must be greater than 0.
+        - max_workers: Must be greater than 0.
+
+    Example Usage:
+
+    .. code-block:: python
+
+        primary_conn = ConnectionConfig(host="localhost", port=5432, service_name="main_db")
+        replica_conn = ConnectionConfig(host="replica.local", port=5432, service_name="replica_db")
+
+        db_config = BaseDatabaseConfig(
+            type="postgres",
+            name="main",
+            username="user",
+            password="password",
+            primary=primary_conn,
+            replica=replica_conn,
+            max_retries=5,
+            max_workers=10
+        )
+    """
+
     type: str
     name: str
     username: str
@@ -147,6 +267,82 @@ class BaseDatabaseConfig(BaseModel):
         return value
 
 class BaseDatabase(ABC):
+
+    """
+    Abstract base class for database clients.
+
+    ``BaseDatabase`` provides a framework for executing queries asynchronously
+    against a database. It manages a queue of query tasks, executes them in a
+    thread pool, handles retries and reconnections, and logs all relevant events.
+
+    This class is designed to be extended for specific database types by
+    implementing the abstract methods ``_connect`` and ``_query``.
+
+    :param config: The database configuration containing connection details, credentials, 
+                   and operational parameters.
+    :type config: BaseDatabaseConfig
+
+    Attributes:
+        config (BaseDatabaseConfig): The database configuration object.
+        logger (logging.Logger): Logger for database events.
+        _queue (Queue): Internal queue of pending query tasks.
+        _stop_event (Event): Event used to signal shutdown of the dispatcher thread.
+        _executor (ThreadPoolExecutor): Thread pool for executing queries.
+        _dispatcher (Thread): Background thread that dispatches query tasks.
+    
+    Public Methods:
+        execute(query, params=None) -> Future:
+            Adds a query to the execution queue and returns a Future for its result.
+        
+        shutdown() -> None:
+            Shuts down the dispatcher thread, waits for all tasks to finish, 
+            and shuts down the executor.
+
+    Abstract Methods:
+        _connect() -> None:
+            Establish a connection to the database. Must be implemented in subclasses.
+        
+        _query(query, params=None) -> Dict[str, Any]:
+            Execute a query on the database and return the result as a dictionary.
+            Must be implemented in subclasses.
+
+    Internal Methods:
+        _dispatch() -> None:
+            Internal loop that pulls query tasks from the queue and submits them
+            to the executor for execution.
+        
+        _safe_query(task: QueryTask) -> Dict[str, Any]:
+            Executes a query safely, handling exceptions and logging results.
+        
+        _safe_connect() -> None:
+            Attempts to establish a database connection with retries and error handling.
+
+    Example Usage:
+
+    .. code-block:: python
+
+        class MyDatabase(BaseDatabase):
+            def _connect(self):
+                # Implementation for connecting to the specific database
+                pass
+
+            def _query(self, query, params=None):
+                # Implementation for executing a query
+                return {"result": "success"}
+
+        config = BaseDatabaseConfig(
+            type="my_db",
+            name="main",
+            username="user",
+            password="pass",
+            primary=ConnectionConfig(host="localhost", port=5432)
+        )
+
+        db = MyDatabase(config)
+        future = db.execute("SELECT * FROM table")
+        result = future.result()
+        db.shutdown()
+    """
 
     def __init__(self, config: BaseDatabaseConfig):
         """

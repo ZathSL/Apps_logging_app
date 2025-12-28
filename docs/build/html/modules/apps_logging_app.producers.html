@@ -396,6 +396,9 @@
 <dt class="sig sig-object py" id="apps_logging_app.producers.base.BaseProducerConfig">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">apps_logging_app.producers.base.</span></span><span class="sig-name descname"><span class="pre">BaseProducerConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_retries</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/producers/base.html#BaseProducerConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.producers.base.BaseProducerConfig" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
+<p>Configuration model for a message producer.</p>
+<p>BaseProducerConfig defines the configuration parameters required
+to initialize a producer, including its type, name, and retry behavior.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -407,17 +410,65 @@
 </dl>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="apps_logging_app.producers.base.BaseProducerConfig.type">
-<span class="sig-name descname"><span class="pre">type</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#apps_logging_app.producers.base.BaseProducerConfig.type" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">type</span></span><a class="headerlink" href="#apps_logging_app.producers.base.BaseProducerConfig.type" title="Link to this definition">¶</a></dt>
+<dd><p>The type of the producer. Cannot be None.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="apps_logging_app.producers.base.BaseProducerConfig.name">
-<span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#apps_logging_app.producers.base.BaseProducerConfig.name" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#apps_logging_app.producers.base.BaseProducerConfig.name" title="Link to this definition">¶</a></dt>
+<dd><p>The name of the producer. Cannot be None.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="apps_logging_app.producers.base.BaseProducerConfig.max_retries">
-<span class="sig-name descname"><span class="pre">max_retries</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#apps_logging_app.producers.base.BaseProducerConfig.max_retries" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">max_retries</span></span><a class="headerlink" href="#apps_logging_app.producers.base.BaseProducerConfig.max_retries" title="Link to this definition">¶</a></dt>
+<dd><p>Maximum number of retries for sending messages
+or reconnecting in case of failure. Must be greater than 0.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int, default=5</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="simple">
+<dt>Validators:</dt><dd><dl class="simple">
+<dt>validate_type(cls, value):</dt><dd><p>Ensures that <cite>type</cite> is not None.</p>
+</dd>
+<dt>validate_name(cls, value):</dt><dd><p>Ensures that <cite>name</cite> is not None.</p>
+</dd>
+<dt>validate_max_retries(cls, value):</dt><dd><p>Ensures that <cite>max_retries</cite> is a positive integer greater than 0.</p>
+</dd>
+</dl>
+</dd>
+<dt>Usage:</dt><dd><p>This model is passed to the constructor of a BaseProducer subclass
+to initialize the producer with validated configuration values.</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id0">
+<span class="sig-name descname"><span class="pre">type</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#id0" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id1">
+<span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#id1" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id2">
+<span class="sig-name descname"><span class="pre">max_retries</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#id2" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
@@ -465,9 +516,104 @@
 <dt class="sig sig-object py" id="apps_logging_app.producers.base.BaseProducer">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">apps_logging_app.producers.base.</span></span><span class="sig-name descname"><span class="pre">BaseProducer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/producers/base.html#BaseProducer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.producers.base.BaseProducer" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ABC</span></code></p>
+<p>Abstract base class for a message producer.</p>
+<dl class="simple">
+<dt>The BaseProducer manages the lifecycle of a producer, including:</dt><dd><ul class="simple">
+<li><p>Queueing messages</p></li>
+<li><p>Handling retries</p></li>
+<li><p>Connecting to the underlying transport or service</p></li>
+<li><p>Running a worker thread to process messages asynchronously</p></li>
+<li><p>Gracefully shutting down</p></li>
+</ul>
+</dd>
+</dl>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>config</strong> (<a class="reference internal" href="#apps_logging_app.producers.base.BaseProducerConfig" title="apps_logging_app.producers.base.BaseProducerConfig"><em>BaseProducerConfig</em></a>)</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.producers.base.BaseProducer.config">
+<span class="sig-name descname"><span class="pre">config</span></span><a class="headerlink" href="#apps_logging_app.producers.base.BaseProducer.config" title="Link to this definition">¶</a></dt>
+<dd><p>Configuration for the producer, including type, name, and max_retries.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#apps_logging_app.producers.base.BaseProducerConfig" title="apps_logging_app.producers.base.BaseProducerConfig">BaseProducerConfig</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.producers.base.BaseProducer.logger">
+<span class="sig-name descname"><span class="pre">logger</span></span><a class="headerlink" href="#apps_logging_app.producers.base.BaseProducer.logger" title="Link to this definition">¶</a></dt>
+<dd><p>Logger for reporting events and errors.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>logging.Logger</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.producers.base.BaseProducer._queue">
+<span class="sig-name descname"><span class="pre">_queue</span></span><a class="headerlink" href="#apps_logging_app.producers.base.BaseProducer._queue" title="Link to this definition">¶</a></dt>
+<dd><p>Internal queue holding messages to be sent.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Queue</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.producers.base.BaseProducer._stop_event">
+<span class="sig-name descname"><span class="pre">_stop_event</span></span><a class="headerlink" href="#apps_logging_app.producers.base.BaseProducer._stop_event" title="Link to this definition">¶</a></dt>
+<dd><p>Event flag to signal the worker thread to stop.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>threading.Event</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.producers.base.BaseProducer._worker_thread">
+<span class="sig-name descname"><span class="pre">_worker_thread</span></span><a class="headerlink" href="#apps_logging_app.producers.base.BaseProducer._worker_thread" title="Link to this definition">¶</a></dt>
+<dd><p>Worker thread that processes messages from the queue.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>threading.Thread</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="simple">
+<dt>Public Methods:</dt><dd><dl class="simple">
+<dt>produce(is_error: bool, message: Dict[str, Any]) -&gt; None:</dt><dd><p>Queue a message to be sent by the producer.</p>
+</dd>
+<dt>shutdown(timeout: float | None = None) -&gt; None:</dt><dd><p>Gracefully shut down the producer and stop the worker thread.</p>
+</dd>
+</dl>
+</dd>
+<dt>Internal Methods (to be implemented by subclasses):</dt><dd><dl class="simple">
+<dt>_connect() -&gt; None:</dt><dd><p>Establish a connection to the underlying transport or service.</p>
+</dd>
+<dt>_send(is_error: bool, message: Dict[str, Any]) -&gt; None:</dt><dd><p>Send a message to the underlying transport or service.</p>
+</dd>
+<dt>_close() -&gt; None:</dt><dd><p>Close the connection to the underlying transport or service.</p>
+</dd>
+</dl>
+</dd>
+<dt>Internal Worker Behavior:</dt><dd><ul class="simple">
+<li><p>Runs in a separate daemon thread.</p></li>
+<li><p>Fetches messages from the internal queue and attempts to send them.</p></li>
+<li><p>Retries messages up to <cite>max_retries</cite> on failure.</p></li>
+<li><p>Reconnects to the underlying connection if sending fails after retries.</p></li>
+<li><p>Waits for 0.5 seconds when the queue is empty before polling again.</p></li>
+</ul>
+</dd>
+<dt>Connection Handling:</dt><dd><p>The producer uses <cite>_safe_connect()</cite> to ensure that connections are retried
+up to <cite>max_retries</cite> times, with a 60-second wait after consecutive failures.</p>
 </dd>
 </dl>
 <dl class="py method">
@@ -517,9 +663,45 @@ for the worker thread to finish. Defaults to None.</p>
 <dt class="sig sig-object py" id="apps_logging_app.producers.factory.ProducerFactory">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">apps_logging_app.producers.factory.</span></span><span class="sig-name descname"><span class="pre">ProducerFactory</span></span><a class="reference internal" href="../_modules/apps_logging_app/producers/factory.html#ProducerFactory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.producers.factory.ProducerFactory" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Factory class to create and manage producer instances.</p>
+<p>ProducerFactory is responsible for creating producer instances based on
+a specified type and name. It ensures that each producer is instantiated
+only once by maintaining a global cache (<cite>PRODUCER_INSTANCES</cite>). If an
+instance already exists in the cache, it is returned directly; otherwise,
+the instance is created using the configuration loaded from the
+<cite>producers.yaml</cite> file and registered producer classes.</p>
+<p>The factory uses the <cite>PRODUCER_REGISTRY</cite> to map producer types to their
+corresponding configuration model and class.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="apps_logging_app.producers.factory.ProducerFactory.create">
-<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">create</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">producer_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">producer_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/producers/factory.html#ProducerFactory.create"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.producers.factory.ProducerFactory.create" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">create</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">producer_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">producer_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/producers/factory.html#ProducerFactory.create"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.producers.factory.ProducerFactory.create" title="Link to this definition">¶</a></dt>
+<dd><p>Creates a producer instance for the given type and name, using cached
+instances if available, or configuration from <cite>producers.yaml</cite> otherwise.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>producer_type</strong> (<em>str</em>)</p></li>
+<li><p><strong>producer_name</strong> (<em>str</em>)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="field-list simple">
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ValueError</strong> – If the configuration for the specified producer type and name is not
+    found in <cite>producers.yaml</cite>.</p></li>
+<li><p><strong>ValueError</strong> – If the producer type is not registered in <cite>PRODUCER_REGISTRY</cite>.</p></li>
+<li><p><strong>Usage</strong> – </p></li>
+<li><p><strong>-----</strong> – </p></li>
+<li><p><strong>producer = ProducerFactory.create</strong><strong>(</strong><strong>&quot;kafka&quot;</strong><strong>, </strong><strong>&quot;main_topic&quot;</strong><strong>)</strong> – </p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="id3">
+<span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">create</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">producer_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">producer_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/producers/factory.html#ProducerFactory.create"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id3" title="Link to this definition">¶</a></dt>
 <dd><p>Create a producer instance based on the given type and name.</p>
 <p>If the instance already exists in the cache, it is returned directly.
 Otherwise, the instance is created using the configuration from the producers.yaml
@@ -555,16 +737,50 @@ file and stored in the cache.</p>
 <dt class="sig sig-object py" id="apps_logging_app.producers.registry.ProducerEntry">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">apps_logging_app.producers.registry.</span></span><span class="sig-name descname"><span class="pre">ProducerEntry</span></span><a class="reference internal" href="../_modules/apps_logging_app/producers/registry.html#ProducerEntry"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.producers.registry.ProducerEntry" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Generic</span></code>[<code class="xref py py-obj docutils literal notranslate"><span class="pre">C</span></code>]</p>
+<p>A registry entry for a producer class.</p>
+<p>This class binds a producer type to its configuration model and
+producer class, allowing dynamic creation of producer instances
+via the ProducerFactory.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="apps_logging_app.producers.registry.ProducerEntry.config_model">
-<span class="sig-name descname"><span class="pre">config_model</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><span class="pre">C</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#apps_logging_app.producers.registry.ProducerEntry.config_model" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">config_model</span></span><a class="headerlink" href="#apps_logging_app.producers.registry.ProducerEntry.config_model" title="Link to this definition">¶</a></dt>
+<dd><p>The Pydantic model class used to validate and parse the producer configuration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Type[C]</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="apps_logging_app.producers.registry.ProducerEntry.producer_class">
-<span class="sig-name descname"><span class="pre">producer_class</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#apps_logging_app.producers.base.BaseProducer" title="apps_logging_app.producers.base.BaseProducer"><span class="pre">BaseProducer</span></a><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#apps_logging_app.producers.registry.ProducerEntry.producer_class" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">producer_class</span></span><a class="headerlink" href="#apps_logging_app.producers.registry.ProducerEntry.producer_class" title="Link to this definition">¶</a></dt>
+<dd><p>The concrete producer class that will be instantiated.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Type[<a class="reference internal" href="#apps_logging_app.producers.base.BaseProducer" title="apps_logging_app.producers.base.BaseProducer">BaseProducer</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id4">
+<span class="sig-name descname"><span class="pre">config_model</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><span class="pre">C</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#id4" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id5">
+<span class="sig-name descname"><span class="pre">producer_class</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#apps_logging_app.producers.base.BaseProducer" title="apps_logging_app.producers.base.BaseProducer"><span class="pre">BaseProducer</span></a><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#id5" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="apps_logging_app.producers.registry.PRODUCER_REGISTRY">
+<span class="sig-prename descclassname"><span class="pre">apps_logging_app.producers.registry.</span></span><span class="sig-name descname"><span class="pre">PRODUCER_REGISTRY</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#apps_logging_app.producers.registry.ProducerEntry" title="apps_logging_app.producers.registry.ProducerEntry"><span class="pre">ProducerEntry</span></a><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'kafka_handler':</span> <span class="pre">&lt;apps_logging_app.producers.registry.ProducerEntry</span> <span class="pre">object&gt;}</span></span><a class="headerlink" href="#apps_logging_app.producers.registry.PRODUCER_REGISTRY" title="Link to this definition">¶</a></dt>
+<dd><p>A global registry that maps producer types (str) to their corresponding <code class="docutils literal notranslate"><span class="pre">ProducerEntry</span></code> objects.</p>
+<p>This registry is used by factories like <code class="docutils literal notranslate"><span class="pre">ProducerFactory</span></code> to look up and create producer
+instances based on their type.</p>
 </dd></dl>
 
 <dl class="py function">
@@ -656,6 +872,9 @@ file and stored in the cache.</p>
 <li><a class="reference internal" href="#apps_logging_app.producers.base.BaseProducerConfig.type"><code class="docutils literal notranslate"><span class="pre">BaseProducerConfig.type</span></code></a></li>
 <li><a class="reference internal" href="#apps_logging_app.producers.base.BaseProducerConfig.name"><code class="docutils literal notranslate"><span class="pre">BaseProducerConfig.name</span></code></a></li>
 <li><a class="reference internal" href="#apps_logging_app.producers.base.BaseProducerConfig.max_retries"><code class="docutils literal notranslate"><span class="pre">BaseProducerConfig.max_retries</span></code></a></li>
+<li><a class="reference internal" href="#id0"><code class="docutils literal notranslate"><span class="pre">BaseProducerConfig.type</span></code></a></li>
+<li><a class="reference internal" href="#id1"><code class="docutils literal notranslate"><span class="pre">BaseProducerConfig.name</span></code></a></li>
+<li><a class="reference internal" href="#id2"><code class="docutils literal notranslate"><span class="pre">BaseProducerConfig.max_retries</span></code></a></li>
 <li><a class="reference internal" href="#apps_logging_app.producers.base.BaseProducerConfig.validate_type"><code class="docutils literal notranslate"><span class="pre">BaseProducerConfig.validate_type()</span></code></a></li>
 <li><a class="reference internal" href="#apps_logging_app.producers.base.BaseProducerConfig.validate_name"><code class="docutils literal notranslate"><span class="pre">BaseProducerConfig.validate_name()</span></code></a></li>
 <li><a class="reference internal" href="#apps_logging_app.producers.base.BaseProducerConfig.validate_max_retries"><code class="docutils literal notranslate"><span class="pre">BaseProducerConfig.validate_max_retries()</span></code></a></li>
@@ -663,6 +882,11 @@ file and stored in the cache.</p>
 </ul>
 </li>
 <li><a class="reference internal" href="#apps_logging_app.producers.base.BaseProducer"><code class="docutils literal notranslate"><span class="pre">BaseProducer</span></code></a><ul>
+<li><a class="reference internal" href="#apps_logging_app.producers.base.BaseProducer.config"><code class="docutils literal notranslate"><span class="pre">BaseProducer.config</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.producers.base.BaseProducer.logger"><code class="docutils literal notranslate"><span class="pre">BaseProducer.logger</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.producers.base.BaseProducer._queue"><code class="docutils literal notranslate"><span class="pre">BaseProducer._queue</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.producers.base.BaseProducer._stop_event"><code class="docutils literal notranslate"><span class="pre">BaseProducer._stop_event</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.producers.base.BaseProducer._worker_thread"><code class="docutils literal notranslate"><span class="pre">BaseProducer._worker_thread</span></code></a></li>
 <li><a class="reference internal" href="#apps_logging_app.producers.base.BaseProducer.produce"><code class="docutils literal notranslate"><span class="pre">BaseProducer.produce()</span></code></a></li>
 <li><a class="reference internal" href="#apps_logging_app.producers.base.BaseProducer.shutdown"><code class="docutils literal notranslate"><span class="pre">BaseProducer.shutdown()</span></code></a></li>
 </ul>
@@ -672,6 +896,7 @@ file and stored in the cache.</p>
 <li><a class="reference internal" href="#module-apps_logging_app.producers.factory">apps_logging_app.producers.factory module</a><ul>
 <li><a class="reference internal" href="#apps_logging_app.producers.factory.ProducerFactory"><code class="docutils literal notranslate"><span class="pre">ProducerFactory</span></code></a><ul>
 <li><a class="reference internal" href="#apps_logging_app.producers.factory.ProducerFactory.create"><code class="docutils literal notranslate"><span class="pre">ProducerFactory.create()</span></code></a></li>
+<li><a class="reference internal" href="#id3"><code class="docutils literal notranslate"><span class="pre">ProducerFactory.create()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -680,8 +905,11 @@ file and stored in the cache.</p>
 <li><a class="reference internal" href="#apps_logging_app.producers.registry.ProducerEntry"><code class="docutils literal notranslate"><span class="pre">ProducerEntry</span></code></a><ul>
 <li><a class="reference internal" href="#apps_logging_app.producers.registry.ProducerEntry.config_model"><code class="docutils literal notranslate"><span class="pre">ProducerEntry.config_model</span></code></a></li>
 <li><a class="reference internal" href="#apps_logging_app.producers.registry.ProducerEntry.producer_class"><code class="docutils literal notranslate"><span class="pre">ProducerEntry.producer_class</span></code></a></li>
+<li><a class="reference internal" href="#id4"><code class="docutils literal notranslate"><span class="pre">ProducerEntry.config_model</span></code></a></li>
+<li><a class="reference internal" href="#id5"><code class="docutils literal notranslate"><span class="pre">ProducerEntry.producer_class</span></code></a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#apps_logging_app.producers.registry.PRODUCER_REGISTRY"><code class="docutils literal notranslate"><span class="pre">PRODUCER_REGISTRY</span></code></a></li>
 <li><a class="reference internal" href="#apps_logging_app.producers.registry.register_producer"><code class="docutils literal notranslate"><span class="pre">register_producer()</span></code></a></li>
 </ul>
 </li>

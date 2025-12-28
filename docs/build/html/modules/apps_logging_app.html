@@ -383,7 +383,6 @@
 <li class="toctree-l3"><a class="reference internal" href="apps_logging_app.agents.html#apps_logging_app.agents.base.RegexPatternConfig"><code class="docutils literal notranslate"><span class="pre">RegexPatternConfig</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="apps_logging_app.agents.html#apps_logging_app.agents.base.RegexPatternConfig.path_file_name"><code class="docutils literal notranslate"><span class="pre">RegexPatternConfig.path_file_name</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="apps_logging_app.agents.html#apps_logging_app.agents.base.RegexPatternConfig.regex_pattern"><code class="docutils literal notranslate"><span class="pre">RegexPatternConfig.regex_pattern</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="apps_logging_app.agents.html#apps_logging_app.agents.base.RegexPatternConfig.validate_path_file_name"><code class="docutils literal notranslate"><span class="pre">RegexPatternConfig.validate_path_file_name()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="apps_logging_app.agents.html#apps_logging_app.agents.base.RegexPatternConfig.compile_regex"><code class="docutils literal notranslate"><span class="pre">RegexPatternConfig.compile_regex()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="apps_logging_app.agents.html#apps_logging_app.agents.base.RegexPatternConfig.model_config"><code class="docutils literal notranslate"><span class="pre">RegexPatternConfig.model_config</span></code></a></li>
 </ul>
@@ -403,7 +402,7 @@
 <li class="toctree-l4"><a class="reference internal" href="apps_logging_app.agents.html#apps_logging_app.agents.base.DataConnectionConfig.is_error"><code class="docutils literal notranslate"><span class="pre">DataConnectionConfig.is_error</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="apps_logging_app.agents.html#apps_logging_app.agents.base.DataConnectionConfig.source_ref"><code class="docutils literal notranslate"><span class="pre">DataConnectionConfig.source_ref</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="apps_logging_app.agents.html#apps_logging_app.agents.base.DataConnectionConfig.destination_ref"><code class="docutils literal notranslate"><span class="pre">DataConnectionConfig.destination_ref</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="apps_logging_app.agents.html#apps_logging_app.agents.base.DataConnectionConfig.expired_time"><code class="docutils literal notranslate"><span class="pre">DataConnectionConfig.expired_time</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="apps_logging_app.agents.html#apps_logging_app.agents.base.DataConnectionConfig.expired_time_int"><code class="docutils literal notranslate"><span class="pre">DataConnectionConfig.expired_time_int</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="apps_logging_app.agents.html#apps_logging_app.agents.base.DataConnectionConfig.validate_name"><code class="docutils literal notranslate"><span class="pre">DataConnectionConfig.validate_name()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="apps_logging_app.agents.html#apps_logging_app.agents.base.DataConnectionConfig.validate_is_error"><code class="docutils literal notranslate"><span class="pre">DataConnectionConfig.validate_is_error()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="apps_logging_app.agents.html#apps_logging_app.agents.base.DataConnectionConfig.validate_expired_time"><code class="docutils literal notranslate"><span class="pre">DataConnectionConfig.validate_expired_time()</span></code></a></li>
@@ -430,6 +429,7 @@
 <li class="toctree-l4"><a class="reference internal" href="apps_logging_app.agents.html#apps_logging_app.agents.base.BaseAgentConfig.validate_name"><code class="docutils literal notranslate"><span class="pre">BaseAgentConfig.validate_name()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="apps_logging_app.agents.html#apps_logging_app.agents.base.BaseAgentConfig.validate_buffer_rows"><code class="docutils literal notranslate"><span class="pre">BaseAgentConfig.validate_buffer_rows()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="apps_logging_app.agents.html#apps_logging_app.agents.base.BaseAgentConfig.validate_pool_interval"><code class="docutils literal notranslate"><span class="pre">BaseAgentConfig.validate_pool_interval()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="apps_logging_app.agents.html#apps_logging_app.agents.base.BaseAgentConfig.validate_regex_path_references"><code class="docutils literal notranslate"><span class="pre">BaseAgentConfig.validate_regex_path_references()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="apps_logging_app.agents.html#apps_logging_app.agents.base.BaseAgentConfig.model_config"><code class="docutils literal notranslate"><span class="pre">BaseAgentConfig.model_config</span></code></a></li>
 </ul>
 </li>
@@ -450,6 +450,7 @@
 <li class="toctree-l2"><a class="reference internal" href="apps_logging_app.agents.html#module-apps_logging_app.agents.factory">apps_logging_app.agents.factory module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="apps_logging_app.agents.html#apps_logging_app.agents.factory.AgentFactory"><code class="docutils literal notranslate"><span class="pre">AgentFactory</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="apps_logging_app.agents.html#apps_logging_app.agents.factory.AgentFactory.create"><code class="docutils literal notranslate"><span class="pre">AgentFactory.create()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="apps_logging_app.agents.html#id0"><code class="docutils literal notranslate"><span class="pre">AgentFactory.create()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -458,8 +459,11 @@
 <li class="toctree-l3"><a class="reference internal" href="apps_logging_app.agents.html#apps_logging_app.agents.registry.AgentEntry"><code class="docutils literal notranslate"><span class="pre">AgentEntry</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="apps_logging_app.agents.html#apps_logging_app.agents.registry.AgentEntry.config_model"><code class="docutils literal notranslate"><span class="pre">AgentEntry.config_model</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="apps_logging_app.agents.html#apps_logging_app.agents.registry.AgentEntry.agent_class"><code class="docutils literal notranslate"><span class="pre">AgentEntry.agent_class</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="apps_logging_app.agents.html#id1"><code class="docutils literal notranslate"><span class="pre">AgentEntry.config_model</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="apps_logging_app.agents.html#id2"><code class="docutils literal notranslate"><span class="pre">AgentEntry.agent_class</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="apps_logging_app.agents.html#apps_logging_app.agents.registry.AGENT_REGISTRY"><code class="docutils literal notranslate"><span class="pre">AGENT_REGISTRY</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="apps_logging_app.agents.html#apps_logging_app.agents.registry.register_agent"><code class="docutils literal notranslate"><span class="pre">register_agent()</span></code></a></li>
 </ul>
 </li>
@@ -479,7 +483,11 @@
 </li>
 <li class="toctree-l2"><a class="reference internal" href="apps_logging_app.databases.html#submodules">Submodules</a></li>
 <li class="toctree-l2"><a class="reference internal" href="apps_logging_app.databases.html#module-apps_logging_app.databases.base">apps_logging_app.databases.base module</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="apps_logging_app.databases.html#apps_logging_app.databases.base.QueryTask"><code class="docutils literal notranslate"><span class="pre">QueryTask</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="apps_logging_app.databases.html#apps_logging_app.databases.base.QueryTask"><code class="docutils literal notranslate"><span class="pre">QueryTask</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="apps_logging_app.databases.html#apps_logging_app.databases.base.QueryTask.future"><code class="docutils literal notranslate"><span class="pre">QueryTask.future</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="apps_logging_app.databases.html#apps_logging_app.databases.base.QueryTask.retries"><code class="docutils literal notranslate"><span class="pre">QueryTask.retries</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="apps_logging_app.databases.html#apps_logging_app.databases.base.ConnectionConfig"><code class="docutils literal notranslate"><span class="pre">ConnectionConfig</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="apps_logging_app.databases.html#apps_logging_app.databases.base.ConnectionConfig.host"><code class="docutils literal notranslate"><span class="pre">ConnectionConfig.host</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="apps_logging_app.databases.html#apps_logging_app.databases.base.ConnectionConfig.port"><code class="docutils literal notranslate"><span class="pre">ConnectionConfig.port</span></code></a></li>
@@ -508,6 +516,12 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="apps_logging_app.databases.html#apps_logging_app.databases.base.BaseDatabase"><code class="docutils literal notranslate"><span class="pre">BaseDatabase</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="apps_logging_app.databases.html#apps_logging_app.databases.base.BaseDatabase.config"><code class="docutils literal notranslate"><span class="pre">BaseDatabase.config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="apps_logging_app.databases.html#apps_logging_app.databases.base.BaseDatabase.logger"><code class="docutils literal notranslate"><span class="pre">BaseDatabase.logger</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="apps_logging_app.databases.html#apps_logging_app.databases.base.BaseDatabase._queue"><code class="docutils literal notranslate"><span class="pre">BaseDatabase._queue</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="apps_logging_app.databases.html#apps_logging_app.databases.base.BaseDatabase._stop_event"><code class="docutils literal notranslate"><span class="pre">BaseDatabase._stop_event</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="apps_logging_app.databases.html#apps_logging_app.databases.base.BaseDatabase._executor"><code class="docutils literal notranslate"><span class="pre">BaseDatabase._executor</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="apps_logging_app.databases.html#apps_logging_app.databases.base.BaseDatabase._dispatcher"><code class="docutils literal notranslate"><span class="pre">BaseDatabase._dispatcher</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="apps_logging_app.databases.html#apps_logging_app.databases.base.BaseDatabase.execute"><code class="docutils literal notranslate"><span class="pre">BaseDatabase.execute()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="apps_logging_app.databases.html#apps_logging_app.databases.base.BaseDatabase.shutdown"><code class="docutils literal notranslate"><span class="pre">BaseDatabase.shutdown()</span></code></a></li>
 </ul>
@@ -525,8 +539,11 @@
 <li class="toctree-l3"><a class="reference internal" href="apps_logging_app.databases.html#apps_logging_app.databases.registry.DatabaseEntry"><code class="docutils literal notranslate"><span class="pre">DatabaseEntry</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="apps_logging_app.databases.html#apps_logging_app.databases.registry.DatabaseEntry.config_model"><code class="docutils literal notranslate"><span class="pre">DatabaseEntry.config_model</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="apps_logging_app.databases.html#apps_logging_app.databases.registry.DatabaseEntry.database_class"><code class="docutils literal notranslate"><span class="pre">DatabaseEntry.database_class</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="apps_logging_app.databases.html#id0"><code class="docutils literal notranslate"><span class="pre">DatabaseEntry.config_model</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="apps_logging_app.databases.html#id1"><code class="docutils literal notranslate"><span class="pre">DatabaseEntry.database_class</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="apps_logging_app.databases.html#apps_logging_app.databases.registry.DATABASE_REGISTRY"><code class="docutils literal notranslate"><span class="pre">DATABASE_REGISTRY</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="apps_logging_app.databases.html#apps_logging_app.databases.registry.register_database"><code class="docutils literal notranslate"><span class="pre">register_database()</span></code></a></li>
 </ul>
 </li>
@@ -550,6 +567,9 @@
 <li class="toctree-l4"><a class="reference internal" href="apps_logging_app.producers.html#apps_logging_app.producers.base.BaseProducerConfig.type"><code class="docutils literal notranslate"><span class="pre">BaseProducerConfig.type</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="apps_logging_app.producers.html#apps_logging_app.producers.base.BaseProducerConfig.name"><code class="docutils literal notranslate"><span class="pre">BaseProducerConfig.name</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="apps_logging_app.producers.html#apps_logging_app.producers.base.BaseProducerConfig.max_retries"><code class="docutils literal notranslate"><span class="pre">BaseProducerConfig.max_retries</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="apps_logging_app.producers.html#id0"><code class="docutils literal notranslate"><span class="pre">BaseProducerConfig.type</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="apps_logging_app.producers.html#id1"><code class="docutils literal notranslate"><span class="pre">BaseProducerConfig.name</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="apps_logging_app.producers.html#id2"><code class="docutils literal notranslate"><span class="pre">BaseProducerConfig.max_retries</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="apps_logging_app.producers.html#apps_logging_app.producers.base.BaseProducerConfig.validate_type"><code class="docutils literal notranslate"><span class="pre">BaseProducerConfig.validate_type()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="apps_logging_app.producers.html#apps_logging_app.producers.base.BaseProducerConfig.validate_name"><code class="docutils literal notranslate"><span class="pre">BaseProducerConfig.validate_name()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="apps_logging_app.producers.html#apps_logging_app.producers.base.BaseProducerConfig.validate_max_retries"><code class="docutils literal notranslate"><span class="pre">BaseProducerConfig.validate_max_retries()</span></code></a></li>
@@ -557,6 +577,11 @@
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="apps_logging_app.producers.html#apps_logging_app.producers.base.BaseProducer"><code class="docutils literal notranslate"><span class="pre">BaseProducer</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="apps_logging_app.producers.html#apps_logging_app.producers.base.BaseProducer.config"><code class="docutils literal notranslate"><span class="pre">BaseProducer.config</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="apps_logging_app.producers.html#apps_logging_app.producers.base.BaseProducer.logger"><code class="docutils literal notranslate"><span class="pre">BaseProducer.logger</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="apps_logging_app.producers.html#apps_logging_app.producers.base.BaseProducer._queue"><code class="docutils literal notranslate"><span class="pre">BaseProducer._queue</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="apps_logging_app.producers.html#apps_logging_app.producers.base.BaseProducer._stop_event"><code class="docutils literal notranslate"><span class="pre">BaseProducer._stop_event</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="apps_logging_app.producers.html#apps_logging_app.producers.base.BaseProducer._worker_thread"><code class="docutils literal notranslate"><span class="pre">BaseProducer._worker_thread</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="apps_logging_app.producers.html#apps_logging_app.producers.base.BaseProducer.produce"><code class="docutils literal notranslate"><span class="pre">BaseProducer.produce()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="apps_logging_app.producers.html#apps_logging_app.producers.base.BaseProducer.shutdown"><code class="docutils literal notranslate"><span class="pre">BaseProducer.shutdown()</span></code></a></li>
 </ul>
@@ -566,6 +591,7 @@
 <li class="toctree-l2"><a class="reference internal" href="apps_logging_app.producers.html#module-apps_logging_app.producers.factory">apps_logging_app.producers.factory module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="apps_logging_app.producers.html#apps_logging_app.producers.factory.ProducerFactory"><code class="docutils literal notranslate"><span class="pre">ProducerFactory</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="apps_logging_app.producers.html#apps_logging_app.producers.factory.ProducerFactory.create"><code class="docutils literal notranslate"><span class="pre">ProducerFactory.create()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="apps_logging_app.producers.html#id3"><code class="docutils literal notranslate"><span class="pre">ProducerFactory.create()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -574,8 +600,11 @@
 <li class="toctree-l3"><a class="reference internal" href="apps_logging_app.producers.html#apps_logging_app.producers.registry.ProducerEntry"><code class="docutils literal notranslate"><span class="pre">ProducerEntry</span></code></a><ul>
 <li class="toctree-l4"><a class="reference internal" href="apps_logging_app.producers.html#apps_logging_app.producers.registry.ProducerEntry.config_model"><code class="docutils literal notranslate"><span class="pre">ProducerEntry.config_model</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="apps_logging_app.producers.html#apps_logging_app.producers.registry.ProducerEntry.producer_class"><code class="docutils literal notranslate"><span class="pre">ProducerEntry.producer_class</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="apps_logging_app.producers.html#id4"><code class="docutils literal notranslate"><span class="pre">ProducerEntry.config_model</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="apps_logging_app.producers.html#id5"><code class="docutils literal notranslate"><span class="pre">ProducerEntry.producer_class</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="apps_logging_app.producers.html#apps_logging_app.producers.registry.PRODUCER_REGISTRY"><code class="docutils literal notranslate"><span class="pre">PRODUCER_REGISTRY</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="apps_logging_app.producers.html#apps_logging_app.producers.registry.register_producer"><code class="docutils literal notranslate"><span class="pre">register_producer()</span></code></a></li>
 </ul>
 </li>

@@ -339,11 +339,69 @@
           <h1>Source code for apps_logging_app.agents.data</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timedelta</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">ABC</span>
 
 <div class="viewcode-block" id="WorkingDataConnection">
 <a class="viewcode-back" href="../../../modules/apps_logging_app.agents.html#apps_logging_app.agents.data.WorkingDataConnection">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">WorkingDataConnection</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">WorkingDataConnection</span><span class="p">:</span>
+
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Represents a working instance of a data connection during agent execution.</span>
+
+<span class="sd">    ``WorkingDataConnection`` is used internally by agents to track the state</span>
+<span class="sd">    of a data connection as it flows through the pipeline, including</span>
+<span class="sd">    extraction from log lines, query execution, and message production.</span>
+
+<span class="sd">    This class stores both static configuration and dynamic runtime state</span>
+<span class="sd">    such as whether a query is in progress, whether the data has been updated,</span>
+<span class="sd">    and expiration times for cached results.</span>
+
+<span class="sd">    **Responsibilities:**</span>
+
+<span class="sd">    - Store identification of the data connection (name, producer, database)</span>
+<span class="sd">    - Track matched data from regex extraction</span>
+<span class="sd">    - Store query results and mark if updates occurred</span>
+<span class="sd">    - Track expiration of the data</span>
+<span class="sd">    - Mark whether a query is currently in progress</span>
+
+<span class="sd">    **Attributes:**</span>
+
+<span class="sd">    - ``name`` (str): Unique identifier for this data connection</span>
+<span class="sd">    - ``producer_type`` (str): Type of the producer this data connection belongs to</span>
+<span class="sd">    - ``producer_name`` (str): Name of the producer this data connection belongs to</span>
+<span class="sd">    - ``database_type`` (str, optional): Type of the database this data connection belongs to</span>
+<span class="sd">    - ``database_name`` (str, optional): Name of the database this data connection belongs to</span>
+<span class="sd">    - ``query`` (str, optional): Query associated with this data connection</span>
+<span class="sd">    - ``is_error`` (bool): Indicates if this data connection is associated with an error</span>
+<span class="sd">    - ``expired_time`` (datetime): Expiration timestamp of the data connection</span>
+<span class="sd">    - ``query_in_progress`` (bool): True if a query execution is in progress</span>
+<span class="sd">    - ``is_updated`` (bool): True if the data has been updated since last processing</span>
+<span class="sd">    - ``data_dict_match`` (Dict[str, Any]): Data extracted by regex matches</span>
+<span class="sd">    - ``data_dict_query_source`` (Dict[str, Any]): Data used to generate queries</span>
+<span class="sd">    - ``data_dict_result`` (Dict[str, Any]): Resulting data from executed queries</span>
+
+<span class="sd">    **Methods:**</span>
+
+<span class="sd">    - ``update_expired_time(minutes: int) -&gt; None``: Updates the ``expired_time``</span>
+<span class="sd">      by adding the specified number of minutes to the current time.</span>
+
+<span class="sd">    :param name: Unique identifier for this data connection</span>
+<span class="sd">    :type name: str</span>
+<span class="sd">    :param producer_type: Type of the producer this data connection belongs to</span>
+<span class="sd">    :type producer_type: str</span>
+<span class="sd">    :param producer_name: Name of the producer this data connection belongs to</span>
+<span class="sd">    :type producer_name: str</span>
+<span class="sd">    :param database_type: Type of the database (optional)</span>
+<span class="sd">    :type database_type: str, optional</span>
+<span class="sd">    :param database_name: Name of the database (optional)</span>
+<span class="sd">    :type database_name: str, optional</span>
+<span class="sd">    :param query: Query associated with the data connection (optional)</span>
+<span class="sd">    :type query: str, optional</span>
+<span class="sd">    :param is_error: Whether this connection represents an error</span>
+<span class="sd">    :type is_error: bool, optional</span>
+<span class="sd">    :param expired_time: Expiration timestamp (optional)</span>
+<span class="sd">    :type expired_time: datetime, optional</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
                         <span class="n">producer_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> 
                         <span class="n">producer_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>

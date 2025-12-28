@@ -346,11 +346,31 @@
 <div class="viewcode-block" id="AgentEntry">
 <a class="viewcode-back" href="../../../modules/apps_logging_app.agents.html#apps_logging_app.agents.registry.AgentEntry">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">AgentEntry</span><span class="p">(</span><span class="n">Generic</span><span class="p">[</span><span class="n">C</span><span class="p">]):</span>
+
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Represents a registry entry for an agent.</span>
+
+<span class="sd">    ``AgentEntry`` stores the mapping between an agent type, its configuration model,</span>
+<span class="sd">    and the corresponding agent class. This class is used internally by the agent</span>
+<span class="sd">    registry to manage agent types and their associated metadata.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        config_model (Type[C]): The Pydantic configuration model class associated with the agent.</span>
+<span class="sd">        agent_class (Type[BaseAgent]): The agent class corresponding to the agent type.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="n">config_model</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">C</span><span class="p">]</span>
     <span class="n">agent_class</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">BaseAgent</span><span class="p">]</span></div>
 
 
 <span class="n">AGENT_REGISTRY</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">AgentEntry</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">A global registry that maps agent types (str) to their corresponding ``AgentEntry`` objects.</span>
+
+<span class="sd">This registry is used by factories like ``AgentFactory`` to look up and create agent</span>
+<span class="sd">instances based on their type.</span>
+<span class="sd">&quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="register_agent">
 <a class="viewcode-back" href="../../../modules/apps_logging_app.agents.html#apps_logging_app.agents.registry.register_agent">[docs]</a>

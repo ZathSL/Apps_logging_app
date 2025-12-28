@@ -5,10 +5,33 @@ from .base import BaseProducer, BaseProducerConfig
 C = TypeVar('C', bound=BaseProducerConfig)
 
 class ProducerEntry(Generic[C]):
+
+    """
+    A registry entry for a producer class.
+
+    This class binds a producer type to its configuration model and
+    producer class, allowing dynamic creation of producer instances
+    via the ProducerFactory.
+
+    Attributes
+    ----------
+    config_model : Type[C]
+        The Pydantic model class used to validate and parse the producer configuration.
+    producer_class : Type[BaseProducer]
+        The concrete producer class that will be instantiated.
+    """
+
     config_model: Type[C]
     producer_class: Type[BaseProducer]
 
 PRODUCER_REGISTRY: Dict[str, ProducerEntry] = {}
+
+"""
+A global registry that maps producer types (str) to their corresponding ``ProducerEntry`` objects.
+
+This registry is used by factories like ``ProducerFactory`` to look up and create producer
+instances based on their type.
+"""
 
 def register_producer(
     *,

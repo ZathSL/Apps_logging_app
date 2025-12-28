@@ -347,6 +347,48 @@
 <div class="viewcode-block" id="DatabaseFactory">
 <a class="viewcode-back" href="../../../modules/apps_logging_app.databases.html#apps_logging_app.databases.factory.DatabaseFactory">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">DatabaseFactory</span><span class="p">:</span>
+
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Factory class responsible for creating and managing database instances.</span>
+
+<span class="sd">    ``DatabaseFactory`` reads database configurations from a YAML file,</span>
+<span class="sd">    validates them using the registered config model, and instantiates</span>
+<span class="sd">    the corresponding database class. It ensures that only a single</span>
+<span class="sd">    instance exists for each (database_type, database_name) combination,</span>
+<span class="sd">    acting as a global cache for database connections.</span>
+
+<span class="sd">    This factory relies on:</span>
+<span class="sd">        - `DATABASE_REGISTRY`: A mapping of database types to their</span>
+<span class="sd">          corresponding configuration model and database class.</span>
+<span class="sd">        - `databases.yaml`: A configuration file containing database</span>
+<span class="sd">          definitions.</span>
+
+<span class="sd">    Methods:</span>
+<span class="sd">        create(database_type: str, database_name: str):</span>
+<span class="sd">            Creates a new database instance or returns the cached instance</span>
+<span class="sd">            if it already exists.</span>
+
+<span class="sd">    :param database_type: The type of the database to create (must be registered).</span>
+<span class="sd">    :type database_type: str</span>
+<span class="sd">    :param database_name: The name of the database to create (must exist in the YAML config).</span>
+<span class="sd">    :type database_name: str</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If the database configuration is not found in the YAML file.</span>
+<span class="sd">        ValueError: If the database type is not registered in DATABASE_REGISTRY.</span>
+
+<span class="sd">    Example Usage:</span>
+
+<span class="sd">    .. code-block:: python</span>
+
+<span class="sd">        # Create a PostgreSQL database instance</span>
+<span class="sd">        db_instance = DatabaseFactory.create(&quot;postgres&quot;, &quot;users_db&quot;)</span>
+
+<span class="sd">        # Subsequent calls return the same instance (cached)</span>
+<span class="sd">        same_instance = DatabaseFactory.create(&quot;postgres&quot;, &quot;users_db&quot;)</span>
+<span class="sd">        assert db_instance is same_instance</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+       
 <div class="viewcode-block" id="DatabaseFactory.create">
 <a class="viewcode-back" href="../../../modules/apps_logging_app.databases.html#apps_logging_app.databases.factory.DatabaseFactory.create">[docs]</a>
     <span class="nd">@staticmethod</span>

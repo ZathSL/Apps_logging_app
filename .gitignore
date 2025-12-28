@@ -12,4 +12,6 @@ apps_logging_app/logs/prova.log
 apps_logging_app/logs/application.log
 apps_logging_app/producers/__pycache__
 apps_logging_app/producers/kafka_handler
-docker
+cicd/ansible
+cicd/pipelines
+/docker

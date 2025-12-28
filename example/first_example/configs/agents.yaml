@@ -21,7 +21,7 @@ agents:
               regex_pattern: 'responseJSON:\s*(?P<response_json>\{[\s\S]*?\})'
           - name: info_pattern_engagement_all_messages
             is_error: false
-            expired_time: 1440
+            expired_time_int: 1440
             source_ref: 
               path_file_name: onprem_direct
               regex_pattern: 'responseJSON:\s*(?P<response_json>\{[\s\S]*?\})'
@@ -31,7 +31,7 @@ agents:
               query: SELECT * FROM dual
           - name: info_pattern_engagement_single_message
             is_error: false
-            expired_time: 1440
+            expired_time_int: 1440
             source_ref: 
               path_file_name: onprem_direct
               regex_pattern: "INFO|DEBUG|TRACE"
@@ -41,7 +41,7 @@ agents:
               query: SELECT * FROM dual
           - name: normal_query
             is_error: false
-            expired_time: 1440
+            expired_time_int: 1440
             destination_ref:
               type: oracle
               name: sasdb_ciexpit_owner

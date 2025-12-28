@@ -1,8 +1,66 @@
 from datetime import datetime, timedelta
 from typing import Dict, Any
-from abc import ABC
 
-class WorkingDataConnection(ABC):
+class WorkingDataConnection:
+
+    """
+    Represents a working instance of a data connection during agent execution.
+
+    ``WorkingDataConnection`` is used internally by agents to track the state
+    of a data connection as it flows through the pipeline, including
+    extraction from log lines, query execution, and message production.
+
+    This class stores both static configuration and dynamic runtime state
+    such as whether a query is in progress, whether the data has been updated,
+    and expiration times for cached results.
+
+    **Responsibilities:**
+
+    - Store identification of the data connection (name, producer, database)
+    - Track matched data from regex extraction
+    - Store query results and mark if updates occurred
+    - Track expiration of the data
+    - Mark whether a query is currently in progress
+
+    **Attributes:**
+
+    - ``name`` (str): Unique identifier for this data connection
+    - ``producer_type`` (str): Type of the producer this data connection belongs to
+    - ``producer_name`` (str): Name of the producer this data connection belongs to
+    - ``database_type`` (str, optional): Type of the database this data connection belongs to
+    - ``database_name`` (str, optional): Name of the database this data connection belongs to
+    - ``query`` (str, optional): Query associated with this data connection
+    - ``is_error`` (bool): Indicates if this data connection is associated with an error
+    - ``expired_time`` (datetime): Expiration timestamp of the data connection
+    - ``query_in_progress`` (bool): True if a query execution is in progress
+    - ``is_updated`` (bool): True if the data has been updated since last processing
+    - ``data_dict_match`` (Dict[str, Any]): Data extracted by regex matches
+    - ``data_dict_query_source`` (Dict[str, Any]): Data used to generate queries
+    - ``data_dict_result`` (Dict[str, Any]): Resulting data from executed queries
+
+    **Methods:**
+
+    - ``update_expired_time(minutes: int) -> None``: Updates the ``expired_time``
+      by adding the specified number of minutes to the current time.
+
+    :param name: Unique identifier for this data connection
+    :type name: str
+    :param producer_type: Type of the producer this data connection belongs to
+    :type producer_type: str
+    :param producer_name: Name of the producer this data connection belongs to
+    :type producer_name: str
+    :param database_type: Type of the database (optional)
+    :type database_type: str, optional
+    :param database_name: Name of the database (optional)
+    :type database_name: str, optional
+    :param query: Query associated with the data connection (optional)
+    :type query: str, optional
+    :param is_error: Whether this connection represents an error
+    :type is_error: bool, optional
+    :param expired_time: Expiration timestamp (optional)
+    :type expired_time: datetime, optional
+    """
+
     def __init__(self, name: str,
                         producer_type: str, 
                         producer_name: str,

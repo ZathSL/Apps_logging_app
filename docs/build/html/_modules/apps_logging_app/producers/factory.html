@@ -347,6 +347,39 @@
 <div class="viewcode-block" id="ProducerFactory">
 <a class="viewcode-back" href="../../../modules/apps_logging_app.producers.html#apps_logging_app.producers.factory.ProducerFactory">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ProducerFactory</span><span class="p">:</span>
+
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Factory class to create and manage producer instances.</span>
+
+<span class="sd">    ProducerFactory is responsible for creating producer instances based on</span>
+<span class="sd">    a specified type and name. It ensures that each producer is instantiated</span>
+<span class="sd">    only once by maintaining a global cache (`PRODUCER_INSTANCES`). If an</span>
+<span class="sd">    instance already exists in the cache, it is returned directly; otherwise,</span>
+<span class="sd">    the instance is created using the configuration loaded from the </span>
+<span class="sd">    `producers.yaml` file and registered producer classes.</span>
+
+<span class="sd">    The factory uses the `PRODUCER_REGISTRY` to map producer types to their</span>
+<span class="sd">    corresponding configuration model and class.</span>
+
+<span class="sd">    Methods</span>
+<span class="sd">    -------</span>
+<span class="sd">    create(producer_type: str, producer_name: str)</span>
+<span class="sd">        Creates a producer instance for the given type and name, using cached</span>
+<span class="sd">        instances if available, or configuration from `producers.yaml` otherwise.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If the configuration for the specified producer type and name is not</span>
+<span class="sd">        found in `producers.yaml`.</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If the producer type is not registered in `PRODUCER_REGISTRY`.</span>
+
+<span class="sd">    Usage</span>
+<span class="sd">    -----</span>
+<span class="sd">    producer = ProducerFactory.create(&quot;kafka&quot;, &quot;main_topic&quot;)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
 <div class="viewcode-block" id="ProducerFactory.create">
 <a class="viewcode-back" href="../../../modules/apps_logging_app.producers.html#apps_logging_app.producers.factory.ProducerFactory.create">[docs]</a>
     <span class="nd">@staticmethod</span>

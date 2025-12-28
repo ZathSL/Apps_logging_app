@@ -6,6 +6,32 @@ from queue import Queue, Empty
 import threading
 
 class BaseProducerConfig(BaseModel):
+
+    """
+    Configuration model for a message producer.
+
+    BaseProducerConfig defines the configuration parameters required
+    to initialize a producer, including its type, name, and retry behavior.
+
+    Attributes:
+        type (str): The type of the producer. Cannot be None.
+        name (str): The name of the producer. Cannot be None.
+        max_retries (int, default=5): Maximum number of retries for sending messages
+            or reconnecting in case of failure. Must be greater than 0.
+
+    Validators:
+        validate_type(cls, value):
+            Ensures that `type` is not None.
+        validate_name(cls, value):
+            Ensures that `name` is not None.
+        validate_max_retries(cls, value):
+            Ensures that `max_retries` is a positive integer greater than 0.
+
+    Usage:
+        This model is passed to the constructor of a BaseProducer subclass
+        to initialize the producer with validated configuration values.
+    """
+
     type: str
     name: str
     max_retries: int = 5
@@ -49,6 +75,49 @@ class BaseProducerConfig(BaseModel):
         return value
 
 class BaseProducer(ABC):
+
+    """
+    Abstract base class for a message producer.
+
+    The BaseProducer manages the lifecycle of a producer, including:
+        - Queueing messages
+        - Handling retries
+        - Connecting to the underlying transport or service
+        - Running a worker thread to process messages asynchronously
+        - Gracefully shutting down
+
+    Attributes:
+        config (BaseProducerConfig): Configuration for the producer, including type, name, and max_retries.
+        logger (logging.Logger): Logger for reporting events and errors.
+        _queue (Queue): Internal queue holding messages to be sent.
+        _stop_event (threading.Event): Event flag to signal the worker thread to stop.
+        _worker_thread (threading.Thread): Worker thread that processes messages from the queue.
+
+    Public Methods:
+        produce(is_error: bool, message: Dict[str, Any]) -> None:
+            Queue a message to be sent by the producer.
+        shutdown(timeout: float | None = None) -> None:
+            Gracefully shut down the producer and stop the worker thread.
+
+    Internal Methods (to be implemented by subclasses):
+        _connect() -> None:
+            Establish a connection to the underlying transport or service.
+        _send(is_error: bool, message: Dict[str, Any]) -> None:
+            Send a message to the underlying transport or service.
+        _close() -> None:
+            Close the connection to the underlying transport or service.
+
+    Internal Worker Behavior:
+        - Runs in a separate daemon thread.
+        - Fetches messages from the internal queue and attempts to send them.
+        - Retries messages up to `max_retries` on failure.
+        - Reconnects to the underlying connection if sending fails after retries.
+        - Waits for 0.5 seconds when the queue is empty before polling again.
+
+    Connection Handling:
+        The producer uses `_safe_connect()` to ensure that connections are retried
+        up to `max_retries` times, with a 60-second wait after consecutive failures.
+    """
 
     def __init__(self, config: BaseProducerConfig):
         """

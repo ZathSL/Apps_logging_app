@@ -354,9 +354,22 @@
 <dt class="sig sig-object py" id="apps_logging_app.agents.sasdm.agent.SasdmAgent">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">apps_logging_app.agents.sasdm.agent.</span></span><span class="sig-name descname"><span class="pre">SasdmAgent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/agents/sasdm/agent.html#SasdmAgent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.agents.sasdm.agent.SasdmAgent" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="apps_logging_app.agents.html#apps_logging_app.agents.base.BaseAgent" title="apps_logging_app.agents.base.BaseAgent"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseAgent</span></code></a></p>
+<p>Agent responsible for processing SASDM-related working data connections.</p>
+<p>The agent transforms and filters <code class="docutils literal notranslate"><span class="pre">WorkingDataConnection</span></code> objects by
+parsing JSON responses and extracting a predefined subset of fields.</p>
+<p>Supported working data connection names:
+- <code class="docutils literal notranslate"><span class="pre">info_pattern</span></code>
+- <code class="docutils literal notranslate"><span class="pre">info_pattern_engagement_all_messages</span></code></p>
+<p>For matching connections, the agent extracts the following keys from the
+JSON response:
+- <code class="docutils literal notranslate"><span class="pre">externalCode</span></code>
+- <code class="docutils literal notranslate"><span class="pre">status</span></code>
+- <code class="docutils literal notranslate"><span class="pre">httpStatus</span></code></p>
+<p>The extracted data is stored in the <code class="docutils literal notranslate"><span class="pre">data_dict_result</span></code> attribute of the
+corresponding <code class="docutils literal notranslate"><span class="pre">WorkingDataConnection</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>config</strong> (<a class="reference internal" href="#apps_logging_app.agents.sasdm.config.SasdmAgentConfig" title="apps_logging_app.agents.sasdm.config.SasdmAgentConfig"><em>SasdmAgentConfig</em></a>)</p>
+<dd class="field-odd"><p><strong>config</strong> (<a class="reference internal" href="#apps_logging_app.agents.sasdm.config.SasdmAgentConfig" title="apps_logging_app.agents.sasdm.config.SasdmAgentConfig"><em>SasdmAgentConfig</em></a>) – Configuration object for the agent.</p>
 </dd>
 </dl>
 <dl class="py attribute">

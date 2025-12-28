@@ -6,6 +6,48 @@ from .registry import DATABASE_REGISTRY
 DATABASE_INSTANCES = {}
 
 class DatabaseFactory:
+
+    """
+    Factory class responsible for creating and managing database instances.
+
+    ``DatabaseFactory`` reads database configurations from a YAML file,
+    validates them using the registered config model, and instantiates
+    the corresponding database class. It ensures that only a single
+    instance exists for each (database_type, database_name) combination,
+    acting as a global cache for database connections.
+
+    This factory relies on:
+        - `DATABASE_REGISTRY`: A mapping of database types to their
+          corresponding configuration model and database class.
+        - `databases.yaml`: A configuration file containing database
+          definitions.
+
+    Methods:
+        create(database_type: str, database_name: str):
+            Creates a new database instance or returns the cached instance
+            if it already exists.
+
+    :param database_type: The type of the database to create (must be registered).
+    :type database_type: str
+    :param database_name: The name of the database to create (must exist in the YAML config).
+    :type database_name: str
+
+    Raises:
+        ValueError: If the database configuration is not found in the YAML file.
+        ValueError: If the database type is not registered in DATABASE_REGISTRY.
+
+    Example Usage:
+
+    .. code-block:: python
+
+        # Create a PostgreSQL database instance
+        db_instance = DatabaseFactory.create("postgres", "users_db")
+
+        # Subsequent calls return the same instance (cached)
+        same_instance = DatabaseFactory.create("postgres", "users_db")
+        assert db_instance is same_instance
+    """
+       
     @staticmethod
     def create(database_type: str, database_name: str):
         

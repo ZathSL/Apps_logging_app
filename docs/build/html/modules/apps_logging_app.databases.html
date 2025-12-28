@@ -380,29 +380,90 @@
 <dt class="sig sig-object py" id="apps_logging_app.databases.base.QueryTask">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">apps_logging_app.databases.base.</span></span><span class="sig-name descname"><span class="pre">QueryTask</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">query</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/databases/base.html#QueryTask"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.databases.base.QueryTask" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Represents a database query task to be executed asynchronously.</p>
+<p><code class="docutils literal notranslate"><span class="pre">QueryTask</span></code> encapsulates a SQL or database query along with optional
+parameters and manages its execution state through a Future object.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>query</strong> (<em>str</em>)</p></li>
-<li><p><strong>params</strong> (<em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>] </em><em>| </em><em>None</em>)</p></li>
+<li><p><strong>query</strong> (<em>str</em>) – The SQL or database query string to be executed.</p></li>
+<li><p><strong>params</strong> (<em>Optional</em><em>[</em><em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em>) – Optional dictionary of parameters to be passed to the query.</p></li>
 </ul>
 </dd>
 </dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.databases.base.QueryTask.future">
+<span class="sig-name descname"><span class="pre">future</span></span><a class="headerlink" href="#apps_logging_app.databases.base.QueryTask.future" title="Link to this definition">¶</a></dt>
+<dd><p>A concurrent.futures.Future object that will hold
+the result or exception of the query once executed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Future</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.databases.base.QueryTask.retries">
+<span class="sig-name descname"><span class="pre">retries</span></span><a class="headerlink" href="#apps_logging_app.databases.base.QueryTask.retries" title="Link to this definition">¶</a></dt>
+<dd><p>Counter for the number of times the query has been
+retried due to failure. Defaults to 0.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<p>Example Usage:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">task</span> <span class="o">=</span> <span class="n">QueryTask</span><span class="p">(</span>
+    <span class="n">query</span><span class="o">=</span><span class="s2">&quot;SELECT * FROM users WHERE id = </span><span class="si">%(user_id)s</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="n">params</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;user_id&quot;</span><span class="p">:</span> <span class="mi">42</span><span class="p">}</span>
+<span class="p">)</span>
+
+<span class="n">future_result</span> <span class="o">=</span> <span class="n">task</span><span class="o">.</span><span class="n">future</span>  <span class="c1"># Will eventually contain query results</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="apps_logging_app.databases.base.ConnectionConfig">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">apps_logging_app.databases.base.</span></span><span class="sig-name descname"><span class="pre">ConnectionConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">host</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">service_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/databases/base.html#ConnectionConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.databases.base.ConnectionConfig" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
+<p>Configuration model for a single database connection.</p>
+<p><code class="docutils literal notranslate"><span class="pre">ConnectionConfig</span></code> defines the connection parameters required to
+connect to a database instance, including host, port, and an optional
+service name or database identifier.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>host</strong> (<em>str</em>)</p></li>
-<li><p><strong>port</strong> (<em>int</em>)</p></li>
-<li><p><strong>service_name</strong> (<em>str</em><em> | </em><em>None</em>)</p></li>
+<li><p><strong>host</strong> (<em>str</em>) – Hostname or IP address of the database server.</p></li>
+<li><p><strong>port</strong> (<em>int</em>) – Port number on which the database server is listening.
+Must be between 1 and 65535.</p></li>
+<li><p><strong>service_name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Optional service name, schema, or database name.</p></li>
 </ul>
 </dd>
 </dl>
+<dl class="simple">
+<dt>Validators:</dt><dd><ul class="simple">
+<li><p>host: Must be a non-empty valid hostname or IP address.</p></li>
+<li><p>port: Must be an integer between 1 and 65535.</p></li>
+</ul>
+</dd>
+</dl>
+<p>Example Usage:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">primary_conn</span> <span class="o">=</span> <span class="n">ConnectionConfig</span><span class="p">(</span>
+    <span class="n">host</span><span class="o">=</span><span class="s2">&quot;localhost&quot;</span><span class="p">,</span>
+    <span class="n">port</span><span class="o">=</span><span class="mi">5432</span><span class="p">,</span>
+    <span class="n">service_name</span><span class="o">=</span><span class="s2">&quot;main_db&quot;</span>
+<span class="p">)</span>
+
+<span class="n">replica_conn</span> <span class="o">=</span> <span class="n">ConnectionConfig</span><span class="p">(</span>
+    <span class="n">host</span><span class="o">=</span><span class="s2">&quot;replica.local&quot;</span><span class="p">,</span>
+    <span class="n">port</span><span class="o">=</span><span class="mi">5432</span>
+<span class="p">)</span>
+</pre></div>
+</div>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="apps_logging_app.databases.base.ConnectionConfig.host">
 <span class="sig-name descname"><span class="pre">host</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#apps_logging_app.databases.base.ConnectionConfig.host" title="Link to this definition">¶</a></dt>
@@ -464,20 +525,53 @@
 <dt class="sig sig-object py" id="apps_logging_app.databases.base.BaseDatabaseConfig">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">apps_logging_app.databases.base.</span></span><span class="sig-name descname"><span class="pre">BaseDatabaseConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">username</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">password</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">primary</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">replica</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_retries</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_workers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/databases/base.html#BaseDatabaseConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.databases.base.BaseDatabaseConfig" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
+<p>Configuration model for a database client.</p>
+<p><code class="docutils literal notranslate"><span class="pre">BaseDatabaseConfig</span></code> stores all the necessary connection and operational
+parameters to initialize a database client. This includes credentials,
+primary and replica connection details, retry policies, and concurrency settings.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>type</strong> (<em>str</em>)</p></li>
-<li><p><strong>name</strong> (<em>str</em>)</p></li>
-<li><p><strong>username</strong> (<em>str</em>)</p></li>
-<li><p><strong>password</strong> (<em>str</em>)</p></li>
-<li><p><strong>primary</strong> (<a class="reference internal" href="#apps_logging_app.databases.base.ConnectionConfig" title="apps_logging_app.databases.base.ConnectionConfig"><em>ConnectionConfig</em></a>)</p></li>
-<li><p><strong>replica</strong> (<a class="reference internal" href="#apps_logging_app.databases.base.ConnectionConfig" title="apps_logging_app.databases.base.ConnectionConfig"><em>ConnectionConfig</em></a><em> | </em><em>None</em>)</p></li>
-<li><p><strong>max_retries</strong> (<em>int</em>)</p></li>
-<li><p><strong>max_workers</strong> (<em>int</em>)</p></li>
+<li><p><strong>type</strong> (<em>str</em>) – Type of the database (e.g., “postgres”, “mysql”).</p></li>
+<li><p><strong>name</strong> (<em>str</em>) – Unique name for the database configuration.</p></li>
+<li><p><strong>username</strong> (<em>str</em>) – Username used to authenticate with the database.</p></li>
+<li><p><strong>password</strong> (<em>str</em>) – Password used to authenticate with the database.</p></li>
+<li><p><strong>primary</strong> (<a class="reference internal" href="#apps_logging_app.databases.base.ConnectionConfig" title="apps_logging_app.databases.base.ConnectionConfig"><em>ConnectionConfig</em></a>) – Connection configuration for the primary database instance.</p></li>
+<li><p><strong>replica</strong> (<em>Optional</em><em>[</em><a class="reference internal" href="#apps_logging_app.databases.base.ConnectionConfig" title="apps_logging_app.databases.base.ConnectionConfig"><em>ConnectionConfig</em></a><em>]</em>) – Optional connection configuration for a replica database instance.</p></li>
+<li><p><strong>max_retries</strong> (<em>int</em>) – Maximum number of times to retry a failed connection.
+Defaults to 5.</p></li>
+<li><p><strong>max_workers</strong> (<em>int</em>) – Maximum number of worker threads for executing queries.
+Defaults to 10.</p></li>
 </ul>
 </dd>
 </dl>
+<dl class="simple">
+<dt>Validators:</dt><dd><ul class="simple">
+<li><p>type: Ensures the type is not None.</p></li>
+<li><p>name: Ensures the name is not None.</p></li>
+<li><p>username: Ensures the username is not None.</p></li>
+<li><p>password: Ensures the password is not None.</p></li>
+<li><p>max_retries: Must be greater than 0.</p></li>
+<li><p>max_workers: Must be greater than 0.</p></li>
+</ul>
+</dd>
+</dl>
+<p>Example Usage:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">primary_conn</span> <span class="o">=</span> <span class="n">ConnectionConfig</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="s2">&quot;localhost&quot;</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">5432</span><span class="p">,</span> <span class="n">service_name</span><span class="o">=</span><span class="s2">&quot;main_db&quot;</span><span class="p">)</span>
+<span class="n">replica_conn</span> <span class="o">=</span> <span class="n">ConnectionConfig</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="s2">&quot;replica.local&quot;</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">5432</span><span class="p">,</span> <span class="n">service_name</span><span class="o">=</span><span class="s2">&quot;replica_db&quot;</span><span class="p">)</span>
+
+<span class="n">db_config</span> <span class="o">=</span> <span class="n">BaseDatabaseConfig</span><span class="p">(</span>
+    <span class="nb">type</span><span class="o">=</span><span class="s2">&quot;postgres&quot;</span><span class="p">,</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;main&quot;</span><span class="p">,</span>
+    <span class="n">username</span><span class="o">=</span><span class="s2">&quot;user&quot;</span><span class="p">,</span>
+    <span class="n">password</span><span class="o">=</span><span class="s2">&quot;password&quot;</span><span class="p">,</span>
+    <span class="n">primary</span><span class="o">=</span><span class="n">primary_conn</span><span class="p">,</span>
+    <span class="n">replica</span><span class="o">=</span><span class="n">replica_conn</span><span class="p">,</span>
+    <span class="n">max_retries</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+    <span class="n">max_workers</span><span class="o">=</span><span class="mi">10</span>
+<span class="p">)</span>
+</pre></div>
+</div>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="apps_logging_app.databases.base.BaseDatabaseConfig.type">
 <span class="sig-name descname"><span class="pre">type</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#apps_logging_app.databases.base.BaseDatabaseConfig.type" title="Link to this definition">¶</a></dt>
@@ -632,11 +726,136 @@
 <dt class="sig sig-object py" id="apps_logging_app.databases.base.BaseDatabase">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">apps_logging_app.databases.base.</span></span><span class="sig-name descname"><span class="pre">BaseDatabase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/databases/base.html#BaseDatabase"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.databases.base.BaseDatabase" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ABC</span></code></p>
+<p>Abstract base class for database clients.</p>
+<p><code class="docutils literal notranslate"><span class="pre">BaseDatabase</span></code> provides a framework for executing queries asynchronously
+against a database. It manages a queue of query tasks, executes them in a
+thread pool, handles retries and reconnections, and logs all relevant events.</p>
+<p>This class is designed to be extended for specific database types by
+implementing the abstract methods <code class="docutils literal notranslate"><span class="pre">_connect</span></code> and <code class="docutils literal notranslate"><span class="pre">_query</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>config</strong> (<a class="reference internal" href="#apps_logging_app.databases.base.BaseDatabaseConfig" title="apps_logging_app.databases.base.BaseDatabaseConfig"><em>BaseDatabaseConfig</em></a>)</p>
+<dd class="field-odd"><p><strong>config</strong> (<a class="reference internal" href="#apps_logging_app.databases.base.BaseDatabaseConfig" title="apps_logging_app.databases.base.BaseDatabaseConfig"><em>BaseDatabaseConfig</em></a>) – The database configuration containing connection details, credentials,
+and operational parameters.</p>
 </dd>
 </dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.databases.base.BaseDatabase.config">
+<span class="sig-name descname"><span class="pre">config</span></span><a class="headerlink" href="#apps_logging_app.databases.base.BaseDatabase.config" title="Link to this definition">¶</a></dt>
+<dd><p>The database configuration object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#apps_logging_app.databases.base.BaseDatabaseConfig" title="apps_logging_app.databases.base.BaseDatabaseConfig">BaseDatabaseConfig</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.databases.base.BaseDatabase.logger">
+<span class="sig-name descname"><span class="pre">logger</span></span><a class="headerlink" href="#apps_logging_app.databases.base.BaseDatabase.logger" title="Link to this definition">¶</a></dt>
+<dd><p>Logger for database events.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>logging.Logger</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.databases.base.BaseDatabase._queue">
+<span class="sig-name descname"><span class="pre">_queue</span></span><a class="headerlink" href="#apps_logging_app.databases.base.BaseDatabase._queue" title="Link to this definition">¶</a></dt>
+<dd><p>Internal queue of pending query tasks.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Queue</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.databases.base.BaseDatabase._stop_event">
+<span class="sig-name descname"><span class="pre">_stop_event</span></span><a class="headerlink" href="#apps_logging_app.databases.base.BaseDatabase._stop_event" title="Link to this definition">¶</a></dt>
+<dd><p>Event used to signal shutdown of the dispatcher thread.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Event</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.databases.base.BaseDatabase._executor">
+<span class="sig-name descname"><span class="pre">_executor</span></span><a class="headerlink" href="#apps_logging_app.databases.base.BaseDatabase._executor" title="Link to this definition">¶</a></dt>
+<dd><p>Thread pool for executing queries.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ThreadPoolExecutor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.databases.base.BaseDatabase._dispatcher">
+<span class="sig-name descname"><span class="pre">_dispatcher</span></span><a class="headerlink" href="#apps_logging_app.databases.base.BaseDatabase._dispatcher" title="Link to this definition">¶</a></dt>
+<dd><p>Background thread that dispatches query tasks.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Thread</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="simple">
+<dt>Public Methods:</dt><dd><dl class="simple">
+<dt>execute(query, params=None) -&gt; Future:</dt><dd><p>Adds a query to the execution queue and returns a Future for its result.</p>
+</dd>
+<dt>shutdown() -&gt; None:</dt><dd><p>Shuts down the dispatcher thread, waits for all tasks to finish,
+and shuts down the executor.</p>
+</dd>
+</dl>
+</dd>
+<dt>Abstract Methods:</dt><dd><dl class="simple">
+<dt>_connect() -&gt; None:</dt><dd><p>Establish a connection to the database. Must be implemented in subclasses.</p>
+</dd>
+<dt>_query(query, params=None) -&gt; Dict[str, Any]:</dt><dd><p>Execute a query on the database and return the result as a dictionary.
+Must be implemented in subclasses.</p>
+</dd>
+</dl>
+</dd>
+<dt>Internal Methods:</dt><dd><dl class="simple">
+<dt>_dispatch() -&gt; None:</dt><dd><p>Internal loop that pulls query tasks from the queue and submits them
+to the executor for execution.</p>
+</dd>
+<dt>_safe_query(task: QueryTask) -&gt; Dict[str, Any]:</dt><dd><p>Executes a query safely, handling exceptions and logging results.</p>
+</dd>
+<dt>_safe_connect() -&gt; None:</dt><dd><p>Attempts to establish a database connection with retries and error handling.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p>Example Usage:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">MyDatabase</span><span class="p">(</span><span class="n">BaseDatabase</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_connect</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># Implementation for connecting to the specific database</span>
+        <span class="k">pass</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="c1"># Implementation for executing a query</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;result&quot;</span><span class="p">:</span> <span class="s2">&quot;success&quot;</span><span class="p">}</span>
+
+<span class="n">config</span> <span class="o">=</span> <span class="n">BaseDatabaseConfig</span><span class="p">(</span>
+    <span class="nb">type</span><span class="o">=</span><span class="s2">&quot;my_db&quot;</span><span class="p">,</span>
+    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;main&quot;</span><span class="p">,</span>
+    <span class="n">username</span><span class="o">=</span><span class="s2">&quot;user&quot;</span><span class="p">,</span>
+    <span class="n">password</span><span class="o">=</span><span class="s2">&quot;pass&quot;</span><span class="p">,</span>
+    <span class="n">primary</span><span class="o">=</span><span class="n">ConnectionConfig</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="s2">&quot;localhost&quot;</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">5432</span><span class="p">)</span>
+<span class="p">)</span>
+
+<span class="n">db</span> <span class="o">=</span> <span class="n">MyDatabase</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+<span class="n">future</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;SELECT * FROM table&quot;</span><span class="p">)</span>
+<span class="n">result</span> <span class="o">=</span> <span class="n">future</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
+<span class="n">db</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span>
+</pre></div>
+</div>
 <dl class="py method">
 <dt class="sig sig-object py" id="apps_logging_app.databases.base.BaseDatabase.execute">
 <span class="sig-name descname"><span class="pre">execute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">query</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/databases/base.html#BaseDatabase.execute"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.databases.base.BaseDatabase.execute" title="Link to this definition">¶</a></dt>
@@ -682,6 +901,52 @@ tasks to finish.</p>
 <dt class="sig sig-object py" id="apps_logging_app.databases.factory.DatabaseFactory">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">apps_logging_app.databases.factory.</span></span><span class="sig-name descname"><span class="pre">DatabaseFactory</span></span><a class="reference internal" href="../_modules/apps_logging_app/databases/factory.html#DatabaseFactory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.databases.factory.DatabaseFactory" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Factory class responsible for creating and managing database instances.</p>
+<p><code class="docutils literal notranslate"><span class="pre">DatabaseFactory</span></code> reads database configurations from a YAML file,
+validates them using the registered config model, and instantiates
+the corresponding database class. It ensures that only a single
+instance exists for each (database_type, database_name) combination,
+acting as a global cache for database connections.</p>
+<dl class="simple">
+<dt>This factory relies on:</dt><dd><ul class="simple">
+<li><p><cite>DATABASE_REGISTRY</cite>: A mapping of database types to their
+corresponding configuration model and database class.</p></li>
+<li><p><cite>databases.yaml</cite>: A configuration file containing database
+definitions.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">create(database_type</span></span></dt>
+<dd><p>str, database_name: str):
+Creates a new database instance or returns the cached instance
+if it already exists.</p>
+</dd></dl>
+
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>database_type</strong> (<em>str</em>) – The type of the database to create (must be registered).</p></li>
+<li><p><strong>database_name</strong> (<em>str</em>) – The name of the database to create (must exist in the YAML config).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>ValueError</strong> – If the database configuration is not found in the YAML file.</p></li>
+<li><p><strong>ValueError</strong> – If the database type is not registered in DATABASE_REGISTRY.</p></li>
+</ul>
+</dd>
+</dl>
+<p>Example Usage:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Create a PostgreSQL database instance</span>
+<span class="n">db_instance</span> <span class="o">=</span> <span class="n">DatabaseFactory</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="s2">&quot;postgres&quot;</span><span class="p">,</span> <span class="s2">&quot;users_db&quot;</span><span class="p">)</span>
+
+<span class="c1"># Subsequent calls return the same instance (cached)</span>
+<span class="n">same_instance</span> <span class="o">=</span> <span class="n">DatabaseFactory</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="s2">&quot;postgres&quot;</span><span class="p">,</span> <span class="s2">&quot;users_db&quot;</span><span class="p">)</span>
+<span class="k">assert</span> <span class="n">db_instance</span> <span class="ow">is</span> <span class="n">same_instance</span>
+</pre></div>
+</div>
 <dl class="py method">
 <dt class="sig sig-object py" id="apps_logging_app.databases.factory.DatabaseFactory.create">
 <span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">create</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">database_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">database_name</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/databases/factory.html#DatabaseFactory.create"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.databases.factory.DatabaseFactory.create" title="Link to this definition">¶</a></dt>
@@ -704,16 +969,51 @@ tasks to finish.</p>
 <dt class="sig sig-object py" id="apps_logging_app.databases.registry.DatabaseEntry">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">apps_logging_app.databases.registry.</span></span><span class="sig-name descname"><span class="pre">DatabaseEntry</span></span><a class="reference internal" href="../_modules/apps_logging_app/databases/registry.html#DatabaseEntry"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.databases.registry.DatabaseEntry" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Generic</span></code>[<code class="xref py py-obj docutils literal notranslate"><span class="pre">C</span></code>]</p>
+<p>Represents a registry entry for a database type.</p>
+<p>Each DatabaseEntry associates a database configuration model
+with its corresponding database class. This allows the system
+to instantiate database objects dynamically from a configuration
+without hardcoding class names.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="apps_logging_app.databases.registry.DatabaseEntry.config_model">
-<span class="sig-name descname"><span class="pre">config_model</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><span class="pre">C</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#apps_logging_app.databases.registry.DatabaseEntry.config_model" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
+<span class="sig-name descname"><span class="pre">config_model</span></span><a class="headerlink" href="#apps_logging_app.databases.registry.DatabaseEntry.config_model" title="Link to this definition">¶</a></dt>
+<dd><p>The Pydantic model used to validate the database configuration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Type[C]</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="apps_logging_app.databases.registry.DatabaseEntry.database_class">
-<span class="sig-name descname"><span class="pre">database_class</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#apps_logging_app.databases.base.BaseDatabase" title="apps_logging_app.databases.base.BaseDatabase"><span class="pre">BaseDatabase</span></a><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#apps_logging_app.databases.registry.DatabaseEntry.database_class" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">database_class</span></span><a class="headerlink" href="#apps_logging_app.databases.registry.DatabaseEntry.database_class" title="Link to this definition">¶</a></dt>
+<dd><p>The class of the database to instantiate.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Type[<a class="reference internal" href="#apps_logging_app.databases.base.BaseDatabase" title="apps_logging_app.databases.base.BaseDatabase">BaseDatabase</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id0">
+<span class="sig-name descname"><span class="pre">config_model</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><span class="pre">C</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#id0" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id1">
+<span class="sig-name descname"><span class="pre">database_class</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#apps_logging_app.databases.base.BaseDatabase" title="apps_logging_app.databases.base.BaseDatabase"><span class="pre">BaseDatabase</span></a><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#id1" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="apps_logging_app.databases.registry.DATABASE_REGISTRY">
+<span class="sig-prename descclassname"><span class="pre">apps_logging_app.databases.registry.</span></span><span class="sig-name descname"><span class="pre">DATABASE_REGISTRY</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#apps_logging_app.databases.registry.DatabaseEntry" title="apps_logging_app.databases.registry.DatabaseEntry"><span class="pre">DatabaseEntry</span></a><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'oracle':</span> <span class="pre">&lt;apps_logging_app.databases.registry.DatabaseEntry</span> <span class="pre">object&gt;}</span></span><a class="headerlink" href="#apps_logging_app.databases.registry.DATABASE_REGISTRY" title="Link to this definition">¶</a></dt>
+<dd><p>A global registry that maps database types (str) to their corresponding <code class="docutils literal notranslate"><span class="pre">DatabaseEntry</span></code> objects.</p>
+<p>This registry is used by factories like <code class="docutils literal notranslate"><span class="pre">DatabaseFactory</span></code> to look up and create database
+instances based on their type.</p>
 </dd></dl>
 
 <dl class="py function">
@@ -804,7 +1104,11 @@ It also creates a DatabaseEntry and adds it to the DATABASE_REGISTRY with the gi
 <li><a class="reference internal" href="#subpackages">Subpackages</a></li>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
 <li><a class="reference internal" href="#module-apps_logging_app.databases.base">apps_logging_app.databases.base module</a><ul>
-<li><a class="reference internal" href="#apps_logging_app.databases.base.QueryTask"><code class="docutils literal notranslate"><span class="pre">QueryTask</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.databases.base.QueryTask"><code class="docutils literal notranslate"><span class="pre">QueryTask</span></code></a><ul>
+<li><a class="reference internal" href="#apps_logging_app.databases.base.QueryTask.future"><code class="docutils literal notranslate"><span class="pre">QueryTask.future</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.databases.base.QueryTask.retries"><code class="docutils literal notranslate"><span class="pre">QueryTask.retries</span></code></a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#apps_logging_app.databases.base.ConnectionConfig"><code class="docutils literal notranslate"><span class="pre">ConnectionConfig</span></code></a><ul>
 <li><a class="reference internal" href="#apps_logging_app.databases.base.ConnectionConfig.host"><code class="docutils literal notranslate"><span class="pre">ConnectionConfig.host</span></code></a></li>
 <li><a class="reference internal" href="#apps_logging_app.databases.base.ConnectionConfig.port"><code class="docutils literal notranslate"><span class="pre">ConnectionConfig.port</span></code></a></li>
@@ -833,6 +1137,12 @@ It also creates a DatabaseEntry and adds it to the DATABASE_REGISTRY with the gi
 </ul>
 </li>
 <li><a class="reference internal" href="#apps_logging_app.databases.base.BaseDatabase"><code class="docutils literal notranslate"><span class="pre">BaseDatabase</span></code></a><ul>
+<li><a class="reference internal" href="#apps_logging_app.databases.base.BaseDatabase.config"><code class="docutils literal notranslate"><span class="pre">BaseDatabase.config</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.databases.base.BaseDatabase.logger"><code class="docutils literal notranslate"><span class="pre">BaseDatabase.logger</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.databases.base.BaseDatabase._queue"><code class="docutils literal notranslate"><span class="pre">BaseDatabase._queue</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.databases.base.BaseDatabase._stop_event"><code class="docutils literal notranslate"><span class="pre">BaseDatabase._stop_event</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.databases.base.BaseDatabase._executor"><code class="docutils literal notranslate"><span class="pre">BaseDatabase._executor</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.databases.base.BaseDatabase._dispatcher"><code class="docutils literal notranslate"><span class="pre">BaseDatabase._dispatcher</span></code></a></li>
 <li><a class="reference internal" href="#apps_logging_app.databases.base.BaseDatabase.execute"><code class="docutils literal notranslate"><span class="pre">BaseDatabase.execute()</span></code></a></li>
 <li><a class="reference internal" href="#apps_logging_app.databases.base.BaseDatabase.shutdown"><code class="docutils literal notranslate"><span class="pre">BaseDatabase.shutdown()</span></code></a></li>
 </ul>
@@ -850,8 +1160,11 @@ It also creates a DatabaseEntry and adds it to the DATABASE_REGISTRY with the gi
 <li><a class="reference internal" href="#apps_logging_app.databases.registry.DatabaseEntry"><code class="docutils literal notranslate"><span class="pre">DatabaseEntry</span></code></a><ul>
 <li><a class="reference internal" href="#apps_logging_app.databases.registry.DatabaseEntry.config_model"><code class="docutils literal notranslate"><span class="pre">DatabaseEntry.config_model</span></code></a></li>
 <li><a class="reference internal" href="#apps_logging_app.databases.registry.DatabaseEntry.database_class"><code class="docutils literal notranslate"><span class="pre">DatabaseEntry.database_class</span></code></a></li>
+<li><a class="reference internal" href="#id0"><code class="docutils literal notranslate"><span class="pre">DatabaseEntry.config_model</span></code></a></li>
+<li><a class="reference internal" href="#id1"><code class="docutils literal notranslate"><span class="pre">DatabaseEntry.database_class</span></code></a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#apps_logging_app.databases.registry.DATABASE_REGISTRY"><code class="docutils literal notranslate"><span class="pre">DATABASE_REGISTRY</span></code></a></li>
 <li><a class="reference internal" href="#apps_logging_app.databases.registry.register_database"><code class="docutils literal notranslate"><span class="pre">register_database()</span></code></a></li>
 </ul>
 </li>

@@ -6,6 +6,39 @@ from .registry import PRODUCER_REGISTRY
 PRODUCER_INSTANCES = {}
 
 class ProducerFactory:
+
+    """
+    Factory class to create and manage producer instances.
+
+    ProducerFactory is responsible for creating producer instances based on
+    a specified type and name. It ensures that each producer is instantiated
+    only once by maintaining a global cache (`PRODUCER_INSTANCES`). If an
+    instance already exists in the cache, it is returned directly; otherwise,
+    the instance is created using the configuration loaded from the 
+    `producers.yaml` file and registered producer classes.
+
+    The factory uses the `PRODUCER_REGISTRY` to map producer types to their
+    corresponding configuration model and class.
+
+    Methods
+    -------
+    create(producer_type: str, producer_name: str)
+        Creates a producer instance for the given type and name, using cached
+        instances if available, or configuration from `producers.yaml` otherwise.
+
+    Raises
+    ------
+    ValueError
+        If the configuration for the specified producer type and name is not
+        found in `producers.yaml`.
+    ValueError
+        If the producer type is not registered in `PRODUCER_REGISTRY`.
+
+    Usage
+    -----
+    producer = ProducerFactory.create("kafka", "main_topic")
+    """
+
     @staticmethod
     def create(producer_type: str, producer_name: str):
 

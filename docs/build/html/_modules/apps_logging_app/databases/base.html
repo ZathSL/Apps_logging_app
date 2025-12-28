@@ -351,6 +351,36 @@
 <div class="viewcode-block" id="QueryTask">
 <a class="viewcode-back" href="../../../modules/apps_logging_app.databases.html#apps_logging_app.databases.base.QueryTask">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">QueryTask</span><span class="p">:</span>
+
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Represents a database query task to be executed asynchronously.</span>
+
+<span class="sd">    ``QueryTask`` encapsulates a SQL or database query along with optional</span>
+<span class="sd">    parameters and manages its execution state through a Future object.</span>
+
+<span class="sd">    :param query: The SQL or database query string to be executed.</span>
+<span class="sd">    :type query: str</span>
+<span class="sd">    :param params: Optional dictionary of parameters to be passed to the query.</span>
+<span class="sd">    :type params: Optional[Dict[str, Any]]</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        future (Future): A concurrent.futures.Future object that will hold</span>
+<span class="sd">                         the result or exception of the query once executed.</span>
+<span class="sd">        retries (int): Counter for the number of times the query has been</span>
+<span class="sd">                       retried due to failure. Defaults to 0.</span>
+
+<span class="sd">    Example Usage:</span>
+
+<span class="sd">    .. code-block:: python</span>
+
+<span class="sd">        task = QueryTask(</span>
+<span class="sd">            query=&quot;SELECT * FROM users WHERE id = %(user_id)s&quot;,</span>
+<span class="sd">            params={&quot;user_id&quot;: 42}</span>
+<span class="sd">        )</span>
+
+<span class="sd">        future_result = task.future  # Will eventually contain query results</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Initialize a QueryTask with a query and optional parameters.</span>
@@ -369,6 +399,42 @@
 <div class="viewcode-block" id="ConnectionConfig">
 <a class="viewcode-back" href="../../../modules/apps_logging_app.databases.html#apps_logging_app.databases.base.ConnectionConfig">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ConnectionConfig</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Configuration model for a single database connection.</span>
+
+<span class="sd">    ``ConnectionConfig`` defines the connection parameters required to</span>
+<span class="sd">    connect to a database instance, including host, port, and an optional</span>
+<span class="sd">    service name or database identifier.</span>
+
+<span class="sd">    :param host: Hostname or IP address of the database server.</span>
+<span class="sd">    :type host: str</span>
+<span class="sd">    :param port: Port number on which the database server is listening.</span>
+<span class="sd">                 Must be between 1 and 65535.</span>
+<span class="sd">    :type port: int</span>
+<span class="sd">    :param service_name: Optional service name, schema, or database name.</span>
+<span class="sd">    :type service_name: Optional[str]</span>
+
+<span class="sd">    Validators:</span>
+<span class="sd">        - host: Must be a non-empty valid hostname or IP address.</span>
+<span class="sd">        - port: Must be an integer between 1 and 65535.</span>
+
+<span class="sd">    Example Usage:</span>
+
+<span class="sd">    .. code-block:: python</span>
+
+<span class="sd">        primary_conn = ConnectionConfig(</span>
+<span class="sd">            host=&quot;localhost&quot;,</span>
+<span class="sd">            port=5432,</span>
+<span class="sd">            service_name=&quot;main_db&quot;</span>
+<span class="sd">        )</span>
+
+<span class="sd">        replica_conn = ConnectionConfig(</span>
+<span class="sd">            host=&quot;replica.local&quot;,</span>
+<span class="sd">            port=5432</span>
+<span class="sd">        )</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="n">host</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">port</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">service_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
@@ -412,6 +478,60 @@
 <div class="viewcode-block" id="BaseDatabaseConfig">
 <a class="viewcode-back" href="../../../modules/apps_logging_app.databases.html#apps_logging_app.databases.base.BaseDatabaseConfig">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">BaseDatabaseConfig</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Configuration model for a database client.</span>
+
+<span class="sd">    ``BaseDatabaseConfig`` stores all the necessary connection and operational </span>
+<span class="sd">    parameters to initialize a database client. This includes credentials, </span>
+<span class="sd">    primary and replica connection details, retry policies, and concurrency settings.</span>
+
+<span class="sd">    :param type: Type of the database (e.g., &quot;postgres&quot;, &quot;mysql&quot;).</span>
+<span class="sd">    :type type: str</span>
+<span class="sd">    :param name: Unique name for the database configuration.</span>
+<span class="sd">    :type name: str</span>
+<span class="sd">    :param username: Username used to authenticate with the database.</span>
+<span class="sd">    :type username: str</span>
+<span class="sd">    :param password: Password used to authenticate with the database.</span>
+<span class="sd">    :type password: str</span>
+<span class="sd">    :param primary: Connection configuration for the primary database instance.</span>
+<span class="sd">    :type primary: ConnectionConfig</span>
+<span class="sd">    :param replica: Optional connection configuration for a replica database instance.</span>
+<span class="sd">    :type replica: Optional[ConnectionConfig]</span>
+<span class="sd">    :param max_retries: Maximum number of times to retry a failed connection.</span>
+<span class="sd">                        Defaults to 5.</span>
+<span class="sd">    :type max_retries: int</span>
+<span class="sd">    :param max_workers: Maximum number of worker threads for executing queries.</span>
+<span class="sd">                        Defaults to 10.</span>
+<span class="sd">    :type max_workers: int</span>
+
+<span class="sd">    Validators:</span>
+<span class="sd">        - type: Ensures the type is not None.</span>
+<span class="sd">        - name: Ensures the name is not None.</span>
+<span class="sd">        - username: Ensures the username is not None.</span>
+<span class="sd">        - password: Ensures the password is not None.</span>
+<span class="sd">        - max_retries: Must be greater than 0.</span>
+<span class="sd">        - max_workers: Must be greater than 0.</span>
+
+<span class="sd">    Example Usage:</span>
+
+<span class="sd">    .. code-block:: python</span>
+
+<span class="sd">        primary_conn = ConnectionConfig(host=&quot;localhost&quot;, port=5432, service_name=&quot;main_db&quot;)</span>
+<span class="sd">        replica_conn = ConnectionConfig(host=&quot;replica.local&quot;, port=5432, service_name=&quot;replica_db&quot;)</span>
+
+<span class="sd">        db_config = BaseDatabaseConfig(</span>
+<span class="sd">            type=&quot;postgres&quot;,</span>
+<span class="sd">            name=&quot;main&quot;,</span>
+<span class="sd">            username=&quot;user&quot;,</span>
+<span class="sd">            password=&quot;password&quot;,</span>
+<span class="sd">            primary=primary_conn,</span>
+<span class="sd">            replica=replica_conn,</span>
+<span class="sd">            max_retries=5,</span>
+<span class="sd">            max_workers=10</span>
+<span class="sd">        )</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">username</span><span class="p">:</span> <span class="nb">str</span>
@@ -521,6 +641,82 @@
 <div class="viewcode-block" id="BaseDatabase">
 <a class="viewcode-back" href="../../../modules/apps_logging_app.databases.html#apps_logging_app.databases.base.BaseDatabase">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">BaseDatabase</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
+
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Abstract base class for database clients.</span>
+
+<span class="sd">    ``BaseDatabase`` provides a framework for executing queries asynchronously</span>
+<span class="sd">    against a database. It manages a queue of query tasks, executes them in a</span>
+<span class="sd">    thread pool, handles retries and reconnections, and logs all relevant events.</span>
+
+<span class="sd">    This class is designed to be extended for specific database types by</span>
+<span class="sd">    implementing the abstract methods ``_connect`` and ``_query``.</span>
+
+<span class="sd">    :param config: The database configuration containing connection details, credentials, </span>
+<span class="sd">                   and operational parameters.</span>
+<span class="sd">    :type config: BaseDatabaseConfig</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        config (BaseDatabaseConfig): The database configuration object.</span>
+<span class="sd">        logger (logging.Logger): Logger for database events.</span>
+<span class="sd">        _queue (Queue): Internal queue of pending query tasks.</span>
+<span class="sd">        _stop_event (Event): Event used to signal shutdown of the dispatcher thread.</span>
+<span class="sd">        _executor (ThreadPoolExecutor): Thread pool for executing queries.</span>
+<span class="sd">        _dispatcher (Thread): Background thread that dispatches query tasks.</span>
+<span class="sd">    </span>
+<span class="sd">    Public Methods:</span>
+<span class="sd">        execute(query, params=None) -&gt; Future:</span>
+<span class="sd">            Adds a query to the execution queue and returns a Future for its result.</span>
+<span class="sd">        </span>
+<span class="sd">        shutdown() -&gt; None:</span>
+<span class="sd">            Shuts down the dispatcher thread, waits for all tasks to finish, </span>
+<span class="sd">            and shuts down the executor.</span>
+
+<span class="sd">    Abstract Methods:</span>
+<span class="sd">        _connect() -&gt; None:</span>
+<span class="sd">            Establish a connection to the database. Must be implemented in subclasses.</span>
+<span class="sd">        </span>
+<span class="sd">        _query(query, params=None) -&gt; Dict[str, Any]:</span>
+<span class="sd">            Execute a query on the database and return the result as a dictionary.</span>
+<span class="sd">            Must be implemented in subclasses.</span>
+
+<span class="sd">    Internal Methods:</span>
+<span class="sd">        _dispatch() -&gt; None:</span>
+<span class="sd">            Internal loop that pulls query tasks from the queue and submits them</span>
+<span class="sd">            to the executor for execution.</span>
+<span class="sd">        </span>
+<span class="sd">        _safe_query(task: QueryTask) -&gt; Dict[str, Any]:</span>
+<span class="sd">            Executes a query safely, handling exceptions and logging results.</span>
+<span class="sd">        </span>
+<span class="sd">        _safe_connect() -&gt; None:</span>
+<span class="sd">            Attempts to establish a database connection with retries and error handling.</span>
+
+<span class="sd">    Example Usage:</span>
+
+<span class="sd">    .. code-block:: python</span>
+
+<span class="sd">        class MyDatabase(BaseDatabase):</span>
+<span class="sd">            def _connect(self):</span>
+<span class="sd">                # Implementation for connecting to the specific database</span>
+<span class="sd">                pass</span>
+
+<span class="sd">            def _query(self, query, params=None):</span>
+<span class="sd">                # Implementation for executing a query</span>
+<span class="sd">                return {&quot;result&quot;: &quot;success&quot;}</span>
+
+<span class="sd">        config = BaseDatabaseConfig(</span>
+<span class="sd">            type=&quot;my_db&quot;,</span>
+<span class="sd">            name=&quot;main&quot;,</span>
+<span class="sd">            username=&quot;user&quot;,</span>
+<span class="sd">            password=&quot;pass&quot;,</span>
+<span class="sd">            primary=ConnectionConfig(host=&quot;localhost&quot;, port=5432)</span>
+<span class="sd">        )</span>
+
+<span class="sd">        db = MyDatabase(config)</span>
+<span class="sd">        future = db.execute(&quot;SELECT * FROM table&quot;)</span>
+<span class="sd">        result = future.result()</span>
+<span class="sd">        db.shutdown()</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">BaseDatabaseConfig</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
