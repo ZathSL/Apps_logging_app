@@ -1,0 +1,15 @@
+apps_logging_app/__pycache__
+apps_logging_app/.venv
+apps_logging_app/agents/__pycache__
+apps_logging_app/agents/sasdm
+apps_logging_app/agents/spring
+apps_logging_app/configs/agents.yaml
+apps_logging_app/configs/databases.yaml
+apps_logging_app/configs/producers.yaml
+apps_logging_app/databases/__pycache__
+apps_logging_app/databases/oracle
+apps_logging_app/logs/prova.log
+apps_logging_app/logs/application.log
+apps_logging_app/producers/__pycache__
+apps_logging_app/producers/kafka_handler
+docker

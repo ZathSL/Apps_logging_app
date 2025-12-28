@@ -1,0 +1,5 @@
+kafka-python
+oracledb
+PyYAML
+pydantic
+kafka-python

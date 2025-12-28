@@ -1,0 +1,48 @@
+agents:
+  - type: sasdm
+    name: sasdm-agent
+    buffer_rows: 500
+    path_files:
+      - name: onprem_direct
+        path: /app/apps_logging_app/logs/prova.log
+    producer_connections:
+      - type: kafka_handler
+        name: kafka-handler-hulk
+        data_connections:
+          - name: error_pattern
+            is_error: true
+            source_ref: 
+              path_file_name: onprem_direct
+              regex_pattern: "ERROR|FATAL|EXCEPTION"
+          - name: info_pattern
+            is_error: false
+            source_ref: 
+              path_file_name: onprem_direct
+              regex_pattern: 'responseJSON:\s*(?P<response_json>\{[\s\S]*?\})'
+          - name: info_pattern_engagement_all_messages
+            is_error: false
+            expired_time: 1440
+            source_ref: 
+              path_file_name: onprem_direct
+              regex_pattern: 'responseJSON:\s*(?P<response_json>\{[\s\S]*?\})'
+            destination_ref:
+              type: oracle
+              name: sasdb_ciexpit_owner
+              query: SELECT * FROM dual
+          - name: info_pattern_engagement_single_message
+            is_error: false
+            expired_time: 1440
+            source_ref: 
+              path_file_name: onprem_direct
+              regex_pattern: "INFO|DEBUG|TRACE"
+            destination_ref:
+              type: oracle
+              name: sasdb_ciexpit_owner
+              query: SELECT * FROM dual
+          - name: normal_query
+            is_error: false
+            expired_time: 1440
+            destination_ref:
+              type: oracle
+              name: sasdb_ciexpit_owner
+              query: SELECT * FROM dual
