@@ -37,37 +37,41 @@ Architecture diagram
 
 .. mermaid::
 
-    graph LR
-        %% Sources
-        FileSources[File Sources]
+   %%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#1e1e1e', 'lineColor': '#ffffff', 'textColor': '#ffffff' }}}%%
+   graph LR
+      %% Sources
+      FileSources[File Sources]
 
-        %% Core components
-        Agent[Agent]
-        Orchestrator[Orchestrator]
-        ExternalDB[(External Database)]
-        Producer[Producer]
-        Brokers[Message Brokers]
+      %% Core components
+      Agent[Agent]
+      Orchestrator[Orchestrator]
+      ExternalDB[(External Database)]
+      Producer[Producer]
+      Brokers[Message Brokers]
 
-        %% Queues
-        QueryQueue[(Query Queue)]
-        MessageQueue[(Message Queue)]
+      %% Queues
+      QueryQueue[(Query Queue)]
+      MessageQueue[(Message Queue)]
 
-        %% File ingestion
-        FileSources --> Agent
+      %% File ingestion
+      FileSources -->|Create Queries| Agent
 
-        %% Query flow
-        Agent -->|Create Queries| QueryQueue
-        QueryQueue -->|Consume Queries| Orchestrator
-        Orchestrator -->|Execute Query| ExternalDB
-        ExternalDB -->|Query Result| Orchestrator
-        Orchestrator -->|Return Result| Agent
+      %% Query flow
+      Agent -->|Create Queries| QueryQueue
+      QueryQueue -->|Consume Queries| Orchestrator
+      Orchestrator -->|Execute Query| ExternalDB
+      ExternalDB -->|Query Result| Orchestrator
+      Orchestrator -->|Return Result| Agent
 
-        %% Message production
-        Agent -->|Produce Messages| MessageQueue
+      %% Message production
+      Agent -->|Produce Messages| MessageQueue
 
-        %% Message distribution
-        MessageQueue --> Producer
-        Producer --> Brokers
+      %% Message distribution
+      MessageQueue --> Producer
+      Producer --> Brokers
+
+      %% Styling links
+      linkStyle default stroke:#ffffff, stroke-width:3px
 
 
 Parallel flows

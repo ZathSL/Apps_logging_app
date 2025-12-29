@@ -52,8 +52,7 @@ Example:
         max_retries: 5
         max_workers: 10
 
-> Note: All fields are validated using Pydantic `BaseModel` classes and `field_validator`s
-> to ensure correctness before runtime.
+> Note: All fields are validated using Pydantic `BaseModel` classes and `field_validator` methods to ensure correctness before runtime.
 
 ---
 

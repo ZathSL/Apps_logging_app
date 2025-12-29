@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 class WorkingDataConnection:
 
@@ -64,9 +64,9 @@ class WorkingDataConnection:
     def __init__(self, name: str,
                         producer_type: str, 
                         producer_name: str,
-                        database_type: str = None,
-                        database_name: str = None,
-                        query: str = None,
+                        database_type: Optional[str] = None,
+                        database_name: Optional[str] = None,
+                        query: Optional[str] = None,
                         is_error: bool = False,
                         expired_time: datetime = datetime.min):
 

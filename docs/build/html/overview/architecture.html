@@ -376,37 +376,41 @@ framework.</p>
 <section id="architecture-diagram">
 <h2>Architecture diagram<a class="headerlink" href="#architecture-diagram" title="Link to this heading">¶</a></h2>
 <pre  class="mermaid">
-        graph LR
-    %% Sources
-    FileSources[File Sources]
+        %%{init: {'theme': 'dark', 'themeVariables': { 'primaryColor': '#1e1e1e', 'lineColor': '#ffffff', 'textColor': '#ffffff' }}}%%
+graph LR
+   %% Sources
+   FileSources[File Sources]
 
-    %% Core components
-    Agent[Agent]
-    Orchestrator[Orchestrator]
-    ExternalDB[(External Database)]
-    Producer[Producer]
-    Brokers[Message Brokers]
+   %% Core components
+   Agent[Agent]
+   Orchestrator[Orchestrator]
+   ExternalDB[(External Database)]
+   Producer[Producer]
+   Brokers[Message Brokers]
 
-    %% Queues
-    QueryQueue[(Query Queue)]
-    MessageQueue[(Message Queue)]
+   %% Queues
+   QueryQueue[(Query Queue)]
+   MessageQueue[(Message Queue)]
 
-    %% File ingestion
-    FileSources --&gt; Agent
+   %% File ingestion
+   FileSources --&gt;|Create Queries| Agent
 
-    %% Query flow
-    Agent --&gt;|Create Queries| QueryQueue
-    QueryQueue --&gt;|Consume Queries| Orchestrator
-    Orchestrator --&gt;|Execute Query| ExternalDB
-    ExternalDB --&gt;|Query Result| Orchestrator
-    Orchestrator --&gt;|Return Result| Agent
+   %% Query flow
+   Agent --&gt;|Create Queries| QueryQueue
+   QueryQueue --&gt;|Consume Queries| Orchestrator
+   Orchestrator --&gt;|Execute Query| ExternalDB
+   ExternalDB --&gt;|Query Result| Orchestrator
+   Orchestrator --&gt;|Return Result| Agent
 
-    %% Message production
-    Agent --&gt;|Produce Messages| MessageQueue
+   %% Message production
+   Agent --&gt;|Produce Messages| MessageQueue
 
-    %% Message distribution
-    MessageQueue --&gt; Producer
-    Producer --&gt; Brokers
+   %% Message distribution
+   MessageQueue --&gt; Producer
+   Producer --&gt; Brokers
+
+   %% Styling links
+   linkStyle default stroke:#ffffff, stroke-width:3px
     </pre></section>
 <section id="parallel-flows">
 <h2>Parallel flows<a class="headerlink" href="#parallel-flows" title="Link to this heading">¶</a></h2>
