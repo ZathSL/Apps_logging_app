@@ -1,6 +1,6 @@
 CREATE A DOCKER ENVIRONMENT
 
-move example/configs-dev to apps_logging_app directory and rename it as configs
+move example/configs to apps_logging_app directory and rename it as configs
 
 move example/docker to root directory of the project
 
@@ -20,7 +20,7 @@ To build all the test project
     sudo docker compose -f ../docker/docker-compose.yaml up --build
 
 To see inside the container
-    sudo docker exec -it apps-logging-app /bin/sh
+    sudo docker exec -it apps_logging_app /bin/sh
 
 
 To generate sphinx doc

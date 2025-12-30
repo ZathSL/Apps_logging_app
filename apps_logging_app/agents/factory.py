@@ -63,8 +63,8 @@ class AgentFactory:
 
         config = entry.config_model.model_validate(raw_config)
 
-        from producers.factory import ProducerFactory
-        from databases.factory import DatabaseFactory
+        from ..producers.factory import ProducerFactory
+        from ..databases.factory import DatabaseFactory
 
         for producer_connection in config.producer_connections:
             ProducerFactory.get_instance(

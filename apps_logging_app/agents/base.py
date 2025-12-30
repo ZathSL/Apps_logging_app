@@ -894,39 +894,38 @@ class BaseAgent(ABC):
 
     def _data_connections_execute_queries(self) -> None:
         """
-        Executes queries for all working data connections that have a database name and
-        are not currently executing a query.
+        Executes queries for data connections if the data connection has a database name and
+        is not currently in progress.
 
-        For each working data connection, it gets the database instance from the
-        DATABASE_INSTANCES factory and executes the query using the database instance.
-        It then adds a done callback to the future to update the working data connection
-        status when the query is finished executing.
+        It iterates over all working data connections and for each one, it gets the
+        database instance from the DatabaseFactory and executes the query. It then
+        sets the query_in_progress flag on the data connection to True and adds a done callback
+        to the Future returned by the database instance. The done callback is a partial
+        function of _on_done with the working data connection as an argument.
+
+        If an error occurs while executing the query, it logs the error.
         """
-        from databases.factory import DATABASE_INSTANCES
+        from ..databases.factory import DatabaseFactory
 
         for working_data_connection in self.working_data_connections:
-            if working_data_connection.database_name and not working_data_connection.query_in_progress:
-                database_instance = DATABASE_INSTANCES.get((working_data_connection.database_type, working_data_connection.database_name))
+            if working_data_connection.database_name and not working_data_connection.query_in_progress:                
+                database_instance = DatabaseFactory.get_instance(
+                    working_data_connection.database_type,
+                    working_data_connection.database_name
+                )
                 working_data_connection.query_in_progress = True
                 future = database_instance.execute(working_data_connection.query, working_data_connection.data_dict_query_source)
                 future.add_done_callback(partial(self._on_done, working_data_connection))
 
     def _send_messages_to_producers(self) -> None:
-        """
-        Sends messages extracted from data connections to producers.
-
-        It iterates over all working data connections and for each one, it gets the
-        producer instance from the PRODUCER_INSTANCES factory and sends the message
-        to the producer if the data connection has a result and is updated. It then
-        resets the is_updated flag on the data connection.
-
-        If an error occurs while sending the message to the producer, it logs the error.
-        """
         
-        from producers.factory import PRODUCER_INSTANCES
+        from ..producers.factory import ProducerFactory
         
         for working_data_connection in self.working_data_connections:
-            producer_instance = PRODUCER_INSTANCES.get((working_data_connection.producer_type, working_data_connection.producer_name))
+            producer_instance = ProducerFactory.get_instance(
+                working_data_connection.producer_type, 
+                working_data_connection.producer_name
+            )
             try:
                 if working_data_connection.data_dict_result and working_data_connection.is_updated:
                     producer_instance.produce(working_data_connection.is_error, working_data_connection.data_dict_result)

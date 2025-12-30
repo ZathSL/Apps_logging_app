@@ -25,7 +25,7 @@ def main():
     with open(base_config_path, 'r') as f:
         base_config = yaml.safe_load(f)
     
-    log_dir_path = Path(base_config['app']['log_dir'])
+    log_dir_path = Path(__file__).parent / base_config['app']['log_dir']
     log_dir_path.mkdir(parents=True, exist_ok=True)
     log_file_path = log_dir_path / 'application.log'
 

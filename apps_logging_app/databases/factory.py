@@ -86,8 +86,9 @@ class DatabaseFactory:
         Returns:
             BaseDatabase: The instantiated database class.
         """
+        config_path = Path(__file__).parent.parent / 'configs' / 'databases.yaml'
         if cls._config is None:
-            with open(Path(__file__).parent.parent / 'configs' / 'databases.yaml') as f:
+            with open(config_path) as f:
                 cls._config = yaml.safe_load(f)["databases"]
 
         raw_config = next(
