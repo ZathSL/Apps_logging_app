@@ -1,52 +1,58 @@
 import yaml
 from pathlib import Path
 from .registry import PRODUCER_REGISTRY
-
-# Cache globale per istanze producer condivise
-PRODUCER_INSTANCES = {}
+import threading
 
 class ProducerFactory:
 
     """
-    Factory class to create and manage producer instances.
+    Factory class responsible for creating and managing shared producer instances.
 
-    ProducerFactory is responsible for creating producer instances based on
-    a specified type and name. It ensures that each producer is instantiated
-    only once by maintaining a global cache (`PRODUCER_INSTANCES`). If an
-    instance already exists in the cache, it is returned directly; otherwise,
-    the instance is created using the configuration loaded from the 
-    `producers.yaml` file and registered producer classes.
+    ``ProducerFactory`` implements a *multiton* pattern (singleton per key),
+    ensuring that only one producer instance exists for each
+    ``(producer_type, producer_name)`` combination.
 
-    The factory uses the `PRODUCER_REGISTRY` to map producer types to their
-    corresponding configuration model and class.
+    Producer instances represent shared, long-lived resources (e.g. message
+    brokers, event producers, streaming clients) and are therefore cached
+    globally within the factory. Subsequent requests for the same producer
+    return the cached instance.
 
-    Methods
-    -------
-    create(producer_type: str, producer_name: str)
-        Creates a producer instance for the given type and name, using cached
-        instances if available, or configuration from `producers.yaml` otherwise.
+    The factory loads producer configurations from a YAML file and validates
+    them using the registered configuration model before instantiating the
+    corresponding producer class.
 
-    Raises
-    ------
-    ValueError
-        If the configuration for the specified producer type and name is not
-        found in `producers.yaml`.
-    ValueError
-        If the producer type is not registered in `PRODUCER_REGISTRY`.
+    This factory relies on:
 
-    Usage
-    -----
-    producer = ProducerFactory.create("kafka", "main_topic")
+    - ``PRODUCER_REGISTRY``: a registry mapping producer types to their
+      configuration models and producer implementation classes.
+    - ``producers.yaml``: a configuration file containing producer definitions.
+
+    **Responsibilities:**
+
+    - Manage the lifecycle of shared producer instances
+    - Ensure thread-safe creation of producer instances
+    - Validate producer configurations
+    - Instantiate the correct producer implementation
+
+    .. note::
+
+        The factory is thread-safe and lazily initializes both the producer
+        configuration and producer instances.
+
     """
 
-    @staticmethod
-    def create(producer_type: str, producer_name: str):
 
+    _instances = {}
+    _lock = threading.Lock()
+    _config = None
+
+    @classmethod
+    def get_instance(cls, producer_type: str, producer_name: str):
         """
-        Create a producer instance based on the given type and name.
+        Returns a shared producer instance for the given type and name.
 
-        If the instance already exists in the cache, it is returned directly.
-        Otherwise, the instance is created using the configuration from the producers.yaml
+        If the instance already exists in the cache, it is returned directly;
+        otherwise, the instance is created using the configuration from the producers.yaml
         file and stored in the cache.
 
         Parameters
@@ -58,38 +64,53 @@ class ProducerFactory:
 
         Returns
         -------
-        Producer
-            The created producer instance
-
-        Raises
-        ------
-        ValueError
-            If the producer config is not found for the given type and name
-        ValueError
-            If the producer type is unknown
+        The shared producer instance
         """
-        if (producer_type, producer_name) in PRODUCER_INSTANCES:
-            return
+        key = (producer_type, producer_name)
 
-        with open(Path(__file__).parent.parent / 'configs' / 'producers.yaml') as f:
-            producers_config = yaml.safe_load(f)["producers"]  
+        if key in cls._instances:
+            return cls._instances[key]
+        
+        with cls._lock:
+            if key not in cls._instances:
+                cls._instances[key] = cls._create(producer_type, producer_name)
+        return cls._instances[key]
+    
+    @classmethod
+    def _create(cls, producer_type: str, producer_name: str):
+        """
+        Creates a new producer instance using the configuration from the YAML file.
 
-        raw_config = next((p for p in producers_config if (p["type"] == producer_type and p["name"] == producer_name)), None)
+        Args:
+            producer_type (str): The type of the producer to create.
+            producer_name (str): The name of the producer to create.
+
+        Raises:
+            ValueError: If the producer configuration is not found in the YAML file.
+            ValueError: If the producer type is not registered in PRODUCER_REGISTRY.
+
+        Returns:
+            BaseProducer: The instantiated producer class.
+        """
+        if cls._config is None:
+            with open(Path(__file__)).parent.parent / 'configs' / 'producers.yaml' as f:
+                cls._config = yaml.safe_load(f)["producers"]
+
+        raw_config = next(
+            (p for p in cls._config
+             if p["type"] == producer_type and p["name"] == producer_name),
+            None
+        )
 
         if not raw_config:
-            raise ValueError(f"Producer config not found for type: {producer_type}")
-
-        # Create instance using the registry
+            raise ValueError(
+                f"Producer config not found for type={producer_type}, name={producer_name}"
+            )
+        
         entry = PRODUCER_REGISTRY.get(producer_type)
-
         if not entry:
             raise ValueError(f"Unknown producer type: {producer_type}")
-
-        producer_config = entry.config_model.model_validate(raw_config)
-
-
-        instance = entry.producer_class(producer_config)
-
-
-        PRODUCER_INSTANCES[(producer_type, producer_name)] = instance
         
+        producer_config = entry.config_model.model_validate(raw_config)
+        return entry.producer_class(producer_config)
+    

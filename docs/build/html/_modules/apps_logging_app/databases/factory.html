@@ -340,83 +340,117 @@
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">yaml</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">DATABASE_REGISTRY</span>
-
-<span class="c1"># Global cache for shared database instances</span>
-<span class="n">DATABASE_INSTANCES</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">threading</span>
 
 <div class="viewcode-block" id="DatabaseFactory">
 <a class="viewcode-back" href="../../../modules/apps_logging_app.databases.html#apps_logging_app.databases.factory.DatabaseFactory">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">DatabaseFactory</span><span class="p">:</span>
 
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Factory class responsible for creating and managing database instances.</span>
+<span class="sd">    Factory class responsible for creating and managing shared database instances.</span>
 
-<span class="sd">    ``DatabaseFactory`` reads database configurations from a YAML file,</span>
-<span class="sd">    validates them using the registered config model, and instantiates</span>
-<span class="sd">    the corresponding database class. It ensures that only a single</span>
-<span class="sd">    instance exists for each (database_type, database_name) combination,</span>
-<span class="sd">    acting as a global cache for database connections.</span>
+<span class="sd">    ``DatabaseFactory`` implements a *multiton* pattern (singleton per key),</span>
+<span class="sd">    ensuring that only one database instance exists for each</span>
+<span class="sd">    ``(database_type, database_name)`` combination.</span>
+
+<span class="sd">    Database instances are considered shared resources and are cached</span>
+<span class="sd">    globally within the factory. Subsequent calls requesting the same</span>
+<span class="sd">    database type and name will return the same instance.</span>
+
+<span class="sd">    The factory loads database configurations from a YAML file and validates</span>
+<span class="sd">    them using the registered configuration model before instantiating the</span>
+<span class="sd">    corresponding database class.</span>
 
 <span class="sd">    This factory relies on:</span>
-<span class="sd">        - `DATABASE_REGISTRY`: A mapping of database types to their</span>
-<span class="sd">          corresponding configuration model and database class.</span>
-<span class="sd">        - `databases.yaml`: A configuration file containing database</span>
-<span class="sd">          definitions.</span>
 
-<span class="sd">    Methods:</span>
-<span class="sd">        create(database_type: str, database_name: str):</span>
-<span class="sd">            Creates a new database instance or returns the cached instance</span>
-<span class="sd">            if it already exists.</span>
+<span class="sd">    - ``DATABASE_REGISTRY``: a registry mapping database types to their</span>
+<span class="sd">      configuration models and database implementation classes.</span>
+<span class="sd">    - ``databases.yaml``: a configuration file containing database definitions.</span>
 
-<span class="sd">    :param database_type: The type of the database to create (must be registered).</span>
-<span class="sd">    :type database_type: str</span>
-<span class="sd">    :param database_name: The name of the database to create (must exist in the YAML config).</span>
-<span class="sd">    :type database_name: str</span>
+<span class="sd">    **Responsibilities:**</span>
 
-<span class="sd">    Raises:</span>
-<span class="sd">        ValueError: If the database configuration is not found in the YAML file.</span>
-<span class="sd">        ValueError: If the database type is not registered in DATABASE_REGISTRY.</span>
+<span class="sd">    - Manage the lifecycle of shared database instances</span>
+<span class="sd">    - Ensure thread-safe creation of database instances</span>
+<span class="sd">    - Validate database configurations</span>
+<span class="sd">    - Instantiate the correct database implementation</span>
 
-<span class="sd">    Example Usage:</span>
+<span class="sd">    .. note::</span>
 
-<span class="sd">    .. code-block:: python</span>
+<span class="sd">        The factory is thread-safe and lazily initializes both the database</span>
+<span class="sd">        configuration and database instances.</span>
 
-<span class="sd">        # Create a PostgreSQL database instance</span>
-<span class="sd">        db_instance = DatabaseFactory.create(&quot;postgres&quot;, &quot;users_db&quot;)</span>
-
-<span class="sd">        # Subsequent calls return the same instance (cached)</span>
-<span class="sd">        same_instance = DatabaseFactory.create(&quot;postgres&quot;, &quot;users_db&quot;)</span>
-<span class="sd">        assert db_instance is same_instance</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-       
-<div class="viewcode-block" id="DatabaseFactory.create">
-<a class="viewcode-back" href="../../../modules/apps_logging_app.databases.html#apps_logging_app.databases.factory.DatabaseFactory.create">[docs]</a>
-    <span class="nd">@staticmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">create</span><span class="p">(</span><span class="n">database_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">database_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-        
-        <span class="k">if</span> <span class="p">(</span><span class="n">database_type</span><span class="p">,</span> <span class="n">database_name</span><span class="p">)</span> <span class="ow">in</span> <span class="n">DATABASE_INSTANCES</span><span class="p">:</span>
-            <span class="k">return</span> 
 
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s1">&#39;configs&#39;</span> <span class="o">/</span> <span class="s1">&#39;databases.yaml&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-            <span class="n">databases</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">f</span><span class="p">)[</span><span class="s2">&quot;databases&quot;</span><span class="p">]</span>
+    <span class="n">_instances</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">_lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>
+    <span class="n">_config</span> <span class="o">=</span> <span class="kc">None</span>
 
-        <span class="n">raw_config</span> <span class="o">=</span> <span class="nb">next</span><span class="p">((</span><span class="n">d</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">databases</span> <span class="k">if</span> <span class="p">(</span><span class="n">d</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">database_type</span> <span class="ow">and</span> <span class="n">d</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">database_name</span><span class="p">)),</span> <span class="kc">None</span><span class="p">)</span>
+<div class="viewcode-block" id="DatabaseFactory.get_instance">
+<a class="viewcode-back" href="../../../modules/apps_logging_app.databases.html#apps_logging_app.databases.factory.DatabaseFactory.get_instance">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_instance</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">database_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">database_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns a shared database instance for the given type and name.</span>
+
+<span class="sd">        The instance is cached globally, and subsequent calls with the same type and name</span>
+<span class="sd">        will return the same instance.</span>
+
+<span class="sd">        :param database_type: The type of the database (must be registered in DATABASE_REGISTRY).</span>
+<span class="sd">        :type database_type: str</span>
+<span class="sd">        :param database_name: The name of the database (must exist in the YAML config).</span>
+<span class="sd">        :type database_name: str</span>
+<span class="sd">        :return: The shared database instance.</span>
+<span class="sd">        :rtype: BaseDatabase</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="p">(</span><span class="n">database_type</span><span class="p">,</span> <span class="n">database_name</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_instances</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_instances</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+        <span class="k">with</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_lock</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_instances</span><span class="p">:</span>
+                <span class="bp">cls</span><span class="o">.</span><span class="n">_instances</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_create</span><span class="p">(</span><span class="n">database_type</span><span class="p">,</span> <span class="n">database_name</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_instances</span><span class="p">[</span><span class="n">key</span><span class="p">]</span></div>
+
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_create</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">database_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">database_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates a new database instance using the configuration from the YAML file.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            database_type (str): The type of the database to create.</span>
+<span class="sd">            database_name (str): The name of the database to create.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If the database configuration is not found in the YAML file.</span>
+<span class="sd">            ValueError: If the database type is not registered in DATABASE_REGISTRY.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            BaseDatabase: The instantiated database class.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_config</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s1">&#39;configs&#39;</span> <span class="o">/</span> <span class="s1">&#39;databases.yaml&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="bp">cls</span><span class="o">.</span><span class="n">_config</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">f</span><span class="p">)[</span><span class="s2">&quot;databases&quot;</span><span class="p">]</span>
+
+        <span class="n">raw_config</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">d</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_config</span>
+             <span class="k">if</span> <span class="n">d</span><span class="p">[</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">database_type</span> <span class="ow">and</span> <span class="n">d</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">database_name</span><span class="p">),</span>
+            <span class="kc">None</span>
+        <span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">raw_config</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Database config not found for type: </span><span class="si">{</span><span class="n">database_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Database config not found for type=</span><span class="si">{</span><span class="n">database_type</span><span class="si">}</span><span class="s2">, name=</span><span class="si">{</span><span class="n">database_name</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
 
-        <span class="c1"># Create instance using the registry</span>
         <span class="n">entry</span> <span class="o">=</span> <span class="n">DATABASE_REGISTRY</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">database_type</span><span class="p">)</span>
-
         <span class="k">if</span> <span class="ow">not</span> <span class="n">entry</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown database type: </span><span class="si">{</span><span class="n">database_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
         <span class="n">database_config</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">config_model</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">raw_config</span><span class="p">)</span>
-
-        <span class="n">instance</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">database_class</span><span class="p">(</span><span class="n">database_config</span><span class="p">)</span>
-
-        <span class="n">DATABASE_INSTANCES</span><span class="p">[(</span><span class="n">database_type</span><span class="p">,</span> <span class="n">database_name</span><span class="p">)]</span> <span class="o">=</span> <span class="n">instance</span></div>
-</div>
+        <span class="k">return</span> <span class="n">entry</span><span class="o">.</span><span class="n">database_class</span><span class="p">(</span><span class="n">database_config</span><span class="p">)</span></div>
 
 </pre></div>
         </article>

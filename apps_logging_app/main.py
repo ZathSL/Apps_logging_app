@@ -4,10 +4,10 @@ import logging
 from logging import Formatter
 from logging.handlers import TimedRotatingFileHandler
 from .agents.factory import AgentFactory
-from .agents.sasdm.agent import SasdmAgent
-from .agents.spring.agent import SpringAgent
-from .databases.oracle.database import OracleDatabase
-from .producers.kafka_handler.producer import KafkaHandlerProducer
+from .agents.sasdm.agent import SasdmAgent                         # Import required to register agent, database and producer classes
+from .agents.spring.agent import SpringAgent                       # Import required to register agent, database and producer classes
+from .databases.oracle.database import OracleDatabase              # Import required to register agent, database and producer classes
+from .producers.kafka_handler.producer import KafkaHandlerProducer # Import required to register agent, database and producer classes
 
 def main():
     """
@@ -46,7 +46,7 @@ def main():
     with open(agents_config_path, 'r') as f:
         agents_config = yaml.safe_load(f)
 
-    AGENT_INSTANCES = {}
+    RUNNING_AGENTS = {}
     
     for agent_raw_config in agents_config['agents']:
         try:
@@ -54,7 +54,7 @@ def main():
             agent_name = agent_raw_config['name']
             main_logger.info(f"Creating agent: {agent_name} (type: {agent_type})")
             agent = AgentFactory.create(agent_raw_config)
-            AGENT_INSTANCES[(agent_type, agent_name)] = agent
+            RUNNING_AGENTS[(agent_type, agent_name)] = agent
             main_logger.info(f"Agent {agent_name} created successfully")
         except Exception as e:
             main_logger.error(f"Error creating agent {agent_name}: {e}")
@@ -66,9 +66,11 @@ def main():
             time.sleep(60)
     except KeyboardInterrupt:
         main_logger.warning(f"Shutdown requested")
-        for agent in AGENT_INSTANCES.values():
-            agent.stop()
-
+        for agent in RUNNING_AGENTS.values():
+            try:
+                agent.stop()
+            except Exception as e:
+                main_logger.error(f"Error stopping agent {agent.name}: {e}")
 
 if __name__ == "__main__":
     main()

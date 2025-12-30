@@ -1,75 +1,109 @@
 import yaml
 from pathlib import Path
 from .registry import DATABASE_REGISTRY
-
-# Global cache for shared database instances
-DATABASE_INSTANCES = {}
+import threading
 
 class DatabaseFactory:
 
     """
-    Factory class responsible for creating and managing database instances.
+    Factory class responsible for creating and managing shared database instances.
 
-    ``DatabaseFactory`` reads database configurations from a YAML file,
-    validates them using the registered config model, and instantiates
-    the corresponding database class. It ensures that only a single
-    instance exists for each (database_type, database_name) combination,
-    acting as a global cache for database connections.
+    ``DatabaseFactory`` implements a *multiton* pattern (singleton per key),
+    ensuring that only one database instance exists for each
+    ``(database_type, database_name)`` combination.
+
+    Database instances are considered shared resources and are cached
+    globally within the factory. Subsequent calls requesting the same
+    database type and name will return the same instance.
+
+    The factory loads database configurations from a YAML file and validates
+    them using the registered configuration model before instantiating the
+    corresponding database class.
 
     This factory relies on:
-        - `DATABASE_REGISTRY`: A mapping of database types to their
-          corresponding configuration model and database class.
-        - `databases.yaml`: A configuration file containing database
-          definitions.
 
-    Methods:
-        create(database_type: str, database_name: str):
-            Creates a new database instance or returns the cached instance
-            if it already exists.
+    - ``DATABASE_REGISTRY``: a registry mapping database types to their
+      configuration models and database implementation classes.
+    - ``databases.yaml``: a configuration file containing database definitions.
 
-    :param database_type: The type of the database to create (must be registered).
-    :type database_type: str
-    :param database_name: The name of the database to create (must exist in the YAML config).
-    :type database_name: str
+    **Responsibilities:**
 
-    Raises:
-        ValueError: If the database configuration is not found in the YAML file.
-        ValueError: If the database type is not registered in DATABASE_REGISTRY.
+    - Manage the lifecycle of shared database instances
+    - Ensure thread-safe creation of database instances
+    - Validate database configurations
+    - Instantiate the correct database implementation
 
-    Example Usage:
+    .. note::
 
-    .. code-block:: python
+        The factory is thread-safe and lazily initializes both the database
+        configuration and database instances.
 
-        # Create a PostgreSQL database instance
-        db_instance = DatabaseFactory.create("postgres", "users_db")
-
-        # Subsequent calls return the same instance (cached)
-        same_instance = DatabaseFactory.create("postgres", "users_db")
-        assert db_instance is same_instance
     """
-       
-    @staticmethod
-    def create(database_type: str, database_name: str):
-        
-        if (database_type, database_name) in DATABASE_INSTANCES:
-            return 
 
-        with open(Path(__file__).parent.parent / 'configs' / 'databases.yaml') as f:
-            databases = yaml.safe_load(f)["databases"]
+    _instances = {}
+    _lock = threading.Lock()
+    _config = None
 
-        raw_config = next((d for d in databases if (d["type"] == database_type and d['name'] == database_name)), None)
+    @classmethod
+    def get_instance(cls, database_type: str, database_name: str):
+        """
+        Returns a shared database instance for the given type and name.
+
+        The instance is cached globally, and subsequent calls with the same type and name
+        will return the same instance.
+
+        :param database_type: The type of the database (must be registered in DATABASE_REGISTRY).
+        :type database_type: str
+        :param database_name: The name of the database (must exist in the YAML config).
+        :type database_name: str
+        :return: The shared database instance.
+        :rtype: BaseDatabase
+        """
+        key = (database_type, database_name)
+
+        if key in cls._instances:
+            return cls._instances[key]
+
+        with cls._lock:
+            if key not in cls._instances:
+                cls._instances[key] = cls._create(database_type, database_name)
+
+        return cls._instances[key]
+
+    @classmethod
+    def _create(cls, database_type: str, database_name: str):
+
+        """Creates a new database instance using the configuration from the YAML file.
+
+        Args:
+            database_type (str): The type of the database to create.
+            database_name (str): The name of the database to create.
+
+        Raises:
+            ValueError: If the database configuration is not found in the YAML file.
+            ValueError: If the database type is not registered in DATABASE_REGISTRY.
+
+        Returns:
+            BaseDatabase: The instantiated database class.
+        """
+        if cls._config is None:
+            with open(Path(__file__).parent.parent / 'configs' / 'databases.yaml') as f:
+                cls._config = yaml.safe_load(f)["databases"]
+
+        raw_config = next(
+            (d for d in cls._config
+             if d["type"] == database_type and d["name"] == database_name),
+            None
+        )
 
         if not raw_config:
-            raise ValueError(f"Database config not found for type: {database_type}")
+            raise ValueError(
+                f"Database config not found for type={database_type}, name={database_name}"
+            )
 
-        # Create instance using the registry
         entry = DATABASE_REGISTRY.get(database_type)
-
         if not entry:
             raise ValueError(f"Unknown database type: {database_type}")
 
         database_config = entry.config_model.model_validate(raw_config)
-
-        instance = entry.database_class(database_config)
-
-        DATABASE_INSTANCES[(database_type, database_name)] = instance
+        return entry.database_class(database_config)

@@ -339,57 +339,59 @@
           <h1>Source code for apps_logging_app.agents.factory</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span><span class="w"> </span><span class="nn">.registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">AGENT_REGISTRY</span>
 
-
 <div class="viewcode-block" id="AgentFactory">
 <a class="viewcode-back" href="../../../modules/apps_logging_app.agents.html#apps_logging_app.agents.factory.AgentFactory">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">AgentFactory</span><span class="p">:</span>
 
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Factory class responsible for creating agent instances from configuration dictionaries.</span>
+<span class="sd">    Factory class responsible for creating agent instances from configuration</span>
+<span class="sd">    dictionaries.</span>
 
-<span class="sd">    ``AgentFactory`` provides a static method ``create`` that instantiates an agent</span>
-<span class="sd">    based on a given raw configuration dictionary. It validates the configuration</span>
-<span class="sd">    against the agent&#39;s expected config model, initializes required producers and</span>
-<span class="sd">    databases, and returns a fully configured agent instance.</span>
+<span class="sd">    ``AgentFactory`` is a stateless factory that instantiates agent objects</span>
+<span class="sd">    based on a raw configuration dictionary. It validates the configuration</span>
+<span class="sd">    against the agent&#39;s registered configuration model, initializes all</span>
+<span class="sd">    required shared resources (producers and databases), and returns a fully</span>
+<span class="sd">    configured agent instance.</span>
+
+<span class="sd">    This factory does **not** cache agent instances: each call to</span>
+<span class="sd">    :meth:`create` returns a new agent object. Shared resources such as</span>
+<span class="sd">    producers and databases are retrieved through their respective factories</span>
+<span class="sd">    and are internally cached.</span>
+
+<span class="sd">    The factory relies on:</span>
+
+<span class="sd">    - ``AGENT_REGISTRY``: a registry mapping agent types to their corresponding</span>
+<span class="sd">      configuration model and agent class.</span>
+<span class="sd">    - ``ProducerFactory``: used to initialize producer connections required</span>
+<span class="sd">      by the agent.</span>
+<span class="sd">    - ``DatabaseFactory``: used to initialize database connections referenced</span>
+<span class="sd">      by producer data connections.</span>
 
 <span class="sd">    **Responsibilities:**</span>
 
 <span class="sd">    - Validate the agent type from the configuration</span>
-<span class="sd">    - Instantiate the correct agent class</span>
-<span class="sd">    - Initialize associated producer connections</span>
-<span class="sd">    - Initialize associated database connections for data connections</span>
+<span class="sd">    - Validate the configuration using the registered config model</span>
+<span class="sd">    - Initialize all required producer instances</span>
+<span class="sd">    - Initialize all required database instances</span>
+<span class="sd">    - Instantiate and return a new agent instance</span>
 
-<span class="sd">    **Methods:**</span>
+<span class="sd">    .. note::</span>
 
-<span class="sd">    .. method:: create(raw_config: dict) -&gt; BaseAgent</span>
+<span class="sd">        ``AgentFactory`` is intentionally stateless and thread-safe, as it does</span>
+<span class="sd">        not maintain any internal cache. Resource lifecycle management is</span>
+<span class="sd">        delegated to the corresponding resource factories.</span>
 
-<span class="sd">        Create an agent from a given configuration dictionary.</span>
-
-<span class="sd">        :param raw_config: A dictionary containing the configuration for the agent.</span>
-<span class="sd">        :type raw_config: dict</span>
-<span class="sd">        :return: An instance of the agent class configured according to ``raw_config``.</span>
-<span class="sd">        :rtype: BaseAgent</span>
-<span class="sd">        :raises ValueError: If the agent type is unknown or not registered in ``AGENT_REGISTRY``.</span>
-<span class="sd">        </span>
-<span class="sd">        **Behavior:**</span>
-<span class="sd">        </span>
-<span class="sd">        1. Retrieves the agent type from ``raw_config``.</span>
-<span class="sd">        2. Looks up the agent type in ``AGENT_REGISTRY``.</span>
-<span class="sd">        3. Validates the configuration using the agent&#39;s config model.</span>
-<span class="sd">        4. Creates all producers associated with the agent&#39;s ``producer_connections``.</span>
-<span class="sd">        5. Creates all databases referenced by data connections that have a ``destination_ref``.</span>
-<span class="sd">        6. Instantiates and returns the configured agent.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-
 <div class="viewcode-block" id="AgentFactory.create">
 <a class="viewcode-back" href="../../../modules/apps_logging_app.agents.html#apps_logging_app.agents.factory.AgentFactory.create">[docs]</a>
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">create</span><span class="p">(</span><span class="n">raw_config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create an agent from a given configuration.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            raw_config: A dictionary containing the configuration for the agent.</span>
+<span class="sd">            raw_config (dict): A dictionary containing the configuration for the agent.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            An instance of the agent class with the given configuration.</span>
@@ -402,19 +404,24 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="n">entry</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown agent type: </span><span class="si">{</span><span class="n">agent_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
-        <span class="n">raw_config</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">config_model</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">raw_config</span><span class="p">)</span>
-
-        <span class="n">producer_connections</span> <span class="o">=</span> <span class="n">raw_config</span><span class="o">.</span><span class="n">producer_connections</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">config_model</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">raw_config</span><span class="p">)</span>
 
         <span class="kn">from</span><span class="w"> </span><span class="nn">producers.factory</span><span class="w"> </span><span class="kn">import</span> <span class="n">ProducerFactory</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">databases.factory</span><span class="w"> </span><span class="kn">import</span> <span class="n">DatabaseFactory</span>
-        <span class="k">for</span> <span class="n">producer_connection</span> <span class="ow">in</span> <span class="n">producer_connections</span><span class="p">:</span>
-            <span class="n">ProducerFactory</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">producer_connection</span><span class="o">.</span><span class="n">type</span><span class="p">,</span> <span class="n">producer_connection</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-            <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+
+        <span class="k">for</span> <span class="n">producer_connection</span> <span class="ow">in</span> <span class="n">config</span><span class="o">.</span><span class="n">producer_connections</span><span class="p">:</span>
+            <span class="n">ProducerFactory</span><span class="o">.</span><span class="n">get_instance</span><span class="p">(</span>
+                <span class="n">producer_connection</span><span class="o">.</span><span class="n">type</span><span class="p">,</span> 
+                <span class="n">producer_connection</span><span class="o">.</span><span class="n">name</span>
+            <span class="p">)</span>
+
             <span class="k">for</span> <span class="n">data_connection</span> <span class="ow">in</span> <span class="n">producer_connection</span><span class="o">.</span><span class="n">data_connections</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">data_connection</span><span class="o">.</span><span class="n">destination_ref</span><span class="p">:</span> 
-                    <span class="n">DatabaseFactory</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">data_connection</span><span class="o">.</span><span class="n">destination_ref</span><span class="o">.</span><span class="n">type</span><span class="p">,</span> <span class="n">data_connection</span><span class="o">.</span><span class="n">destination_ref</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">entry</span><span class="o">.</span><span class="n">agent_class</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="n">raw_config</span><span class="p">)</span></div>
+                <span class="k">if</span> <span class="n">data_connection</span><span class="o">.</span><span class="n">destination_ref</span><span class="p">:</span>
+                    <span class="n">DatabaseFactory</span><span class="o">.</span><span class="n">get_instance</span><span class="p">(</span>
+                        <span class="n">data_connection</span><span class="o">.</span><span class="n">destination_ref</span><span class="o">.</span><span class="n">type</span><span class="p">,</span> 
+                        <span class="n">data_connection</span><span class="o">.</span><span class="n">destination_ref</span><span class="o">.</span><span class="n">name</span>
+                    <span class="p">)</span>
+        <span class="k">return</span> <span class="n">entry</span><span class="o">.</span><span class="n">agent_class</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">)</span></div>
 </div>
 
 </pre></div>

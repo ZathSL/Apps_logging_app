@@ -1,52 +1,54 @@
 from .registry import AGENT_REGISTRY
 
-
 class AgentFactory:
 
     """
-    Factory class responsible for creating agent instances from configuration dictionaries.
+    Factory class responsible for creating agent instances from configuration
+    dictionaries.
 
-    ``AgentFactory`` provides a static method ``create`` that instantiates an agent
-    based on a given raw configuration dictionary. It validates the configuration
-    against the agent's expected config model, initializes required producers and
-    databases, and returns a fully configured agent instance.
+    ``AgentFactory`` is a stateless factory that instantiates agent objects
+    based on a raw configuration dictionary. It validates the configuration
+    against the agent's registered configuration model, initializes all
+    required shared resources (producers and databases), and returns a fully
+    configured agent instance.
+
+    This factory does **not** cache agent instances: each call to
+    :meth:`create` returns a new agent object. Shared resources such as
+    producers and databases are retrieved through their respective factories
+    and are internally cached.
+
+    The factory relies on:
+
+    - ``AGENT_REGISTRY``: a registry mapping agent types to their corresponding
+      configuration model and agent class.
+    - ``ProducerFactory``: used to initialize producer connections required
+      by the agent.
+    - ``DatabaseFactory``: used to initialize database connections referenced
+      by producer data connections.
 
     **Responsibilities:**
 
     - Validate the agent type from the configuration
-    - Instantiate the correct agent class
-    - Initialize associated producer connections
-    - Initialize associated database connections for data connections
+    - Validate the configuration using the registered config model
+    - Initialize all required producer instances
+    - Initialize all required database instances
+    - Instantiate and return a new agent instance
 
-    **Methods:**
+    .. note::
 
-    .. method:: create(raw_config: dict) -> BaseAgent
+        ``AgentFactory`` is intentionally stateless and thread-safe, as it does
+        not maintain any internal cache. Resource lifecycle management is
+        delegated to the corresponding resource factories.
 
-        Create an agent from a given configuration dictionary.
-
-        :param raw_config: A dictionary containing the configuration for the agent.
-        :type raw_config: dict
-        :return: An instance of the agent class configured according to ``raw_config``.
-        :rtype: BaseAgent
-        :raises ValueError: If the agent type is unknown or not registered in ``AGENT_REGISTRY``.
-        
-        **Behavior:**
-        
-        1. Retrieves the agent type from ``raw_config``.
-        2. Looks up the agent type in ``AGENT_REGISTRY``.
-        3. Validates the configuration using the agent's config model.
-        4. Creates all producers associated with the agent's ``producer_connections``.
-        5. Creates all databases referenced by data connections that have a ``destination_ref``.
-        6. Instantiates and returns the configured agent.
     """
-
     @staticmethod
     def create(raw_config: dict):
+
         """
         Create an agent from a given configuration.
 
         Args:
-            raw_config: A dictionary containing the configuration for the agent.
+            raw_config (dict): A dictionary containing the configuration for the agent.
 
         Returns:
             An instance of the agent class with the given configuration.
@@ -59,16 +61,21 @@ class AgentFactory:
         if not entry:
             raise ValueError(f"Unknown agent type: {agent_type}")
 
-        raw_config = entry.config_model.model_validate(raw_config)
-
-        producer_connections = raw_config.producer_connections
+        config = entry.config_model.model_validate(raw_config)
 
         from producers.factory import ProducerFactory
         from databases.factory import DatabaseFactory
-        for producer_connection in producer_connections:
-            ProducerFactory.create(producer_connection.type, producer_connection.name)
-            import time
+
+        for producer_connection in config.producer_connections:
+            ProducerFactory.get_instance(
+                producer_connection.type, 
+                producer_connection.name
+            )
+
             for data_connection in producer_connection.data_connections:
-                if data_connection.destination_ref: 
-                    DatabaseFactory.create(data_connection.destination_ref.type, data_connection.destination_ref.name)
-        return entry.agent_class(config=raw_config)
+                if data_connection.destination_ref:
+                    DatabaseFactory.get_instance(
+                        data_connection.destination_ref.type, 
+                        data_connection.destination_ref.name
+                    )
+        return entry.agent_class(config=config)
