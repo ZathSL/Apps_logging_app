@@ -3,6 +3,7 @@ from typing import Dict, Any, Optional, List
 from ..registry import register_database
 from .config import OracleDatabaseConfig
 from ..base import BaseDatabase
+from ..model import QueryTask
 import oracledb
 
 @register_database(
@@ -54,7 +55,7 @@ class OracleDatabase(BaseDatabase):
         )
         """
 
-    def _connect(self):
+    def connect(self):
         """
         Connects to the Oracle Database using the built DSN string and configuration.
 
@@ -84,22 +85,17 @@ class OracleDatabase(BaseDatabase):
         except Exception as e:
             self.logger.error(f"Client DB {self.config.type}-{self.config.name}: Failed to connect: {e}")
             raise
-    
-    def _query(self, query: str, params: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
-        """
-        Executes a query on the Oracle Database using the connection pool.
 
-        Args:
-            query (str): The SQL query to execute.
-            params (Optional[Dict[str, Any]], optional): The parameters to pass to the query. Defaults to None.
+    def close(self) -> None:
+        self.pool.close()
 
-        Returns:
-            List[Dict[str, Any]]: A list of dictionaries, where each dictionary represents a row in the result set.
-        """
-
-        with self.pool.acquire() as conn:
-            with conn.cursor() as cur:
-                cur.execute(query, params or {})
-                columns = [col[0].lower() for col in cur.description]
-                rows = cur.fetchall()
-                return [dict(zip(columns, row)) for row in rows]
+    def _query(self, task: QueryTask) -> List[Dict[str, Any]]:
+        try:
+            with self.pool.acquire() as conn:
+                with conn.cursor() as cur:
+                    cur.execute(task.query, task.params or {})
+                    columns = [col[0].lower() for col in cur.description]
+                    rows = cur.fetchall()
+                    return [dict(zip(columns, row)) for row in rows]
+        except Exception:
+            raise

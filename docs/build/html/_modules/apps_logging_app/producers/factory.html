@@ -436,8 +436,9 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            BaseProducer: The instantiated producer class.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">config_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s1">&#39;configs&#39;</span> <span class="o">/</span> <span class="s1">&#39;producers.yaml&#39;</span>
         <span class="k">if</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_config</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">))</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s1">&#39;configs&#39;</span> <span class="o">/</span> <span class="s1">&#39;producers.yaml&#39;</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">config_path</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
                 <span class="bp">cls</span><span class="o">.</span><span class="n">_config</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">f</span><span class="p">)[</span><span class="s2">&quot;producers&quot;</span><span class="p">]</span>
 
         <span class="n">raw_config</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span>

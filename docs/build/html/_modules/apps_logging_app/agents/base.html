@@ -1307,39 +1307,46 @@
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_data_connections_execute_queries</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Executes queries for all working data connections that have a database name and</span>
-<span class="sd">        are not currently executing a query.</span>
+<span class="sd">        Executes queries for data connections if the data connection has a database name and</span>
+<span class="sd">        is not currently in progress.</span>
 
-<span class="sd">        For each working data connection, it gets the database instance from the</span>
-<span class="sd">        DATABASE_INSTANCES factory and executes the query using the database instance.</span>
-<span class="sd">        It then adds a done callback to the future to update the working data connection</span>
-<span class="sd">        status when the query is finished executing.</span>
+<span class="sd">        It iterates over all working data connections and for each one, it gets the</span>
+<span class="sd">        database instance from the DatabaseFactory and executes the query. It then</span>
+<span class="sd">        sets the query_in_progress flag on the data connection to True and adds a done callback</span>
+<span class="sd">        to the Future returned by the database instance. The done callback is a partial</span>
+<span class="sd">        function of _on_done with the working data connection as an argument.</span>
+
+<span class="sd">        If an error occurs while executing the query, it logs the error.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">databases.factory</span><span class="w"> </span><span class="kn">import</span> <span class="n">DATABASE_INSTANCES</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">..databases.factory</span><span class="w"> </span><span class="kn">import</span> <span class="n">DatabaseFactory</span>
 
         <span class="k">for</span> <span class="n">working_data_connection</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">working_data_connections</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">working_data_connection</span><span class="o">.</span><span class="n">database_name</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">working_data_connection</span><span class="o">.</span><span class="n">query_in_progress</span><span class="p">:</span>
-                <span class="n">database_instance</span> <span class="o">=</span> <span class="n">DATABASE_INSTANCES</span><span class="o">.</span><span class="n">get</span><span class="p">((</span><span class="n">working_data_connection</span><span class="o">.</span><span class="n">database_type</span><span class="p">,</span> <span class="n">working_data_connection</span><span class="o">.</span><span class="n">database_name</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">working_data_connection</span><span class="o">.</span><span class="n">database_name</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">working_data_connection</span><span class="o">.</span><span class="n">query_in_progress</span><span class="p">:</span>                
+                <span class="n">database_instance</span> <span class="o">=</span> <span class="n">DatabaseFactory</span><span class="o">.</span><span class="n">get_instance</span><span class="p">(</span>
+                    <span class="n">working_data_connection</span><span class="o">.</span><span class="n">database_type</span><span class="p">,</span>
+                    <span class="n">working_data_connection</span><span class="o">.</span><span class="n">database_name</span>
+                <span class="p">)</span>
                 <span class="n">working_data_connection</span><span class="o">.</span><span class="n">query_in_progress</span> <span class="o">=</span> <span class="kc">True</span>
                 <span class="n">future</span> <span class="o">=</span> <span class="n">database_instance</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">working_data_connection</span><span class="o">.</span><span class="n">query</span><span class="p">,</span> <span class="n">working_data_connection</span><span class="o">.</span><span class="n">data_dict_query_source</span><span class="p">)</span>
                 <span class="n">future</span><span class="o">.</span><span class="n">add_done_callback</span><span class="p">(</span><span class="n">partial</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_on_done</span><span class="p">,</span> <span class="n">working_data_connection</span><span class="p">))</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_send_messages_to_producers</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Sends messages extracted from data connections to producers.</span>
+<span class="sd">        Sends messages to producers.</span>
 
-<span class="sd">        It iterates over all working data connections and for each one, it gets the</span>
-<span class="sd">        producer instance from the PRODUCER_INSTANCES factory and sends the message</span>
-<span class="sd">        to the producer if the data connection has a result and is updated. It then</span>
-<span class="sd">        resets the is_updated flag on the data connection.</span>
+<span class="sd">        It iterates over all working data connections and for each one, it gets the producer instance from</span>
+<span class="sd">        the ProducerFactory and sends the message to the producer if the working data connection has a result</span>
+<span class="sd">        and is updated. It then resets the is_updated flag on the working data connection.</span>
 
 <span class="sd">        If an error occurs while sending the message to the producer, it logs the error.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        
-        <span class="kn">from</span><span class="w"> </span><span class="nn">producers.factory</span><span class="w"> </span><span class="kn">import</span> <span class="n">PRODUCER_INSTANCES</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">..producers.factory</span><span class="w"> </span><span class="kn">import</span> <span class="n">ProducerFactory</span>
         
         <span class="k">for</span> <span class="n">working_data_connection</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">working_data_connections</span><span class="p">:</span>
-            <span class="n">producer_instance</span> <span class="o">=</span> <span class="n">PRODUCER_INSTANCES</span><span class="o">.</span><span class="n">get</span><span class="p">((</span><span class="n">working_data_connection</span><span class="o">.</span><span class="n">producer_type</span><span class="p">,</span> <span class="n">working_data_connection</span><span class="o">.</span><span class="n">producer_name</span><span class="p">))</span>
+            <span class="n">producer_instance</span> <span class="o">=</span> <span class="n">ProducerFactory</span><span class="o">.</span><span class="n">get_instance</span><span class="p">(</span>
+                <span class="n">working_data_connection</span><span class="o">.</span><span class="n">producer_type</span><span class="p">,</span> 
+                <span class="n">working_data_connection</span><span class="o">.</span><span class="n">producer_name</span>
+            <span class="p">)</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">working_data_connection</span><span class="o">.</span><span class="n">data_dict_result</span> <span class="ow">and</span> <span class="n">working_data_connection</span><span class="o">.</span><span class="n">is_updated</span><span class="p">:</span>
                     <span class="n">producer_instance</span><span class="o">.</span><span class="n">produce</span><span class="p">(</span><span class="n">working_data_connection</span><span class="o">.</span><span class="n">is_error</span><span class="p">,</span> <span class="n">working_data_connection</span><span class="o">.</span><span class="n">data_dict_result</span><span class="p">)</span>

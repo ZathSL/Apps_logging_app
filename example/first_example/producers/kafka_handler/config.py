@@ -19,12 +19,6 @@ class KafkaHandlerConfig(BaseProducerConfig):
     # Field validator brokers
     @field_validator('brokers')
     def validate_brokers(cls, v):
-        """
-        Validate that the brokers configuration option is a non-empty list of broker addresses.
-
-        Raises:
-            ValueError: If the brokers configuration option is not a non-empty list of broker addresses.
-        """
         if not v or not isinstance(v, list) or len(v) == 0:
             raise ValueError('Brokers must be a non-empty list of broker addresses')
         for broker in v:
@@ -35,12 +29,6 @@ class KafkaHandlerConfig(BaseProducerConfig):
     # Field validator security_protocol
     @field_validator('security_protocol')
     def validate_security_protocol(cls, v):
-        """
-        Validate that the security protocol configuration option is one of the supported security protocols.
-
-        Raises:
-            ValueError: If the security protocol configuration option is not one of the supported security protocols.
-        """
         valid_protocols = {"SSL", "PLAINTEXT", "SASL_SSL", "SASL_PLAINTEXT"}
         if v not in valid_protocols:
             raise ValueError(f"Security protocol must be one of {valid_protocols}")
@@ -49,12 +37,6 @@ class KafkaHandlerConfig(BaseProducerConfig):
     # Field validator acks
     @field_validator('acks')
     def validate_acks(cls, v):
-        """
-        Validate that the acks configuration option is one of the supported acks values.
-
-        Raises:
-            ValueError: If the acks configuration option is not one of the supported acks values.
-        """
         valid_acks = {"all", "0", "1"}
         if v not in valid_acks:
             raise ValueError(f"Acks must be one of {valid_acks}")
@@ -63,12 +45,6 @@ class KafkaHandlerConfig(BaseProducerConfig):
     # Field validator retries, batch_size, linger_ms, buffer_memory
     @field_validator('retries', 'batch_size', 'linger_ms', 'buffer_memory')
     def validate_positive_int(cls, v, field):
-        """
-        Validate that the given field value is a non-negative integer.
-
-        Raises:
-            ValueError: If the field value is a negative integer.
-        """
         if v < 0:
             raise ValueError(f"{field.name} must be a non-negative integer")
         return v

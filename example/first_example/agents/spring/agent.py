@@ -1,4 +1,4 @@
-from typing import List
+from typing import Dict, Any
 from ..base import BaseAgent
 from ..registry import register_agent
 from .config import SpringAgentConfig
@@ -12,7 +12,7 @@ class SpringAgent(BaseAgent):
     def __init__(self, config: SpringAgentConfig):
         super().__init__(config)
 
-    def _data_connections_transformation_and_filtering(self, working_data_connections: List[WorkingDataConnection]) -> List[WorkingDataConnection]:
-        super()._data_connections_transformation_and_filtering(working_data_connections=working_data_connections)
-        return working_data_connections
+    def _data_connections_transformation_and_filtering(self, working_data_connection: WorkingDataConnection) -> Dict[str, Any]:
+        super()._data_connections_transformation_and_filtering(working_data_connections=working_data_connection)
+        return working_data_connection
         

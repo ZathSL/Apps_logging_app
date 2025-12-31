@@ -10,17 +10,6 @@ from .databases.oracle.database import OracleDatabase              # Import requ
 from .producers.kafka_handler.producer import KafkaHandlerProducer # Import required to register agent, database and producer classes
 
 def main():
-    """
-    Main entry point for the application.
-
-    This function loads the configuration from base.yaml and agents.yaml,
-    sets up the logging system, creates instances of the agents using
-    the factory, and then enters an infinite loop to maintain the
-    application in execution.
-
-    The application can be stopped by sending a SIGINT signal (e.g.
-    using Ctrl+C in the terminal).
-    """
     base_config_path = Path(__file__).parent / 'configs' / 'base.yaml'
     with open(base_config_path, 'r') as f:
         base_config = yaml.safe_load(f)

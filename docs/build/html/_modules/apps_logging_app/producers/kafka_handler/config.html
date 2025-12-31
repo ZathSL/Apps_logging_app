@@ -342,7 +342,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span>
 
 <div class="viewcode-block" id="KafkaHandlerConfig">
-<a class="viewcode-back" href="../../../../apps_logging_app.producers.kafka_handler.html#apps_logging_app.producers.kafka_handler.config.KafkaHandlerConfig">[docs]</a>
+<a class="viewcode-back" href="../../../../modules/apps_logging_app.producers.kafka_handler.html#apps_logging_app.producers.kafka_handler.config.KafkaHandlerConfig">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">KafkaHandlerConfig</span><span class="p">(</span><span class="n">BaseProducerConfig</span><span class="p">):</span>
     <span class="n">brokers</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
     <span class="n">security_protocol</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;SSL&quot;</span>
@@ -359,7 +359,7 @@
 
     <span class="c1"># Field validator brokers</span>
 <div class="viewcode-block" id="KafkaHandlerConfig.validate_brokers">
-<a class="viewcode-back" href="../../../../apps_logging_app.producers.kafka_handler.html#apps_logging_app.producers.kafka_handler.config.KafkaHandlerConfig.validate_brokers">[docs]</a>
+<a class="viewcode-back" href="../../../../modules/apps_logging_app.producers.kafka_handler.html#apps_logging_app.producers.kafka_handler.config.KafkaHandlerConfig.validate_brokers">[docs]</a>
     <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;brokers&#39;</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">validate_brokers</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -378,7 +378,7 @@
     
     <span class="c1"># Field validator security_protocol</span>
 <div class="viewcode-block" id="KafkaHandlerConfig.validate_security_protocol">
-<a class="viewcode-back" href="../../../../apps_logging_app.producers.kafka_handler.html#apps_logging_app.producers.kafka_handler.config.KafkaHandlerConfig.validate_security_protocol">[docs]</a>
+<a class="viewcode-back" href="../../../../modules/apps_logging_app.producers.kafka_handler.html#apps_logging_app.producers.kafka_handler.config.KafkaHandlerConfig.validate_security_protocol">[docs]</a>
     <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;security_protocol&#39;</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">validate_security_protocol</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -395,7 +395,7 @@
 
     <span class="c1"># Field validator acks</span>
 <div class="viewcode-block" id="KafkaHandlerConfig.validate_acks">
-<a class="viewcode-back" href="../../../../apps_logging_app.producers.kafka_handler.html#apps_logging_app.producers.kafka_handler.config.KafkaHandlerConfig.validate_acks">[docs]</a>
+<a class="viewcode-back" href="../../../../modules/apps_logging_app.producers.kafka_handler.html#apps_logging_app.producers.kafka_handler.config.KafkaHandlerConfig.validate_acks">[docs]</a>
     <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;acks&#39;</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">validate_acks</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -412,7 +412,7 @@
     
     <span class="c1"># Field validator retries, batch_size, linger_ms, buffer_memory</span>
 <div class="viewcode-block" id="KafkaHandlerConfig.validate_positive_int">
-<a class="viewcode-back" href="../../../../apps_logging_app.producers.kafka_handler.html#apps_logging_app.producers.kafka_handler.config.KafkaHandlerConfig.validate_positive_int">[docs]</a>
+<a class="viewcode-back" href="../../../../modules/apps_logging_app.producers.kafka_handler.html#apps_logging_app.producers.kafka_handler.config.KafkaHandlerConfig.validate_positive_int">[docs]</a>
     <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;retries&#39;</span><span class="p">,</span> <span class="s1">&#39;batch_size&#39;</span><span class="p">,</span> <span class="s1">&#39;linger_ms&#39;</span><span class="p">,</span> <span class="s1">&#39;buffer_memory&#39;</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">validate_positive_int</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">field</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>

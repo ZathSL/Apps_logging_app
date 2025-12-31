@@ -33,6 +33,6 @@ services:
       - oracle
     volumes:
       - ../apps_logging_app:/app/apps_logging_app
-    working_dir: /app/apps_logging_app
-    command: ["python", "main.py"]
+    working_dir: /app
+    command: ["python", "-m", "apps_logging_app.main"]
 

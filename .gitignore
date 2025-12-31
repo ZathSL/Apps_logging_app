@@ -15,3 +15,5 @@ apps_logging_app/producers/kafka_handler
 cicd/ansible
 cicd/pipelines
 /docker
+apps_logging_app/orchestration/__pycache__/
+apps_logging_app/logs/*

@@ -13,24 +13,9 @@ from kafka.errors import NodeNotReadyError, TopicAlreadyExistsError
 )
 class KafkaHandlerProducer(BaseProducer):
     def __init__(self, config: KafkaHandlerConfig):
-        
-        
-        """
-        Initialize a KafkaHandlerProducer.
-
-        :param config: The config to use for connecting to Kafka
-        :type config: KafkaHandlerConfig
-        """
         super().__init__(config)
 
-    def _connect(self):
-        
-        """
-        Connect to Kafka using the config provided.
-
-        :raises:
-            Exception: If impossible to connect to Kafka
-        """
+    def connect(self):
         try:
             self.producer = KafkaProducer(
                 bootstrap_servers=self.config.brokers,
@@ -40,30 +25,15 @@ class KafkaHandlerProducer(BaseProducer):
             self.logger.critical(f"Impossibile creare KafkaProducer: {e}")
             raise
 
-    def _send(self, is_error: bool, message: Dict[str, Any]) -> None:
-        # Implement sending logic to Kafka
-        """
-        Send a message to Kafka.
-
-        :param is_error: If the message is an error
-        :type is_error: bool
-        :param message: The message to send
-        :type message: Dict[str, Any]
-        :raises:
-            Exception: If impossible to send message
-        """
-        try:
-            self.producer.send(self.config.topic, value={"is_error": is_error, "message": message})
-            self.producer.flush()
-        except Exception as e:
-            self.logger.error(f"Impossible to send message: {e}")
-            raise
-    def _close(self) -> None:
-        # Implement closing logic to Kafka
-        """
-        Close the Kafka producer.
-
-        This method will flush any pending messages to be sent and then close the producer.
-        """
+    def close(self) -> None:
         self.producer.flush()
         self.producer.close()
+
+    def _send(self, is_error: bool, message: Any) -> None:
+        try:
+            self.producer.send(self.config.topic, value={"is_error": is_error, "message": message})
+            self.logger.info(f"Producer {self.config.type}-{self.config.name}: Message {message} sent to Kafka")
+            self.producer.flush()
+        except Exception:
+            raise
+        
