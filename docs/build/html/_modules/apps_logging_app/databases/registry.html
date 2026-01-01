@@ -277,6 +277,7 @@
 <li class="toctree-l4"><a class="reference internal" href="../../../modules/apps_logging_app.databases.oracle.html">apps_logging_app.databases.oracle package</a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="../../../modules/apps_logging_app.orchestration.html">apps_logging_app.orchestration package</a></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="../../../modules/apps_logging_app.producers.html">apps_logging_app.producers package</a><input aria-label="Toggle navigation of apps_logging_app.producers package" class="toctree-checkbox" id="toctree-checkbox-20" name="toctree-checkbox-20" role="switch" type="checkbox"/><label for="toctree-checkbox-20"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l4"><a class="reference internal" href="../../../modules/apps_logging_app.producers.kafka_handler.html">apps_logging_app.producers.kafka_handler package</a></li>
 </ul>
@@ -294,6 +295,7 @@
 <li class="toctree-l5"><a class="reference internal" href="../../../modules/apps_logging_app.databases.oracle.html">apps_logging_app.databases.oracle package</a></li>
 </ul>
 </li>
+<li class="toctree-l4"><a class="reference internal" href="../../../modules/apps_logging_app.orchestration.html">apps_logging_app.orchestration package</a></li>
 <li class="toctree-l4 has-children"><a class="reference internal" href="../../../modules/apps_logging_app.producers.html">apps_logging_app.producers package</a><input aria-label="Toggle navigation of apps_logging_app.producers package" class="toctree-checkbox" id="toctree-checkbox-25" name="toctree-checkbox-25" role="switch" type="checkbox"/><label for="toctree-checkbox-25"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l5"><a class="reference internal" href="../../../modules/apps_logging_app.producers.kafka_handler.html">apps_logging_app.producers.kafka_handler package</a></li>
 </ul>
@@ -346,32 +348,34 @@
 <div class="viewcode-block" id="DatabaseEntry">
 <a class="viewcode-back" href="../../../modules/apps_logging_app.databases.html#apps_logging_app.databases.registry.DatabaseEntry">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">DatabaseEntry</span><span class="p">(</span><span class="n">Generic</span><span class="p">[</span><span class="n">C</span><span class="p">]):</span>
-
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Represents a registry entry for a database type.</span>
 
-<span class="sd">    Each DatabaseEntry associates a database configuration model</span>
-<span class="sd">    with its corresponding database class. This allows the system</span>
-<span class="sd">    to instantiate database objects dynamically from a configuration</span>
-<span class="sd">    without hardcoding class names.</span>
+<span class="sd">    Each DatabaseEntry binds a database class to its corresponding configuration model.</span>
+<span class="sd">    It is used internally by the :data:`DATABASE_REGISTRY` to map database types to</span>
+<span class="sd">    their implementation and configuration schema.</span>
 
-<span class="sd">    Attributes:</span>
-<span class="sd">        config_model (Type[C]): The Pydantic model used to validate the database configuration.</span>
-<span class="sd">        database_class (Type[BaseDatabase]): The class of the database to instantiate.</span>
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    config_model : Type[C]</span>
+<span class="sd">        The Pydantic configuration model class associated with this database.</span>
+<span class="sd">        This model defines the structure and validation rules for the database configuration.</span>
+<span class="sd">    database_class : Type[BaseDatabase]</span>
+<span class="sd">        The actual database class associated with this entry.</span>
+<span class="sd">        This class must inherit from :class:`BaseDatabase`.</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    Instances of this class are typically created automatically by the</span>
+<span class="sd">    :func:`register_database` decorator and stored in :data:`DATABASE_REGISTRY`.</span>
+<span class="sd">    You generally do not instantiate this class manually.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-
     <span class="n">config_model</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">C</span><span class="p">]</span>
     <span class="n">database_class</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">BaseDatabase</span><span class="p">]</span></div>
 
 
-<span class="n">DATABASE_REGISTRY</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">DatabaseEntry</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="n">DATABASE_REGISTRY</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">DatabaseEntry</span><span class="p">[</span><span class="n">BaseDatabaseConfig</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
 
-<span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">A global registry that maps database types (str) to their corresponding ``DatabaseEntry`` objects.</span>
-
-<span class="sd">This registry is used by factories like ``DatabaseFactory`` to look up and create database</span>
-<span class="sd">instances based on their type.</span>
-<span class="sd">&quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="register_database">
 <a class="viewcode-back" href="../../../modules/apps_logging_app.databases.html#apps_logging_app.databases.registry.register_database">[docs]</a>
@@ -381,20 +385,20 @@
     <span class="n">config_model</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">BaseDatabaseConfig</span><span class="p">],</span>
 <span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Registers a database class with the given config model and type.</span>
+<span class="sd">    A decorator that registers a database class with the given config model and type.</span>
+
+<span class="sd">    The decorator sets the type attribute of the database class to the given type.</span>
+<span class="sd">    It also creates a DatabaseEntry and adds it to the DATABASE_REGISTRY with the given type as the key.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        database_class (Type[BaseDatabase]): The database class to register.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Type[BaseDatabase]: The registered database class.</span>
-
-<span class="sd">    The decorator sets the type attribute of the database class to the given type.</span>
-<span class="sd">    It also creates a DatabaseEntry and adds it to the DATABASE_REGISTRY with the given type as the key.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">decorator</span><span class="p">(</span><span class="n">database_class</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">BaseDatabase</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Type</span><span class="p">[</span><span class="n">BaseDatabase</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        A decorator that registers the database class with the given config model and type.</span>
+<span class="sd">        A decorator that registers a database class with the given config model and type.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            database_class (Type[BaseDatabase]): The database class to register.</span>
@@ -405,6 +409,7 @@
 <span class="sd">        The decorator sets the type attribute of the database class to the given type.</span>
 <span class="sd">        It also creates a DatabaseEntry and adds it to the DATABASE_REGISTRY with the given type as the key.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">database_class</span><span class="p">,</span> <span class="n">BaseDatabase</span><span class="p">)</span>
         <span class="n">entry</span> <span class="o">=</span> <span class="n">DatabaseEntry</span><span class="p">()</span>
         <span class="n">entry</span><span class="o">.</span><span class="n">config_model</span> <span class="o">=</span> <span class="n">config_model</span>
         <span class="n">entry</span><span class="o">.</span><span class="n">database_class</span> <span class="o">=</span> <span class="n">database_class</span>

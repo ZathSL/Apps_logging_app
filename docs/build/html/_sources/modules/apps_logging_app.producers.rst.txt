@@ -28,6 +28,22 @@ apps\_logging\_app.producers.factory module
    :show-inheritance:
    :undoc-members:
 
+apps\_logging\_app.producers.model module
+-----------------------------------------
+
+.. automodule:: apps_logging_app.producers.model
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+apps\_logging\_app.producers.orchestrator module
+------------------------------------------------
+
+.. automodule:: apps_logging_app.producers.orchestrator
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 apps\_logging\_app.producers.registry module
 --------------------------------------------
 

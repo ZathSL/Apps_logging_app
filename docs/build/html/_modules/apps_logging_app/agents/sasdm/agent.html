@@ -277,6 +277,7 @@
 <li class="toctree-l4"><a class="reference internal" href="../../../../modules/apps_logging_app.databases.oracle.html">apps_logging_app.databases.oracle package</a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../modules/apps_logging_app.orchestration.html">apps_logging_app.orchestration package</a></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="../../../../modules/apps_logging_app.producers.html">apps_logging_app.producers package</a><input aria-label="Toggle navigation of apps_logging_app.producers package" class="toctree-checkbox" id="toctree-checkbox-20" name="toctree-checkbox-20" role="switch" type="checkbox"/><label for="toctree-checkbox-20"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l4"><a class="reference internal" href="../../../../modules/apps_logging_app.producers.kafka_handler.html">apps_logging_app.producers.kafka_handler package</a></li>
 </ul>
@@ -294,6 +295,7 @@
 <li class="toctree-l5"><a class="reference internal" href="../../../../modules/apps_logging_app.databases.oracle.html">apps_logging_app.databases.oracle package</a></li>
 </ul>
 </li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../modules/apps_logging_app.orchestration.html">apps_logging_app.orchestration package</a></li>
 <li class="toctree-l4 has-children"><a class="reference internal" href="../../../../modules/apps_logging_app.producers.html">apps_logging_app.producers package</a><input aria-label="Toggle navigation of apps_logging_app.producers package" class="toctree-checkbox" id="toctree-checkbox-25" name="toctree-checkbox-25" role="switch" type="checkbox"/><label for="toctree-checkbox-25"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l5"><a class="reference internal" href="../../../../modules/apps_logging_app.producers.kafka_handler.html">apps_logging_app.producers.kafka_handler package</a></li>
 </ul>
@@ -337,7 +339,7 @@
         </div>
         <article role="main" id="furo-main-content">
           <h1>Source code for apps_logging_app.agents.sasdm.agent</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span>
+<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">..base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseAgent</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">..registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">register_agent</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">SasdmAgentConfig</span>
@@ -351,62 +353,21 @@
     <span class="n">config_model</span><span class="o">=</span><span class="n">SasdmAgentConfig</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">SasdmAgent</span><span class="p">(</span><span class="n">BaseAgent</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Agent responsible for processing SASDM-related working data connections.</span>
-
-<span class="sd">    The agent transforms and filters ``WorkingDataConnection`` objects by</span>
-<span class="sd">    parsing JSON responses and extracting a predefined subset of fields.</span>
-
-<span class="sd">    Supported working data connection names:</span>
-<span class="sd">    - ``info_pattern``</span>
-<span class="sd">    - ``info_pattern_engagement_all_messages``</span>
-
-<span class="sd">    For matching connections, the agent extracts the following keys from the</span>
-<span class="sd">    JSON response:</span>
-<span class="sd">    - ``externalCode``</span>
-<span class="sd">    - ``status``</span>
-<span class="sd">    - ``httpStatus``</span>
-
-<span class="sd">    The extracted data is stored in the ``data_dict_result`` attribute of the</span>
-<span class="sd">    corresponding ``WorkingDataConnection``.</span>
-
-<span class="sd">    :param config: Configuration object for the agent.</span>
-<span class="sd">    :type config: SasdmAgentConfig</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">SasdmAgentConfig</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initializes the SasdmAgent with the given config.</span>
-
-<span class="sd">        :param config: The config for the agent.</span>
-<span class="sd">        :type config: SasdmAgentConfig</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+ 
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">SasdmAgentConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_data_connections_transformation_and_filtering</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">working_data_connections</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">WorkingDataConnection</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">WorkingDataConnection</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Transforms and filters the given working data connections.</span>
-
-<span class="sd">        It iterates over the given working data connections and for each one, it checks if the</span>
-<span class="sd">        name of the working data connection matches &#39;info_pattern&#39; or</span>
-<span class="sd">        &#39;info_pattern_engagement_all_messages&#39;. If it does, it extracts the given keys from the</span>
-<span class="sd">        JSON response and sets the data_dict_result attribute of the working data connection</span>
-<span class="sd">        to the extracted values.</span>
-
-<span class="sd">        :param working_data_connections: The list of working data connections to transform and filter.</span>
-<span class="sd">        :return: The list of transformed and filtered working data connections.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">for</span> <span class="n">working_data_connection</span> <span class="ow">in</span> <span class="n">working_data_connections</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">working_data_connection</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;info_pattern&#39;</span><span class="p">:</span>
-                <span class="n">working_data_connection</span><span class="o">.</span><span class="n">data_dict_match</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">working_data_connection</span><span class="o">.</span><span class="n">data_dict_match</span><span class="p">[</span><span class="s1">&#39;response_json&#39;</span><span class="p">])</span>
-                <span class="n">keys_to_extract</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;externalCode&quot;</span><span class="p">,</span> <span class="s2">&quot;status&quot;</span><span class="p">,</span> <span class="s2">&quot;httpStatus&quot;</span><span class="p">]</span>
-                <span class="n">new_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">working_data_connection</span><span class="o">.</span><span class="n">data_dict_match</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">keys_to_extract</span><span class="p">}</span>
-                <span class="n">working_data_connection</span><span class="o">.</span><span class="n">data_dict_result</span> <span class="o">=</span> <span class="n">new_dict</span>
-            <span class="k">elif</span> <span class="n">working_data_connection</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;info_pattern_engagement_all_messages&#39;</span><span class="p">:</span>
-                <span class="n">working_data_connection</span><span class="o">.</span><span class="n">data_dict_match</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">working_data_connection</span><span class="o">.</span><span class="n">data_dict_match</span><span class="p">[</span><span class="s1">&#39;response_json&#39;</span><span class="p">])</span>
-                <span class="n">keys_to_extract</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;externalCode&quot;</span><span class="p">,</span> <span class="s2">&quot;status&quot;</span><span class="p">,</span> <span class="s2">&quot;httpStatus&quot;</span><span class="p">]</span>
-                <span class="n">new_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">working_data_connection</span><span class="o">.</span><span class="n">data_dict_match</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">keys_to_extract</span><span class="p">}</span>
-                <span class="c1">#working_data_connection.data_dict_query_source = new_dict</span>
-        <span class="k">return</span> <span class="n">working_data_connections</span></div>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_data_connections_transformation_and_filtering</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">working_data_connection</span><span class="p">:</span> <span class="n">WorkingDataConnection</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+        <span class="n">new_dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">working_data_connection</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;info_pattern&#39;</span><span class="p">:</span>
+            <span class="n">working_data_connection</span><span class="o">.</span><span class="n">data_dict_match</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">working_data_connection</span><span class="o">.</span><span class="n">data_dict_match</span><span class="p">[</span><span class="s1">&#39;response_json&#39;</span><span class="p">])</span>
+            <span class="n">keys_to_extract</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;externalCode&quot;</span><span class="p">,</span> <span class="s2">&quot;status&quot;</span><span class="p">,</span> <span class="s2">&quot;httpStatus&quot;</span><span class="p">]</span>
+            <span class="n">new_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">working_data_connection</span><span class="o">.</span><span class="n">data_dict_match</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">keys_to_extract</span><span class="p">}</span>
+        <span class="k">elif</span> <span class="n">working_data_connection</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;info_pattern_engagement_all_messages&#39;</span><span class="p">:</span>
+            <span class="n">working_data_connection</span><span class="o">.</span><span class="n">data_dict_match</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">working_data_connection</span><span class="o">.</span><span class="n">data_dict_match</span><span class="p">[</span><span class="s1">&#39;response_json&#39;</span><span class="p">])</span>
+            <span class="n">keys_to_extract</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;externalCode&quot;</span><span class="p">,</span> <span class="s2">&quot;status&quot;</span><span class="p">,</span> <span class="s2">&quot;httpStatus&quot;</span><span class="p">]</span>
+            <span class="n">new_dict</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">working_data_connection</span><span class="o">.</span><span class="n">data_dict_match</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">keys_to_extract</span><span class="p">}</span>
+        <span class="k">return</span> <span class="n">new_dict</span></div>
 
         
 </pre></div>

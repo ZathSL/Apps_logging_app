@@ -277,6 +277,7 @@
 <li class="toctree-l4"><a class="reference internal" href="../../../modules/apps_logging_app.databases.oracle.html">apps_logging_app.databases.oracle package</a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="../../../modules/apps_logging_app.orchestration.html">apps_logging_app.orchestration package</a></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="../../../modules/apps_logging_app.producers.html">apps_logging_app.producers package</a><input aria-label="Toggle navigation of apps_logging_app.producers package" class="toctree-checkbox" id="toctree-checkbox-20" name="toctree-checkbox-20" role="switch" type="checkbox"/><label for="toctree-checkbox-20"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l4"><a class="reference internal" href="../../../modules/apps_logging_app.producers.kafka_handler.html">apps_logging_app.producers.kafka_handler package</a></li>
 </ul>
@@ -294,6 +295,7 @@
 <li class="toctree-l5"><a class="reference internal" href="../../../modules/apps_logging_app.databases.oracle.html">apps_logging_app.databases.oracle package</a></li>
 </ul>
 </li>
+<li class="toctree-l4"><a class="reference internal" href="../../../modules/apps_logging_app.orchestration.html">apps_logging_app.orchestration package</a></li>
 <li class="toctree-l4 has-children"><a class="reference internal" href="../../../modules/apps_logging_app.producers.html">apps_logging_app.producers package</a><input aria-label="Toggle navigation of apps_logging_app.producers package" class="toctree-checkbox" id="toctree-checkbox-25" name="toctree-checkbox-25" role="switch" type="checkbox"/><label for="toctree-checkbox-25"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l5"><a class="reference internal" href="../../../modules/apps_logging_app.producers.kafka_handler.html">apps_logging_app.producers.kafka_handler package</a></li>
 </ul>
@@ -338,70 +340,72 @@
         <article role="main" id="furo-main-content">
           <h1>Source code for apps_logging_app.agents.data</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timedelta</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">List</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">concurrent.futures</span><span class="w"> </span><span class="kn">import</span> <span class="n">Future</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">Enum</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataConnectionConfig</span>
+
+<div class="viewcode-block" id="WorkingDataStatus">
+<a class="viewcode-back" href="../../../modules/apps_logging_app.agents.html#apps_logging_app.agents.data.WorkingDataStatus">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">WorkingDataStatus</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Enumeration representing the lifecycle status of a</span>
+<span class="sd">    :class:`WorkingDataConnection`.</span>
+
+<span class="sd">    This enum is used to track the current state of a working data</span>
+<span class="sd">    connection as it moves through the agent processing pipeline.</span>
+
+<span class="sd">    Possible states are:</span>
+
+<span class="sd">    - ``READY``: The data connection is ready to be processed.</span>
+<span class="sd">    - ``QUERY_RUNNING``: A database query is currently being executed.</span>
+<span class="sd">    - ``UPDATED``: New data is available and ready to be sent to producers.</span>
+<span class="sd">    - ``EXPIRED``: The data connection has expired and will be removed.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">READY</span> <span class="o">=</span> <span class="s2">&quot;ready&quot;</span>
+    <span class="n">QUERY_RUNNING</span> <span class="o">=</span> <span class="s2">&quot;query_running&quot;</span>
+    <span class="n">UPDATED</span> <span class="o">=</span> <span class="s2">&quot;updated&quot;</span>
+    <span class="n">EXPIRED</span> <span class="o">=</span> <span class="s2">&quot;expired&quot;</span></div>
+
 
 <div class="viewcode-block" id="WorkingDataConnection">
 <a class="viewcode-back" href="../../../modules/apps_logging_app.agents.html#apps_logging_app.agents.data.WorkingDataConnection">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">WorkingDataConnection</span><span class="p">:</span>
-
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Represents a working instance of a data connection during agent execution.</span>
+<span class="sd">    Runtime representation of a data connection during agent execution.</span>
 
-<span class="sd">    ``WorkingDataConnection`` is used internally by agents to track the state</span>
-<span class="sd">    of a data connection as it flows through the pipeline, including</span>
-<span class="sd">    extraction from log lines, query execution, and message production.</span>
+<span class="sd">    The :class:`WorkingDataConnection` is a mutable, working-state object</span>
+<span class="sd">    created from a :class:`DataConnectionConfig`. It holds intermediate and</span>
+<span class="sd">    final data extracted from log files, query execution results, and</span>
+<span class="sd">    delivery status toward producers.</span>
 
-<span class="sd">    This class stores both static configuration and dynamic runtime state</span>
-<span class="sd">    such as whether a query is in progress, whether the data has been updated,</span>
-<span class="sd">    and expiration times for cached results.</span>
+<span class="sd">    Instances of this class are managed by :class:`BaseAgent` and move</span>
+<span class="sd">    through different states defined by :class:`WorkingDataStatus`.</span>
 
-<span class="sd">    **Responsibilities:**</span>
+<span class="sd">    A working data connection may:</span>
+<span class="sd">    - Be populated by regex matches from log lines</span>
+<span class="sd">    - Generate and execute database queries</span>
+<span class="sd">    - Store query results</span>
+<span class="sd">    - Be sent to one or more producers</span>
+<span class="sd">    - Expire after a configured time window</span>
 
-<span class="sd">    - Store identification of the data connection (name, producer, database)</span>
-<span class="sd">    - Track matched data from regex extraction</span>
-<span class="sd">    - Store query results and mark if updates occurred</span>
-<span class="sd">    - Track expiration of the data</span>
-<span class="sd">    - Mark whether a query is currently in progress</span>
-
-<span class="sd">    **Attributes:**</span>
-
-<span class="sd">    - ``name`` (str): Unique identifier for this data connection</span>
-<span class="sd">    - ``producer_type`` (str): Type of the producer this data connection belongs to</span>
-<span class="sd">    - ``producer_name`` (str): Name of the producer this data connection belongs to</span>
-<span class="sd">    - ``database_type`` (str, optional): Type of the database this data connection belongs to</span>
-<span class="sd">    - ``database_name`` (str, optional): Name of the database this data connection belongs to</span>
-<span class="sd">    - ``query`` (str, optional): Query associated with this data connection</span>
-<span class="sd">    - ``is_error`` (bool): Indicates if this data connection is associated with an error</span>
-<span class="sd">    - ``expired_time`` (datetime): Expiration timestamp of the data connection</span>
-<span class="sd">    - ``query_in_progress`` (bool): True if a query execution is in progress</span>
-<span class="sd">    - ``is_updated`` (bool): True if the data has been updated since last processing</span>
-<span class="sd">    - ``data_dict_match`` (Dict[str, Any]): Data extracted by regex matches</span>
-<span class="sd">    - ``data_dict_query_source`` (Dict[str, Any]): Data used to generate queries</span>
-<span class="sd">    - ``data_dict_result`` (Dict[str, Any]): Resulting data from executed queries</span>
-
-<span class="sd">    **Methods:**</span>
-
-<span class="sd">    - ``update_expired_time(minutes: int) -&gt; None``: Updates the ``expired_time``</span>
-<span class="sd">      by adding the specified number of minutes to the current time.</span>
-
-<span class="sd">    :param name: Unique identifier for this data connection</span>
+<span class="sd">    :param name: Unique identifier for the data connection.</span>
 <span class="sd">    :type name: str</span>
-<span class="sd">    :param producer_type: Type of the producer this data connection belongs to</span>
+<span class="sd">    :param producer_type: Type of the associated producer.</span>
 <span class="sd">    :type producer_type: str</span>
-<span class="sd">    :param producer_name: Name of the producer this data connection belongs to</span>
+<span class="sd">    :param producer_name: Name of the associated producer.</span>
 <span class="sd">    :type producer_name: str</span>
-<span class="sd">    :param database_type: Type of the database (optional)</span>
-<span class="sd">    :type database_type: str, optional</span>
-<span class="sd">    :param database_name: Name of the database (optional)</span>
-<span class="sd">    :type database_name: str, optional</span>
-<span class="sd">    :param query: Query associated with the data connection (optional)</span>
-<span class="sd">    :type query: str, optional</span>
-<span class="sd">    :param is_error: Whether this connection represents an error</span>
-<span class="sd">    :type is_error: bool, optional</span>
-<span class="sd">    :param expired_time: Expiration timestamp (optional)</span>
-<span class="sd">    :type expired_time: datetime, optional</span>
+<span class="sd">    :param database_type: Type of the destination database, if any.</span>
+<span class="sd">    :type database_type: Optional[str]</span>
+<span class="sd">    :param database_name: Name of the destination database, if any.</span>
+<span class="sd">    :type database_name: Optional[str]</span>
+<span class="sd">    :param query: Query associated with this data connection, if any.</span>
+<span class="sd">    :type query: Optional[str]</span>
+<span class="sd">    :param is_error: Whether this data connection represents an error condition.</span>
+<span class="sd">    :type is_error: bool</span>
+<span class="sd">    :param expired_time: Expiration timestamp for this data connection.</span>
+<span class="sd">    :type expired_time: Optional[datetime]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
                         <span class="n">producer_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> 
                         <span class="n">producer_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -409,36 +413,35 @@
                         <span class="n">database_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                         <span class="n">query</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                         <span class="n">is_error</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-                        <span class="n">expired_time</span><span class="p">:</span> <span class="n">datetime</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">min</span><span class="p">):</span>
-
+                        <span class="n">expired_time</span><span class="p">:</span> <span class="n">datetime</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initialize a WorkingDataConnection object.</span>
+<span class="sd">        Initializes a WorkingDataConnection object.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            name (str): Unique identifier for this data connection.</span>
-<span class="sd">            producer_type (str): Type of the producer that this data connection belongs to.</span>
-<span class="sd">            producer_name (str): Name of the producer that this data connection belongs to.</span>
-<span class="sd">            database_type (str, optional): Type of the database that this data connection belongs to. Defaults to None.</span>
-<span class="sd">            database_name (str, optional): Name of the database that this data connection belongs to. Defaults to None.</span>
-<span class="sd">            query (str, optional): Query associated with this data connection. Defaults to None.</span>
+<span class="sd">            producer_type (str): Type of the producer this data connection belongs to.</span>
+<span class="sd">            producer_name (str): Name of the producer this data connection belongs to.</span>
+<span class="sd">            database_type (Optional[str], optional): Type of the database this data connection belongs to. Defaults to None.</span>
+<span class="sd">            database_name (Optional[str], optional): Name of the database this data connection belongs to. Defaults to None.</span>
+<span class="sd">            query (Optional[str], optional): Query associated with this data connection. Defaults to None.</span>
 <span class="sd">            is_error (bool, optional): Whether this data connection is associated with an error. Defaults to False.</span>
-<span class="sd">            expired_time (datetime, optional): Time at which the data associated with this data connection will expire. Defaults to datetime.min.</span>
+<span class="sd">            expired_time (datetime, optional): Expiration timestamp of the data connection. Defaults to None.</span>
 
 <span class="sd">        Attributes:</span>
 <span class="sd">            name (str): Unique identifier for this data connection.</span>
-<span class="sd">            producer_type (str): Type of the producer that this data connection belongs to.</span>
-<span class="sd">            producer_name (str): Name of the producer that this data connection belongs to.</span>
-<span class="sd">            database_type (str): Type of the database that this data connection belongs to.</span>
-<span class="sd">            database_name (str): Name of the database that this data connection belongs to.</span>
-<span class="sd">            query (str): Query associated with this data connection.</span>
-<span class="sd">            is_error (bool): Whether this data connection is associated with an error.</span>
-<span class="sd">            expired_time (datetime): Time at which the data associated with this data connection will expire.</span>
-<span class="sd">            query_in_progress (bool): Whether a query is currently in progress for this data connection.</span>
-<span class="sd">            is_updated (bool): Whether the data associated with this data connection has been updated.</span>
-<span class="sd">            data_dict_match (Dict[str, Any]): Dictionary containing the data that matched the query associated with this data connection.</span>
-<span class="sd">            data_dict_query_source (Dict[str, Any]): Dictionary containing the data that was used to generate the query associated with this data connection.</span>
-<span class="sd">            data_dict_result (Dict[str, Any]): Dictionary containing the data that was generated by the query associated with this data connection.</span>
+<span class="sd">            producer_type (str): Type of the producer this data connection belongs to.</span>
+<span class="sd">            producer_name (str): Name of the producer this data connection belongs to.</span>
+<span class="sd">            database_type (str, optional): Type of the database this data connection belongs to. Defaults to None.</span>
+<span class="sd">            database_name (str, optional): Name of the database this data connection belongs to. Defaults to None.</span>
+<span class="sd">            query (str, optional): Query associated with this data connection. Defaults to None.</span>
+<span class="sd">            is_error (bool, optional): Whether this data connection is associated with an error. Defaults to False.</span>
+<span class="sd">            expired_time (datetime, optional): Expiration timestamp of the data connection. Defaults to None.</span>
+<span class="sd">            data_dict_match (Optional[Dict[str, Any]], optional): Data extracted by regex matches. Defaults to None.</span>
+<span class="sd">            data_dict_query_source (Optional[Dict[str, Any]], optional): Data used to generate queries. Defaults to None.</span>
+<span class="sd">            data_dict_result (Optional[List[Dict[str, Any]]], optional): Resulting data from executed queries. Defaults to None.</span>
+<span class="sd">            list_data_dict_query_result (Optional[List[Dict[str, Any]]], optional): List of resulting data from executed queries. Defaults to None.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># static</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">name</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">producer_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">producer_type</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">producer_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">producer_name</span>
@@ -448,12 +451,45 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">is_error</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">is_error</span>
 
         <span class="c1"># working data</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">expired_time</span><span class="p">:</span> <span class="n">datetime</span> <span class="o">=</span> <span class="n">expired_time</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">query_in_progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">is_updated</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">data_dict_match</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">data_dict_query_source</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">data_dict_result</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">status</span><span class="p">:</span> <span class="n">WorkingDataStatus</span> <span class="o">=</span> <span class="n">WorkingDataStatus</span><span class="o">.</span><span class="n">READY</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">expired_time</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="n">expired_time</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data_dict_match</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data_dict_query_source</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data_dict_result</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">list_data_dict_query_result</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span>
+    
+<div class="viewcode-block" id="WorkingDataConnection.from_config">
+<a class="viewcode-back" href="../../../modules/apps_logging_app.agents.html#apps_logging_app.agents.data.WorkingDataConnection.from_config">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">producer_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">producer_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">cfg</span><span class="p">:</span> <span class="n">DataConnectionConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;WorkingDataConnection&quot;</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Creates a WorkingDataConnection object from a DataConnectionConfig object.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            producer_type (str): Type of the producer this data connection belongs to.</span>
+<span class="sd">            producer_name (str): Name of the producer this data connection belongs to.</span>
+<span class="sd">            cfg (DataConnectionConfig): DataConnectionConfig object to create the WorkingDataConnection from.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            WorkingDataConnection: A WorkingDataConnection object created from the given DataConnectionConfig object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">expired_time</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">minutes</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">expired_time_int</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">expired_time_int</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="k">else</span> <span class="kc">None</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="n">name</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="n">producer_type</span><span class="o">=</span><span class="n">producer_type</span><span class="p">,</span>
+            <span class="n">producer_name</span><span class="o">=</span><span class="n">producer_name</span><span class="p">,</span>
+            <span class="n">database_type</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">destination_ref</span><span class="o">.</span><span class="n">type</span> <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">destination_ref</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="n">database_name</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">destination_ref</span><span class="o">.</span><span class="n">name</span> <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">destination_ref</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="n">query</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">destination_ref</span><span class="o">.</span><span class="n">query</span> <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">destination_ref</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="n">is_error</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">is_error</span><span class="p">,</span>
+            <span class="n">expired_time</span><span class="o">=</span><span class="n">expired_time</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
 
 <div class="viewcode-block" id="WorkingDataConnection.update_expired_time">
 <a class="viewcode-back" href="../../../modules/apps_logging_app.agents.html#apps_logging_app.agents.data.WorkingDataConnection.update_expired_time">[docs]</a>
@@ -465,7 +501,60 @@
 <span class="sd">            minutes (int): The number of minutes to add to the current time.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">expired_time</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">minutes</span><span class="o">=</span><span class="n">minutes</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="WorkingDataConnection.set_ready_status">
+<a class="viewcode-back" href="../../../modules/apps_logging_app.agents.html#apps_logging_app.agents.data.WorkingDataConnection.set_ready_status">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_ready_status</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sets the status of this WorkingDataConnection to READY if it is not expired.</span>
+
+<span class="sd">        It is used to mark the data connection as ready for further processing after a query execution has finished.</span>
+
+<span class="sd">        :return: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">!=</span> <span class="n">WorkingDataStatus</span><span class="o">.</span><span class="n">EXPIRED</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">WorkingDataStatus</span><span class="o">.</span><span class="n">READY</span></div>
+
+
+<div class="viewcode-block" id="WorkingDataConnection.on_query_done">
+<a class="viewcode-back" href="../../../modules/apps_logging_app.agents.html#apps_logging_app.agents.data.WorkingDataConnection.on_query_done">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_query_done</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fut</span><span class="p">:</span> <span class="n">Future</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Called when a query has finished executing.</span>
+
+<span class="sd">        If the query result is not equal to the current list of results, it updates the list of results and sets the status to UPDATED.</span>
+<span class="sd">        If the query result is equal to the current list of results, it sets the status to READY.</span>
+<span class="sd">        If an exception occurs during the query execution, it sets the status to EXPIRED.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">fut</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">result</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">list_data_dict_query_result</span> <span class="o">!=</span> <span class="n">result</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">list_data_dict_query_result</span> <span class="o">=</span> <span class="n">result</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">WorkingDataStatus</span><span class="o">.</span><span class="n">UPDATED</span>
+            <span class="k">elif</span> <span class="n">result</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">list_data_dict_query_result</span> <span class="o">==</span> <span class="n">result</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">set_ready_status</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">update_expired_time</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="WorkingDataConnection.check_expired_time">
+<a class="viewcode-back" href="../../../modules/apps_logging_app.agents.html#apps_logging_app.agents.data.WorkingDataConnection.check_expired_time">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_expired_time</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Checks if the current time is greater than the expired time of this data connection.</span>
+
+<span class="sd">        If it is, it sets the status of this data connection to EXPIRED. If not, it does nothing.</span>
+
+<span class="sd">        :return: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">expired_time</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">expired_time</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">WorkingDataStatus</span><span class="o">.</span><span class="n">EXPIRED</span></div>
 </div>
+
 
 </pre></div>
         </article>

@@ -278,6 +278,7 @@
 <li class="toctree-l4"><a class="reference internal" href="apps_logging_app.databases.oracle.html">apps_logging_app.databases.oracle package</a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="apps_logging_app.orchestration.html">apps_logging_app.orchestration package</a></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="apps_logging_app.producers.html">apps_logging_app.producers package</a><input aria-label="Toggle navigation of apps_logging_app.producers package" class="toctree-checkbox" id="toctree-checkbox-20" name="toctree-checkbox-20" role="switch" type="checkbox"/><label for="toctree-checkbox-20"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l4"><a class="reference internal" href="apps_logging_app.producers.kafka_handler.html">apps_logging_app.producers.kafka_handler package</a></li>
 </ul>
@@ -295,6 +296,7 @@
 <li class="toctree-l5"><a class="reference internal" href="apps_logging_app.databases.oracle.html">apps_logging_app.databases.oracle package</a></li>
 </ul>
 </li>
+<li class="toctree-l4"><a class="reference internal" href="apps_logging_app.orchestration.html">apps_logging_app.orchestration package</a></li>
 <li class="toctree-l4 has-children"><a class="reference internal" href="apps_logging_app.producers.html">apps_logging_app.producers package</a><input aria-label="Toggle navigation of apps_logging_app.producers package" class="toctree-checkbox" id="toctree-checkbox-25" name="toctree-checkbox-25" role="switch" type="checkbox"/><label for="toctree-checkbox-25"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l5"><a class="reference internal" href="apps_logging_app.producers.kafka_handler.html">apps_logging_app.producers.kafka_handler package</a></li>
 </ul>
@@ -396,757 +398,58 @@
 <section id="module-apps_logging_app.agents.base">
 <span id="apps-logging-app-agents-base-module"></span><h2>apps_logging_app.agents.base module<a class="headerlink" href="#module-apps_logging_app.agents.base" title="Link to this heading">¶</a></h2>
 <dl class="py class">
-<dt class="sig sig-object py" id="apps_logging_app.agents.base.PathFileConfig">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">apps_logging_app.agents.base.</span></span><span class="sig-name descname"><span class="pre">PathFileConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cursor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/agents/base.html#PathFileConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.agents.base.PathFileConfig" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
-<p>Configuration model for a monitored file path.</p>
-<p><code class="docutils literal notranslate"><span class="pre">PathFileConfig</span></code> defines a file that is monitored by an agent. It stores
-both static configuration (file path and logical name) and runtime state
-(read cursor and file identifier) required to read files incrementally
-and to correctly handle file rotations.</p>
-<p>Each file configuration is referenced by name from
-<a class="reference internal" href="#apps_logging_app.agents.base.RegexPatternConfig" title="apps_logging_app.agents.base.RegexPatternConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">RegexPatternConfig</span></code></a> to associate regex patterns with specific
-input files.</p>
-<p><strong>Responsibilities:</strong></p>
-<ul class="simple">
-<li><p>Identify a monitored file via a logical name</p></li>
-<li><p>Store the filesystem path of the file</p></li>
-<li><p>Track the current read position (cursor) between polling cycles</p></li>
-<li><p>Detect file rotations using a file identifier</p></li>
-</ul>
-<p><strong>Runtime behavior:</strong></p>
-<ul class="simple">
-<li><p>The <code class="docutils literal notranslate"><span class="pre">cursor</span></code> field represents the byte offset of the last read
-position and is updated after each read operation</p></li>
-<li><p>The <code class="docutils literal notranslate"><span class="pre">id</span></code> field stores a file identifier (e.g. inode or platform-
-specific file ID) and is used to detect file rotations</p></li>
-</ul>
-<p><strong>Validation rules:</strong></p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">name</span></code> must not be <code class="docutils literal notranslate"><span class="pre">None</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">path</span></code> must be a valid existing <code class="xref py py-class docutils literal notranslate"><span class="pre">pathlib.Path</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">id</span></code> must be an integer when provided</p></li>
-</ul>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>name</strong> (<em>str</em>) – Logical name of the monitored file, used for cross-referencing
-by regex configurations</p></li>
-<li><p><strong>path</strong> (<em>pathlib.Path</em>) – Filesystem path of the file to be monitored</p></li>
-<li><p><strong>cursor</strong> (<em>int</em><em>, </em><em>optional</em>) – Byte offset indicating the current read position in the file</p></li>
-<li><p><strong>id</strong> (<em>int</em><em>, </em><em>optional</em>) – File identifier used to detect file rotations</p></li>
-</ul>
-</dd>
-</dl>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="apps_logging_app.agents.base.PathFileConfig.name">
-<span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#apps_logging_app.agents.base.PathFileConfig.name" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="apps_logging_app.agents.base.PathFileConfig.path">
-<span class="sig-name descname"><span class="pre">path</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Path</span></span><a class="headerlink" href="#apps_logging_app.agents.base.PathFileConfig.path" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="apps_logging_app.agents.base.PathFileConfig.cursor">
-<span class="sig-name descname"><span class="pre">cursor</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#apps_logging_app.agents.base.PathFileConfig.cursor" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="apps_logging_app.agents.base.PathFileConfig.id">
-<span class="sig-name descname"><span class="pre">id</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Tuple</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#apps_logging_app.agents.base.PathFileConfig.id" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="apps_logging_app.agents.base.PathFileConfig.validate_name">
-<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">validate_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/agents/base.html#PathFileConfig.validate_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.agents.base.PathFileConfig.validate_name" title="Link to this definition">¶</a></dt>
-<dd><p>Validate the name field of the PathFileConfig model.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>value</strong> – The value of the name field.</p>
-</dd>
-<dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>ValueError</strong> – If the name is None.</p>
-</dd>
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>The validated name value.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="apps_logging_app.agents.base.PathFileConfig.validate_path">
-<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">validate_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/agents/base.html#PathFileConfig.validate_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.agents.base.PathFileConfig.validate_path" title="Link to this definition">¶</a></dt>
-<dd><p>Validate the path field of the PathFileConfig model.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>value</strong> – The value of the path field.</p>
-</dd>
-<dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>ValueError</strong> – If the path is None, not a Path object, or does not exist.</p>
-</dd>
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>The validated path value.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="apps_logging_app.agents.base.PathFileConfig.validate_inode">
-<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">validate_inode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/agents/base.html#PathFileConfig.validate_inode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.agents.base.PathFileConfig.validate_inode" title="Link to this definition">¶</a></dt>
-<dd><p>Validate the id field of the PathFileConfig model.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>value</strong> – The value of the id field.</p>
-</dd>
-<dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>ValueError</strong> – If the id is not None and not an integer.</p>
-</dd>
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>The validated id value.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="apps_logging_app.agents.base.PathFileConfig.model_config">
-<span class="sig-name descname"><span class="pre">model_config</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></span><a class="headerlink" href="#apps_logging_app.agents.base.PathFileConfig.model_config" title="Link to this definition">¶</a></dt>
-<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="apps_logging_app.agents.base.RegexPatternConfig">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">apps_logging_app.agents.base.</span></span><span class="sig-name descname"><span class="pre">RegexPatternConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_file_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">regex_pattern</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/agents/base.html#RegexPatternConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.agents.base.RegexPatternConfig" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
-<p>Configuration model for a regex-based data extraction pattern.</p>
-<p><code class="docutils literal notranslate"><span class="pre">RegexPatternConfig</span></code> defines how data is extracted from a specific input
-file using a regular expression. It is used by
-<a class="reference internal" href="#apps_logging_app.agents.base.DataConnectionConfig" title="apps_logging_app.agents.base.DataConnectionConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataConnectionConfig</span></code></a> to match log lines and extract named capture
-groups that will later be transformed, enriched, and forwarded to
-producers.</p>
-<p>The regular expression is expected to use <strong>named capture groups</strong>
-(<code class="docutils literal notranslate"><span class="pre">?P&lt;name&gt;</span></code>), which are automatically converted into a dictionary
-and stored as extracted data at runtime.</p>
-<p>The regex pattern may be provided either as a compiled <code class="docutils literal notranslate"><span class="pre">re.Pattern</span></code>
-or as a string. When provided as a string, it is automatically compiled
-during model validation.</p>
-<p><strong>Responsibilities:</strong></p>
-<ul class="simple">
-<li><p>Bind a regex pattern to a specific configured file</p></li>
-<li><p>Define how log lines are matched and parsed</p></li>
-<li><p>Provide structured data extraction via named capture groups</p></li>
-</ul>
-<p><strong>Validation and preprocessing:</strong></p>
-<ul class="simple">
-<li><p>If <code class="docutils literal notranslate"><span class="pre">regex_pattern</span></code> is provided as a string, it is compiled using
-<code class="xref py py-func docutils literal notranslate"><span class="pre">re.compile()</span></code> before model creation</p></li>
-</ul>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>path_file_name</strong> (<em>str</em>) – Name of the file configuration this regex applies to</p></li>
-<li><p><strong>regex_pattern</strong> (<em>re.Pattern</em><em>[</em><em>str</em><em>]</em>) – Regular expression used to match and extract data
-from log lines</p></li>
-</ul>
-</dd>
-</dl>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="apps_logging_app.agents.base.RegexPatternConfig.path_file_name">
-<span class="sig-name descname"><span class="pre">path_file_name</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#apps_logging_app.agents.base.RegexPatternConfig.path_file_name" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="apps_logging_app.agents.base.RegexPatternConfig.regex_pattern">
-<span class="sig-name descname"><span class="pre">regex_pattern</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Pattern</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#apps_logging_app.agents.base.RegexPatternConfig.regex_pattern" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="apps_logging_app.agents.base.RegexPatternConfig.compile_regex">
-<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">compile_regex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">v</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/agents/base.html#RegexPatternConfig.compile_regex"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.agents.base.RegexPatternConfig.compile_regex" title="Link to this definition">¶</a></dt>
-<dd><p>Compile a regex pattern from a string.</p>
-<p>This validator is executed before the model is created.</p>
-<p>If the value is a string, it is compiled into a regex pattern
-using the re.compile function. If the value is not a string, it
-is returned unchanged.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>v</strong> – The value of the regex_pattern field.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The compiled regex pattern or the original value if it is not a string.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="apps_logging_app.agents.base.RegexPatternConfig.model_config">
-<span class="sig-name descname"><span class="pre">model_config</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></span><a class="headerlink" href="#apps_logging_app.agents.base.RegexPatternConfig.model_config" title="Link to this definition">¶</a></dt>
-<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="apps_logging_app.agents.base.QueryConfig">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">apps_logging_app.agents.base.</span></span><span class="sig-name descname"><span class="pre">QueryConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">query</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/agents/base.html#QueryConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.agents.base.QueryConfig" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
-<p>Configuration model for a database query.</p>
-<p><code class="docutils literal notranslate"><span class="pre">QueryConfig</span></code> defines how an agent executes a query against a specific
-data source in order to enrich data previously extracted from input files.
-It is typically referenced by a <a class="reference internal" href="#apps_logging_app.agents.base.DataConnectionConfig" title="apps_logging_app.agents.base.DataConnectionConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataConnectionConfig</span></code></a> as a
-destination configuration.</p>
-<p>The query is executed at runtime using the database type and name to
-resolve the appropriate database instance from the database factory.</p>
-<p><strong>Responsibilities:</strong></p>
-<ul class="simple">
-<li><p>Define the database type used to execute the query</p></li>
-<li><p>Identify the target database instance</p></li>
-<li><p>Store the query string to be executed</p></li>
-<li><p>Provide a reusable query definition for data enrichment</p></li>
-</ul>
-<p><strong>Validation rules:</strong></p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">type</span></code> must not be <code class="docutils literal notranslate"><span class="pre">None</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">name</span></code> must not be <code class="docutils literal notranslate"><span class="pre">None</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">query</span></code> must not be <code class="docutils literal notranslate"><span class="pre">None</span></code></p></li>
-</ul>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>type</strong> (<em>str</em>) – Type of the database backend (used to resolve the database
-implementation at runtime)</p></li>
-<li><p><strong>name</strong> (<em>str</em>) – Name of the database instance to be used for query execution</p></li>
-<li><p><strong>query</strong> (<em>str</em>) – Query string to be executed against the database</p></li>
-</ul>
-</dd>
-</dl>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="apps_logging_app.agents.base.QueryConfig.type">
-<span class="sig-name descname"><span class="pre">type</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#apps_logging_app.agents.base.QueryConfig.type" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="apps_logging_app.agents.base.QueryConfig.name">
-<span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#apps_logging_app.agents.base.QueryConfig.name" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="apps_logging_app.agents.base.QueryConfig.query">
-<span class="sig-name descname"><span class="pre">query</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#apps_logging_app.agents.base.QueryConfig.query" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="apps_logging_app.agents.base.QueryConfig.validate_type">
-<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">validate_type</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/agents/base.html#QueryConfig.validate_type"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.agents.base.QueryConfig.validate_type" title="Link to this definition">¶</a></dt>
-<dd><p>Validate the type field of the QueryConfig model.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>value</strong> – The value of the type field.</p>
-</dd>
-<dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>ValueError</strong> – If the type is None.</p>
-</dd>
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>The validated type value.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="apps_logging_app.agents.base.QueryConfig.validate_name">
-<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">validate_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/agents/base.html#QueryConfig.validate_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.agents.base.QueryConfig.validate_name" title="Link to this definition">¶</a></dt>
-<dd><p>Validate the name field of the QueryConfig model.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>value</strong> – The value of the name field.</p>
-</dd>
-<dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>ValueError</strong> – If the name is None.</p>
-</dd>
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>The validated name value.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="apps_logging_app.agents.base.QueryConfig.validate_query">
-<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">validate_query</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/agents/base.html#QueryConfig.validate_query"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.agents.base.QueryConfig.validate_query" title="Link to this definition">¶</a></dt>
-<dd><p>Validate the query field of the QueryConfig model.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>value</strong> – The value of the query field.</p>
-</dd>
-<dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>ValueError</strong> – If the query is None.</p>
-</dd>
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>The validated query value.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="apps_logging_app.agents.base.QueryConfig.model_config">
-<span class="sig-name descname"><span class="pre">model_config</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></span><a class="headerlink" href="#apps_logging_app.agents.base.QueryConfig.model_config" title="Link to this definition">¶</a></dt>
-<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="apps_logging_app.agents.base.DataConnectionConfig">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">apps_logging_app.agents.base.</span></span><span class="sig-name descname"><span class="pre">DataConnectionConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_error</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source_ref</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">destination_ref</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expired_time_int</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/agents/base.html#DataConnectionConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.agents.base.DataConnectionConfig" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
-<p>Configuration model for a data connection.</p>
-<p><code class="docutils literal notranslate"><span class="pre">DataConnectionConfig</span></code> defines a single data flow within a producer
-connection. It describes how data is extracted from a source (typically
-via a regular expression), optionally enriched using a database query,
-and finally forwarded to a producer.</p>
-<p>A data connection can operate in two modes:</p>
-<ul class="simple">
-<li><p><strong>Extraction only</strong>: data is extracted from log lines using a regex
-defined in <a class="reference internal" href="#apps_logging_app.agents.base.RegexPatternConfig" title="apps_logging_app.agents.base.RegexPatternConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">RegexPatternConfig</span></code></a></p></li>
-<li><p><strong>Extraction + enrichment</strong>: extracted data is used as input for a
-database query defined in <a class="reference internal" href="#apps_logging_app.agents.base.QueryConfig" title="apps_logging_app.agents.base.QueryConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">QueryConfig</span></code></a></p></li>
-</ul>
-<p>The resulting data is wrapped into a working data connection at runtime
-and managed until it expires.</p>
-<p><strong>Responsibilities:</strong></p>
-<ul class="simple">
-<li><p>Define the logical name of the data connection</p></li>
-<li><p>Specify whether the produced message represents an error condition</p></li>
-<li><p>Configure the source of extracted data (regex-based)</p></li>
-<li><p>Configure an optional destination query for data enrichment</p></li>
-<li><p>Control the expiration time of the produced data</p></li>
-</ul>
-<p><strong>Validation rules:</strong></p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">name</span></code> must not be <code class="docutils literal notranslate"><span class="pre">None</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">is_error</span></code> must be a boolean</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">expired_time</span></code> must be an integer when provided</p></li>
-</ul>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>name</strong> (<em>str</em>) – Logical name of the data connection</p></li>
-<li><p><strong>is_error</strong> (<em>bool</em>) – Indicates whether the produced message should be treated
-as an error by the producer</p></li>
-<li><p><strong>source_ref</strong> (<a class="reference internal" href="#apps_logging_app.agents.base.RegexPatternConfig" title="apps_logging_app.agents.base.RegexPatternConfig"><em>RegexPatternConfig</em></a><em>, </em><em>optional</em>) – Configuration defining how data is extracted from input
-lines using a regular expression</p></li>
-<li><p><strong>destination_ref</strong> (<a class="reference internal" href="#apps_logging_app.agents.base.QueryConfig" title="apps_logging_app.agents.base.QueryConfig"><em>QueryConfig</em></a><em>, </em><em>optional</em>) – Optional configuration defining a database query
-used to enrich extracted data</p></li>
-<li><p><strong>expired_time_int</strong> (<em>int</em><em>, </em><em>optional</em>) – Time-to-live of the data connection, expressed in
-minutes from creation time</p></li>
-</ul>
-</dd>
-</dl>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="apps_logging_app.agents.base.DataConnectionConfig.name">
-<span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#apps_logging_app.agents.base.DataConnectionConfig.name" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="apps_logging_app.agents.base.DataConnectionConfig.is_error">
-<span class="sig-name descname"><span class="pre">is_error</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span><a class="headerlink" href="#apps_logging_app.agents.base.DataConnectionConfig.is_error" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="apps_logging_app.agents.base.DataConnectionConfig.source_ref">
-<span class="sig-name descname"><span class="pre">source_ref</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#apps_logging_app.agents.base.RegexPatternConfig" title="apps_logging_app.agents.base.RegexPatternConfig"><span class="pre">RegexPatternConfig</span></a></span><a class="headerlink" href="#apps_logging_app.agents.base.DataConnectionConfig.source_ref" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="apps_logging_app.agents.base.DataConnectionConfig.destination_ref">
-<span class="sig-name descname"><span class="pre">destination_ref</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#apps_logging_app.agents.base.QueryConfig" title="apps_logging_app.agents.base.QueryConfig"><span class="pre">QueryConfig</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#apps_logging_app.agents.base.DataConnectionConfig.destination_ref" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="apps_logging_app.agents.base.DataConnectionConfig.expired_time_int">
-<span class="sig-name descname"><span class="pre">expired_time_int</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#apps_logging_app.agents.base.DataConnectionConfig.expired_time_int" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="apps_logging_app.agents.base.DataConnectionConfig.validate_name">
-<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">validate_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/agents/base.html#DataConnectionConfig.validate_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.agents.base.DataConnectionConfig.validate_name" title="Link to this definition">¶</a></dt>
-<dd><p>Validate the name field of the DataConnectionConfig model.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>value</strong> – The value of the name field.</p>
-</dd>
-<dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>ValueError</strong> – If the name is None.</p>
-</dd>
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>The validated name value.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="apps_logging_app.agents.base.DataConnectionConfig.validate_is_error">
-<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">validate_is_error</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/agents/base.html#DataConnectionConfig.validate_is_error"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.agents.base.DataConnectionConfig.validate_is_error" title="Link to this definition">¶</a></dt>
-<dd><p>Validate the is_error field of the DataConnectionConfig model.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>value</strong> – The value of the is_error field.</p>
-</dd>
-<dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>ValueError</strong> – If the is_error is not a boolean.</p>
-</dd>
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>The validated is_error value.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="apps_logging_app.agents.base.DataConnectionConfig.validate_expired_time">
-<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">validate_expired_time</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/agents/base.html#DataConnectionConfig.validate_expired_time"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.agents.base.DataConnectionConfig.validate_expired_time" title="Link to this definition">¶</a></dt>
-<dd><p>Validate the expired_time_int field of the DataConnectionConfig model.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>value</strong> – The value of the expired_time_int field.</p>
-</dd>
-<dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>ValueError</strong> – If the expired_time_int is not an integer.</p>
-</dd>
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>The validated expired_time_int value.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="apps_logging_app.agents.base.DataConnectionConfig.model_config">
-<span class="sig-name descname"><span class="pre">model_config</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></span><a class="headerlink" href="#apps_logging_app.agents.base.DataConnectionConfig.model_config" title="Link to this definition">¶</a></dt>
-<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="apps_logging_app.agents.base.ProducerConnectionConfig">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">apps_logging_app.agents.base.</span></span><span class="sig-name descname"><span class="pre">ProducerConnectionConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_connections</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/agents/base.html#ProducerConnectionConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.agents.base.ProducerConnectionConfig" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
-<p>Configuration model for a producer connection.</p>
-<p><code class="docutils literal notranslate"><span class="pre">ProducerConnectionConfig</span></code> defines how an agent connects to a specific
-producer and which data connections are associated with it. A producer
-represents the final destination of processed data, such as a message
-broker, alerting system, or external service.</p>
-<p>Each producer connection groups one or more
-<a class="reference internal" href="#apps_logging_app.agents.base.DataConnectionConfig" title="apps_logging_app.agents.base.DataConnectionConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataConnectionConfig</span></code></a> instances that describe how data is extracted,
-optionally enriched, and forwarded to the producer.</p>
-<p>This model is validated using <strong>Pydantic</strong> to ensure that the producer
-identity is correctly defined before the agent starts.</p>
-<p><strong>Responsibilities:</strong></p>
-<ul class="simple">
-<li><p>Define the producer type and name</p></li>
-<li><p>Group related data connections under a single producer</p></li>
-<li><p>Provide a structured configuration for message dispatching</p></li>
-</ul>
-<p><strong>Validation rules:</strong></p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">type</span></code> must not be <code class="docutils literal notranslate"><span class="pre">None</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">name</span></code> must not be <code class="docutils literal notranslate"><span class="pre">None</span></code></p></li>
-</ul>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>type</strong> (<em>str</em>) – Logical type of the producer (used to resolve the producer
-implementation at runtime)</p></li>
-<li><p><strong>name</strong> (<em>str</em>) – Unique name of the producer instance</p></li>
-<li><p><strong>data_connections</strong> (<em>list</em><em>[</em><a class="reference internal" href="#apps_logging_app.agents.base.DataConnectionConfig" title="apps_logging_app.agents.base.DataConnectionConfig"><em>DataConnectionConfig</em></a><em>]</em>) – List of data connection configurations associated
-with this producer</p></li>
-</ul>
-</dd>
-</dl>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="apps_logging_app.agents.base.ProducerConnectionConfig.type">
-<span class="sig-name descname"><span class="pre">type</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#apps_logging_app.agents.base.ProducerConnectionConfig.type" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="apps_logging_app.agents.base.ProducerConnectionConfig.name">
-<span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#apps_logging_app.agents.base.ProducerConnectionConfig.name" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="apps_logging_app.agents.base.ProducerConnectionConfig.data_connections">
-<span class="sig-name descname"><span class="pre">data_connections</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#apps_logging_app.agents.base.DataConnectionConfig" title="apps_logging_app.agents.base.DataConnectionConfig"><span class="pre">DataConnectionConfig</span></a><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#apps_logging_app.agents.base.ProducerConnectionConfig.data_connections" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="apps_logging_app.agents.base.ProducerConnectionConfig.validate_type">
-<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">validate_type</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/agents/base.html#ProducerConnectionConfig.validate_type"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.agents.base.ProducerConnectionConfig.validate_type" title="Link to this definition">¶</a></dt>
-<dd><p>Validate the type field of the ProducerConnectionConfig model.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>value</strong> – The value of the type field.</p>
-</dd>
-<dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>ValueError</strong> – If the type is None.</p>
-</dd>
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>The validated type value.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="apps_logging_app.agents.base.ProducerConnectionConfig.validate_name">
-<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">validate_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/agents/base.html#ProducerConnectionConfig.validate_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.agents.base.ProducerConnectionConfig.validate_name" title="Link to this definition">¶</a></dt>
-<dd><p>Validate the name field of the ProducerConnectionConfig model.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>value</strong> – The value of the name field.</p>
-</dd>
-<dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>ValueError</strong> – If the name is None.</p>
-</dd>
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>The validated name value.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="apps_logging_app.agents.base.ProducerConnectionConfig.model_config">
-<span class="sig-name descname"><span class="pre">model_config</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></span><a class="headerlink" href="#apps_logging_app.agents.base.ProducerConnectionConfig.model_config" title="Link to this definition">¶</a></dt>
-<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="apps_logging_app.agents.base.BaseAgentConfig">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">apps_logging_app.agents.base.</span></span><span class="sig-name descname"><span class="pre">BaseAgentConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">buffer_rows</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">500</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_files</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">producer_connections</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pool_interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/agents/base.html#BaseAgentConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.agents.base.BaseAgentConfig" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
-<p>Base configuration model for all agents.</p>
-<p><code class="docutils literal notranslate"><span class="pre">BaseAgentConfig</span></code> defines the common configuration parameters required
-to initialize and run an agent. It describes how the agent identifies
-itself, which files it monitors, how often it processes data, and how
-extracted data is routed to producers.</p>
-<p>This model is implemented using <strong>Pydantic</strong> and includes both field-level
-and model-level validation to ensure configuration consistency before the
-agent starts running.</p>
-<p><strong>Key responsibilities:</strong></p>
-<ul class="simple">
-<li><p>Define the agent identity (type and name)</p></li>
-<li><p>Configure file monitoring and buffering behavior</p></li>
-<li><p>Declare producer connections and their data flows</p></li>
-<li><p>Control the polling interval of the agent processing loop</p></li>
-<li><p>Validate cross-references between file configurations and regex sources</p></li>
-</ul>
-<p><strong>Validation rules:</strong></p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">type</span></code> and <code class="docutils literal notranslate"><span class="pre">name</span></code> must not be <code class="docutils literal notranslate"><span class="pre">None</span></code></p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">buffer_rows</span></code> must be greater than zero</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">pool_interval</span></code> must be greater than zero</p></li>
-<li><p>Any <code class="docutils literal notranslate"><span class="pre">path_file_name</span></code> referenced by a regex source must exist in
-<code class="docutils literal notranslate"><span class="pre">path_files</span></code></p></li>
-</ul>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>type</strong> (<em>str</em>) – Logical type of the agent (used to select the agent
-implementation and producers)</p></li>
-<li><p><strong>name</strong> (<em>str</em>) – Unique name of the agent instance</p></li>
-<li><p><strong>buffer_rows</strong> (<em>int</em><em>, </em><em>optional</em>) – Maximum number of lines read from each file per polling
-cycle</p></li>
-<li><p><strong>path_files</strong> (<em>list</em><em>[</em><a class="reference internal" href="#apps_logging_app.agents.base.PathFileConfig" title="apps_logging_app.agents.base.PathFileConfig"><em>PathFileConfig</em></a><em>]</em><em>, </em><em>optional</em>) – List of file path configurations monitored by the agent</p></li>
-<li><p><strong>producer_connections</strong> (<em>list</em><em>[</em><a class="reference internal" href="#apps_logging_app.agents.base.ProducerConnectionConfig" title="apps_logging_app.agents.base.ProducerConnectionConfig"><em>ProducerConnectionConfig</em></a><em>]</em>) – Definitions of producer connections and their
-associated data connections</p></li>
-<li><p><strong>pool_interval</strong> (<em>float</em>) – Time in seconds to wait between consecutive polling
-cycles</p></li>
-</ul>
-</dd>
-</dl>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="apps_logging_app.agents.base.BaseAgentConfig.type">
-<span class="sig-name descname"><span class="pre">type</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#apps_logging_app.agents.base.BaseAgentConfig.type" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="apps_logging_app.agents.base.BaseAgentConfig.name">
-<span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#apps_logging_app.agents.base.BaseAgentConfig.name" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="apps_logging_app.agents.base.BaseAgentConfig.buffer_rows">
-<span class="sig-name descname"><span class="pre">buffer_rows</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#apps_logging_app.agents.base.BaseAgentConfig.buffer_rows" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="apps_logging_app.agents.base.BaseAgentConfig.path_files">
-<span class="sig-name descname"><span class="pre">path_files</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#apps_logging_app.agents.base.PathFileConfig" title="apps_logging_app.agents.base.PathFileConfig"><span class="pre">PathFileConfig</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#apps_logging_app.agents.base.BaseAgentConfig.path_files" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="apps_logging_app.agents.base.BaseAgentConfig.producer_connections">
-<span class="sig-name descname"><span class="pre">producer_connections</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#apps_logging_app.agents.base.ProducerConnectionConfig" title="apps_logging_app.agents.base.ProducerConnectionConfig"><span class="pre">ProducerConnectionConfig</span></a><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#apps_logging_app.agents.base.BaseAgentConfig.producer_connections" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="apps_logging_app.agents.base.BaseAgentConfig.pool_interval">
-<span class="sig-name descname"><span class="pre">pool_interval</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><a class="headerlink" href="#apps_logging_app.agents.base.BaseAgentConfig.pool_interval" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="apps_logging_app.agents.base.BaseAgentConfig.validate_type">
-<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">validate_type</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/agents/base.html#BaseAgentConfig.validate_type"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.agents.base.BaseAgentConfig.validate_type" title="Link to this definition">¶</a></dt>
-<dd><p>Validate the type field of the BaseAgentConfig model.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>value</strong> – The value of the type field.</p>
-</dd>
-<dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>ValueError</strong> – If the type is None.</p>
-</dd>
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>The validated type value.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="apps_logging_app.agents.base.BaseAgentConfig.validate_name">
-<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">validate_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/agents/base.html#BaseAgentConfig.validate_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.agents.base.BaseAgentConfig.validate_name" title="Link to this definition">¶</a></dt>
-<dd><p>Validate the name field of the BaseAgentConfig model.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>value</strong> – The value of the name field.</p>
-</dd>
-<dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>ValueError</strong> – If the name is None.</p>
-</dd>
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>The validated name value.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="apps_logging_app.agents.base.BaseAgentConfig.validate_buffer_rows">
-<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">validate_buffer_rows</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/agents/base.html#BaseAgentConfig.validate_buffer_rows"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.agents.base.BaseAgentConfig.validate_buffer_rows" title="Link to this definition">¶</a></dt>
-<dd><p>Validate the buffer_rows field of the BaseAgentConfig model.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>value</strong> – The value of the buffer_rows field.</p>
-</dd>
-<dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>ValueError</strong> – If the buffer_rows is less than or equal to 0.</p>
-</dd>
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>The validated buffer_rows value.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="apps_logging_app.agents.base.BaseAgentConfig.validate_pool_interval">
-<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">validate_pool_interval</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/agents/base.html#BaseAgentConfig.validate_pool_interval"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.agents.base.BaseAgentConfig.validate_pool_interval" title="Link to this definition">¶</a></dt>
-<dd><p>Validate the pool_interval field of the BaseAgentConfig model.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>value</strong> – The value of the pool_interval field.</p>
-</dd>
-<dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><strong>ValueError</strong> – If the pool_interval is less than or equal to 0.</p>
-</dd>
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>The validated pool_interval value.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="apps_logging_app.agents.base.BaseAgentConfig.validate_regex_path_references">
-<span class="sig-name descname"><span class="pre">validate_regex_path_references</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/agents/base.html#BaseAgentConfig.validate_regex_path_references"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.agents.base.BaseAgentConfig.validate_regex_path_references" title="Link to this definition">¶</a></dt>
-<dd><p>Validate the regex path references in the BaseAgentConfig model.</p>
-<p>This validator checks if the path_file_name referenced in the data_connections
-of the producer_connections exist in the path_files of the agent.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Raises<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>ValueError</strong> – If the path_file_name referenced in the data_connections
-does not exist in the path_files of the agent.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The validated BaseAgentConfig model.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="apps_logging_app.agents.base.BaseAgentConfig.model_config">
-<span class="sig-name descname"><span class="pre">model_config</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></span><a class="headerlink" href="#apps_logging_app.agents.base.BaseAgentConfig.model_config" title="Link to this definition">¶</a></dt>
-<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
 <dt class="sig sig-object py" id="apps_logging_app.agents.base.BaseAgent">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">apps_logging_app.agents.base.</span></span><span class="sig-name descname"><span class="pre">BaseAgent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/agents/base.html#BaseAgent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.agents.base.BaseAgent" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ABC</span></code></p>
-<p>Abstract base class for all agents.</p>
-<p>The <code class="docutils literal notranslate"><span class="pre">BaseAgent</span></code> defines the common runtime behavior and lifecycle for
-agents that monitor one or more files, extract data using regular
-expressions, optionally enrich the extracted data via database queries,
-and forward the resulting messages to producers.</p>
-<p>The agent runs in a dedicated background thread and periodically executes
-its processing loop until it is explicitly stopped.</p>
-<p><strong>Main responsibilities:</strong></p>
+<p>Abstract base class for all agent implementations.</p>
+<p>The <a class="reference internal" href="#apps_logging_app.agents.base.BaseAgent" title="apps_logging_app.agents.base.BaseAgent"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseAgent</span></code></a> defines the core lifecycle, threading model, and
+data-processing pipeline for agents. Concrete agents must extend this
+class and implement the abstract transformation and filtering logic.</p>
+<p>Responsibilities of this class include:</p>
 <ul class="simple">
-<li><p>Monitor configured file paths and detect file rotations</p></li>
-<li><p>Read log files incrementally using a cursor-based approach</p></li>
-<li><p>Match lines against configured regular expressions</p></li>
-<li><p>Create and manage <code class="xref py py-class docutils literal notranslate"><span class="pre">WorkingDataConnection</span></code> instances</p></li>
-<li><p>Execute optional database queries associated with matched data</p></li>
-<li><p>Dispatch processed messages to configured producers</p></li>
-<li><p>Clean up expired working data connections</p></li>
+<li><p>Initializing and managing <code class="xref py py-class docutils literal notranslate"><span class="pre">WorkingDataConnection</span></code> instances</p></li>
+<li><p>Monitoring and reading log files with rotation handling</p></li>
+<li><p>Matching data via regular expressions</p></li>
+<li><p>Executing database queries asynchronously</p></li>
+<li><p>Sending processed data to producers</p></li>
+<li><p>Managing agent lifecycle (start/stop) in a background thread</p></li>
 </ul>
-<p><strong>Threading model:</strong></p>
-<ul class="simple">
-<li><p>Each agent runs a single daemon worker thread</p></li>
-<li><p>The worker thread periodically invokes the internal processing loop
-based on the configured polling interval</p></li>
-<li><p>Thread termination is controlled via a stop event</p></li>
-</ul>
-<p><strong>Extensibility:</strong></p>
-<p>This class is abstract and must be subclassed.
-Subclasses are required to implement the
-<code class="xref py py-meth docutils literal notranslate"><span class="pre">_data_connections_transformation_and_filtering()</span></code> method in order to
-apply domain-specific transformations and filtering logic to matched data.</p>
-<p><strong>Lifecycle:</strong></p>
-<ol class="arabic simple">
-<li><p>The agent is initialized with a <a class="reference internal" href="#apps_logging_app.agents.base.BaseAgentConfig" title="apps_logging_app.agents.base.BaseAgentConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseAgentConfig</span></code></a></p></li>
-<li><p>A background worker thread is started automatically</p></li>
-<li><p>The agent periodically processes input files and data connections</p></li>
-<li><p>The agent can be stopped gracefully by calling <a class="reference internal" href="#apps_logging_app.agents.base.BaseAgent.stop" title="apps_logging_app.agents.base.BaseAgent.stop"><code class="xref py py-meth docutils literal notranslate"><span class="pre">stop()</span></code></a></p></li>
-</ol>
+<p>Each agent runs in its own worker thread and periodically processes
+configured log files according to the provided configuration.</p>
+<p>Subclasses must implement the
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">_data_connections_transformation_and_filtering()</span></code> method.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>config</strong> (<a class="reference internal" href="#apps_logging_app.agents.base.BaseAgentConfig" title="apps_logging_app.agents.base.BaseAgentConfig"><em>BaseAgentConfig</em></a>) – Configuration object defining agent behavior, file paths,
-producer connections, polling interval, and buffering rules</p>
+<dd class="field-odd"><p><strong>config</strong> (<a class="reference internal" href="#apps_logging_app.agents.model.BaseAgentConfig" title="apps_logging_app.agents.model.BaseAgentConfig"><em>BaseAgentConfig</em></a>) – Configuration object used to initialize the agent.</p>
 </dd>
 </dl>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="apps_logging_app.agents.base.BaseAgent.working_data_connections">
-<span class="sig-name descname"><span class="pre">working_data_connections</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#apps_logging_app.agents.data.WorkingDataConnection" title="apps_logging_app.agents.data.WorkingDataConnection"><span class="pre">WorkingDataConnection</span></a><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#apps_logging_app.agents.base.BaseAgent.working_data_connections" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="apps_logging_app.agents.base.BaseAgent.start">
+<span class="sig-name descname"><span class="pre">start</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/agents/base.html#BaseAgent.start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.agents.base.BaseAgent.start" title="Link to this definition">¶</a></dt>
+<dd><p>Starts the agent.</p>
+<p>This method starts the worker thread which will execute the agent’s
+processing loop.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="apps_logging_app.agents.base.BaseAgent.stop">
 <span class="sig-name descname"><span class="pre">stop</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/agents/base.html#BaseAgent.stop"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.agents.base.BaseAgent.stop" title="Link to this definition">¶</a></dt>
-<dd><p>Stop the agent.</p>
+<dd><p>Stops the agent.</p>
 <p>This method sets the stop event and waits for the worker thread to finish.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>None</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1157,59 +460,159 @@ producer connections, polling interval, and buffering rules</p>
 <section id="module-apps_logging_app.agents.data">
 <span id="apps-logging-app-agents-data-module"></span><h2>apps_logging_app.agents.data module<a class="headerlink" href="#module-apps_logging_app.agents.data" title="Link to this heading">¶</a></h2>
 <dl class="py class">
+<dt class="sig sig-object py" id="apps_logging_app.agents.data.WorkingDataStatus">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">apps_logging_app.agents.data.</span></span><span class="sig-name descname"><span class="pre">WorkingDataStatus</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">values</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/agents/data.html#WorkingDataStatus"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.agents.data.WorkingDataStatus" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Enum</span></code></p>
+<p>Enumeration representing the lifecycle status of a
+<a class="reference internal" href="#apps_logging_app.agents.data.WorkingDataConnection" title="apps_logging_app.agents.data.WorkingDataConnection"><code class="xref py py-class docutils literal notranslate"><span class="pre">WorkingDataConnection</span></code></a>.</p>
+<p>This enum is used to track the current state of a working data
+connection as it moves through the agent processing pipeline.</p>
+<p>Possible states are:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">READY</span></code>: The data connection is ready to be processed.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">QUERY_RUNNING</span></code>: A database query is currently being executed.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">UPDATED</span></code>: New data is available and ready to be sent to producers.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">EXPIRED</span></code>: The data connection has expired and will be removed.</p></li>
+</ul>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.agents.data.WorkingDataStatus.READY">
+<span class="sig-name descname"><span class="pre">READY</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'ready'</span></span><a class="headerlink" href="#apps_logging_app.agents.data.WorkingDataStatus.READY" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.agents.data.WorkingDataStatus.QUERY_RUNNING">
+<span class="sig-name descname"><span class="pre">QUERY_RUNNING</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'query_running'</span></span><a class="headerlink" href="#apps_logging_app.agents.data.WorkingDataStatus.QUERY_RUNNING" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.agents.data.WorkingDataStatus.UPDATED">
+<span class="sig-name descname"><span class="pre">UPDATED</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'updated'</span></span><a class="headerlink" href="#apps_logging_app.agents.data.WorkingDataStatus.UPDATED" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.agents.data.WorkingDataStatus.EXPIRED">
+<span class="sig-name descname"><span class="pre">EXPIRED</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'expired'</span></span><a class="headerlink" href="#apps_logging_app.agents.data.WorkingDataStatus.EXPIRED" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="apps_logging_app.agents.data.WorkingDataConnection">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">apps_logging_app.agents.data.</span></span><span class="sig-name descname"><span class="pre">WorkingDataConnection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">producer_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">producer_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">database_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">database_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">query</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_error</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expired_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">datetime.datetime(1,</span> <span class="pre">1,</span> <span class="pre">1,</span> <span class="pre">0,</span> <span class="pre">0)</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/agents/data.html#WorkingDataConnection"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.agents.data.WorkingDataConnection" title="Link to this definition">¶</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">apps_logging_app.agents.data.</span></span><span class="sig-name descname"><span class="pre">WorkingDataConnection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">producer_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">producer_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">database_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">database_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">query</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_error</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expired_time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/agents/data.html#WorkingDataConnection"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.agents.data.WorkingDataConnection" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Represents a working instance of a data connection during agent execution.</p>
-<p><code class="docutils literal notranslate"><span class="pre">WorkingDataConnection</span></code> is used internally by agents to track the state
-of a data connection as it flows through the pipeline, including
-extraction from log lines, query execution, and message production.</p>
-<p>This class stores both static configuration and dynamic runtime state
-such as whether a query is in progress, whether the data has been updated,
-and expiration times for cached results.</p>
-<p><strong>Responsibilities:</strong></p>
-<ul class="simple">
-<li><p>Store identification of the data connection (name, producer, database)</p></li>
-<li><p>Track matched data from regex extraction</p></li>
-<li><p>Store query results and mark if updates occurred</p></li>
-<li><p>Track expiration of the data</p></li>
-<li><p>Mark whether a query is currently in progress</p></li>
-</ul>
-<p><strong>Attributes:</strong></p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">name</span></code> (str): Unique identifier for this data connection</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">producer_type</span></code> (str): Type of the producer this data connection belongs to</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">producer_name</span></code> (str): Name of the producer this data connection belongs to</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">database_type</span></code> (str, optional): Type of the database this data connection belongs to</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">database_name</span></code> (str, optional): Name of the database this data connection belongs to</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">query</span></code> (str, optional): Query associated with this data connection</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">is_error</span></code> (bool): Indicates if this data connection is associated with an error</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">expired_time</span></code> (datetime): Expiration timestamp of the data connection</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">query_in_progress</span></code> (bool): True if a query execution is in progress</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">is_updated</span></code> (bool): True if the data has been updated since last processing</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">data_dict_match</span></code> (Dict[str, Any]): Data extracted by regex matches</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">data_dict_query_source</span></code> (Dict[str, Any]): Data used to generate queries</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">data_dict_result</span></code> (Dict[str, Any]): Resulting data from executed queries</p></li>
-</ul>
-<p><strong>Methods:</strong></p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">update_expired_time(minutes:</span> <span class="pre">int)</span> <span class="pre">-&gt;</span> <span class="pre">None</span></code>: Updates the <code class="docutils literal notranslate"><span class="pre">expired_time</span></code>
-by adding the specified number of minutes to the current time.</p></li>
-</ul>
+<p>Runtime representation of a data connection during agent execution.</p>
+<p>The <a class="reference internal" href="#apps_logging_app.agents.data.WorkingDataConnection" title="apps_logging_app.agents.data.WorkingDataConnection"><code class="xref py py-class docutils literal notranslate"><span class="pre">WorkingDataConnection</span></code></a> is a mutable, working-state object
+created from a <code class="xref py py-class docutils literal notranslate"><span class="pre">DataConnectionConfig</span></code>. It holds intermediate and
+final data extracted from log files, query execution results, and
+delivery status toward producers.</p>
+<p>Instances of this class are managed by <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseAgent</span></code> and move
+through different states defined by <a class="reference internal" href="#apps_logging_app.agents.data.WorkingDataStatus" title="apps_logging_app.agents.data.WorkingDataStatus"><code class="xref py py-class docutils literal notranslate"><span class="pre">WorkingDataStatus</span></code></a>.</p>
+<p>A working data connection may:
+- Be populated by regex matches from log lines
+- Generate and execute database queries
+- Store query results
+- Be sent to one or more producers
+- Expire after a configured time window</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>name</strong> (<em>str</em>) – Unique identifier for this data connection</p></li>
-<li><p><strong>producer_type</strong> (<em>str</em>) – Type of the producer this data connection belongs to</p></li>
-<li><p><strong>producer_name</strong> (<em>str</em>) – Name of the producer this data connection belongs to</p></li>
-<li><p><strong>database_type</strong> (<em>str</em><em>, </em><em>optional</em>) – Type of the database (optional)</p></li>
-<li><p><strong>database_name</strong> (<em>str</em><em>, </em><em>optional</em>) – Name of the database (optional)</p></li>
-<li><p><strong>query</strong> (<em>str</em><em>, </em><em>optional</em>) – Query associated with the data connection (optional)</p></li>
-<li><p><strong>is_error</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether this connection represents an error</p></li>
-<li><p><strong>expired_time</strong> (<em>datetime</em><em>, </em><em>optional</em>) – Expiration timestamp (optional)</p></li>
+<li><p><strong>name</strong> (<em>str</em>) – Unique identifier for the data connection.</p></li>
+<li><p><strong>producer_type</strong> (<em>str</em>) – Type of the associated producer.</p></li>
+<li><p><strong>producer_name</strong> (<em>str</em>) – Name of the associated producer.</p></li>
+<li><p><strong>database_type</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Type of the destination database, if any.</p></li>
+<li><p><strong>database_name</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Name of the destination database, if any.</p></li>
+<li><p><strong>query</strong> (<em>Optional</em><em>[</em><em>str</em><em>]</em>) – Query associated with this data connection, if any.</p></li>
+<li><p><strong>is_error</strong> (<em>bool</em>) – Whether this data connection represents an error condition.</p></li>
+<li><p><strong>expired_time</strong> (<em>Optional</em><em>[</em><em>datetime</em><em>]</em>) – Expiration timestamp for this data connection.</p></li>
 </ul>
 </dd>
 </dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.agents.data.WorkingDataConnection.name">
+<span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#apps_logging_app.agents.data.WorkingDataConnection.name" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.agents.data.WorkingDataConnection.producer_type">
+<span class="sig-name descname"><span class="pre">producer_type</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#apps_logging_app.agents.data.WorkingDataConnection.producer_type" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.agents.data.WorkingDataConnection.producer_name">
+<span class="sig-name descname"><span class="pre">producer_name</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#apps_logging_app.agents.data.WorkingDataConnection.producer_name" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.agents.data.WorkingDataConnection.database_type">
+<span class="sig-name descname"><span class="pre">database_type</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#apps_logging_app.agents.data.WorkingDataConnection.database_type" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.agents.data.WorkingDataConnection.database_name">
+<span class="sig-name descname"><span class="pre">database_name</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#apps_logging_app.agents.data.WorkingDataConnection.database_name" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.agents.data.WorkingDataConnection.query">
+<span class="sig-name descname"><span class="pre">query</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#apps_logging_app.agents.data.WorkingDataConnection.query" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.agents.data.WorkingDataConnection.is_error">
+<span class="sig-name descname"><span class="pre">is_error</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span><a class="headerlink" href="#apps_logging_app.agents.data.WorkingDataConnection.is_error" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.agents.data.WorkingDataConnection.status">
+<span class="sig-name descname"><span class="pre">status</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#apps_logging_app.agents.data.WorkingDataStatus" title="apps_logging_app.agents.data.WorkingDataStatus"><span class="pre">WorkingDataStatus</span></a></span><a class="headerlink" href="#apps_logging_app.agents.data.WorkingDataConnection.status" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.agents.data.WorkingDataConnection.expired_time">
+<span class="sig-name descname"><span class="pre">expired_time</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">datetime</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#apps_logging_app.agents.data.WorkingDataConnection.expired_time" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.agents.data.WorkingDataConnection.data_dict_match">
+<span class="sig-name descname"><span class="pre">data_dict_match</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#apps_logging_app.agents.data.WorkingDataConnection.data_dict_match" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.agents.data.WorkingDataConnection.data_dict_query_source">
+<span class="sig-name descname"><span class="pre">data_dict_query_source</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#apps_logging_app.agents.data.WorkingDataConnection.data_dict_query_source" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.agents.data.WorkingDataConnection.data_dict_result">
+<span class="sig-name descname"><span class="pre">data_dict_result</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#apps_logging_app.agents.data.WorkingDataConnection.data_dict_result" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.agents.data.WorkingDataConnection.list_data_dict_query_result">
+<span class="sig-name descname"><span class="pre">list_data_dict_query_result</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#apps_logging_app.agents.data.WorkingDataConnection.list_data_dict_query_result" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="apps_logging_app.agents.data.WorkingDataConnection.from_config">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">from_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">producer_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">producer_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cfg</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/agents/data.html#WorkingDataConnection.from_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.agents.data.WorkingDataConnection.from_config" title="Link to this definition">¶</a></dt>
+<dd><p>Creates a WorkingDataConnection object from a DataConnectionConfig object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>producer_type</strong> (<em>str</em>) – Type of the producer this data connection belongs to.</p></li>
+<li><p><strong>producer_name</strong> (<em>str</em>) – Name of the producer this data connection belongs to.</p></li>
+<li><p><strong>cfg</strong> (<a class="reference internal" href="#apps_logging_app.agents.model.DataConnectionConfig" title="apps_logging_app.agents.model.DataConnectionConfig"><em>DataConnectionConfig</em></a>) – DataConnectionConfig object to create the WorkingDataConnection from.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A WorkingDataConnection object created from the given DataConnectionConfig object.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#apps_logging_app.agents.data.WorkingDataConnection" title="apps_logging_app.agents.data.WorkingDataConnection">WorkingDataConnection</a></p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="apps_logging_app.agents.data.WorkingDataConnection.update_expired_time">
 <span class="sig-name descname"><span class="pre">update_expired_time</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">minutes</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/agents/data.html#WorkingDataConnection.update_expired_time"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.agents.data.WorkingDataConnection.update_expired_time" title="Link to this definition">¶</a></dt>
@@ -1217,6 +620,53 @@ by adding the specified number of minutes to the current time.</p></li>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>minutes</strong> (<em>int</em>) – The number of minutes to add to the current time.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="apps_logging_app.agents.data.WorkingDataConnection.set_ready_status">
+<span class="sig-name descname"><span class="pre">set_ready_status</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/agents/data.html#WorkingDataConnection.set_ready_status"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.agents.data.WorkingDataConnection.set_ready_status" title="Link to this definition">¶</a></dt>
+<dd><p>Sets the status of this WorkingDataConnection to READY if it is not expired.</p>
+<p>It is used to mark the data connection as ready for further processing after a query execution has finished.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="apps_logging_app.agents.data.WorkingDataConnection.on_query_done">
+<span class="sig-name descname"><span class="pre">on_query_done</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fut</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/agents/data.html#WorkingDataConnection.on_query_done"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.agents.data.WorkingDataConnection.on_query_done" title="Link to this definition">¶</a></dt>
+<dd><p>Called when a query has finished executing.</p>
+<p>If the query result is not equal to the current list of results, it updates the list of results and sets the status to UPDATED.
+If the query result is equal to the current list of results, it sets the status to READY.
+If an exception occurs during the query execution, it sets the status to EXPIRED.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>fut</strong> (<em>Future</em><em>[</em><em>List</em><em>[</em><em>Dict</em><em>[</em><em>str</em><em>, </em><em>Any</em><em>]</em><em>]</em><em>]</em>)</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="apps_logging_app.agents.data.WorkingDataConnection.check_expired_time">
+<span class="sig-name descname"><span class="pre">check_expired_time</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/agents/data.html#WorkingDataConnection.check_expired_time"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.agents.data.WorkingDataConnection.check_expired_time" title="Link to this definition">¶</a></dt>
+<dd><p>Checks if the current time is greater than the expired time of this data connection.</p>
+<p>If it is, it sets the status of this data connection to EXPIRED. If not, it does nothing.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>None</p>
@@ -1233,40 +683,14 @@ by adding the specified number of minutes to the current time.</p></li>
 <dt class="sig sig-object py" id="apps_logging_app.agents.factory.AgentFactory">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">apps_logging_app.agents.factory.</span></span><span class="sig-name descname"><span class="pre">AgentFactory</span></span><a class="reference internal" href="../_modules/apps_logging_app/agents/factory.html#AgentFactory"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.agents.factory.AgentFactory" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Factory class responsible for creating agent instances from configuration
-dictionaries.</p>
-<p><code class="docutils literal notranslate"><span class="pre">AgentFactory</span></code> is a stateless factory that instantiates agent objects
-based on a raw configuration dictionary. It validates the configuration
-against the agent’s registered configuration model, initializes all
-required shared resources (producers and databases), and returns a fully
-configured agent instance.</p>
-<p>This factory does <strong>not</strong> cache agent instances: each call to
-<a class="reference internal" href="#apps_logging_app.agents.factory.AgentFactory.create" title="apps_logging_app.agents.factory.AgentFactory.create"><code class="xref py py-meth docutils literal notranslate"><span class="pre">create()</span></code></a> returns a new agent object. Shared resources such as
-producers and databases are retrieved through their respective factories
-and are internally cached.</p>
-<p>The factory relies on:</p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">AGENT_REGISTRY</span></code>: a registry mapping agent types to their corresponding
-configuration model and agent class.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">ProducerFactory</span></code>: used to initialize producer connections required
-by the agent.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">DatabaseFactory</span></code>: used to initialize database connections referenced
-by producer data connections.</p></li>
-</ul>
-<p><strong>Responsibilities:</strong></p>
-<ul class="simple">
-<li><p>Validate the agent type from the configuration</p></li>
-<li><p>Validate the configuration using the registered config model</p></li>
-<li><p>Initialize all required producer instances</p></li>
-<li><p>Initialize all required database instances</p></li>
-<li><p>Instantiate and return a new agent instance</p></li>
-</ul>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p><code class="docutils literal notranslate"><span class="pre">AgentFactory</span></code> is intentionally stateless and thread-safe, as it does
-not maintain any internal cache. Resource lifecycle management is
-delegated to the corresponding resource factories.</p>
-</div>
+<p>Factory class responsible for creating agent instances.</p>
+<p>The <a class="reference internal" href="#apps_logging_app.agents.factory.AgentFactory" title="apps_logging_app.agents.factory.AgentFactory"><code class="xref py py-class docutils literal notranslate"><span class="pre">AgentFactory</span></code></a> instantiates agents based on a raw configuration
+dictionary. It resolves the agent type using the global
+<code class="xref py py-data docutils literal notranslate"><span class="pre">AGENT_REGISTRY</span></code>, validates the configuration against the
+corresponding config model, and ensures that all required producers
+and databases are initialized before returning the agent instance.</p>
+<p>This class centralizes agent creation logic and guarantees that
+dependencies are available at startup time.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="apps_logging_app.agents.factory.AgentFactory.create">
 <span class="property"><span class="k"><span class="pre">static</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">create</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">raw_config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/agents/factory.html#AgentFactory.create"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.agents.factory.AgentFactory.create" title="Link to this definition">¶</a></dt>
@@ -1287,56 +711,432 @@ delegated to the corresponding resource factories.</p>
 </dd></dl>
 
 </section>
+<section id="module-apps_logging_app.agents.model">
+<span id="apps-logging-app-agents-model-module"></span><h2>apps_logging_app.agents.model module<a class="headerlink" href="#module-apps_logging_app.agents.model" title="Link to this heading">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="apps_logging_app.agents.model.PathFileConfig">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">apps_logging_app.agents.model.</span></span><span class="sig-name descname"><span class="pre">PathFileConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cursor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/agents/model.html#PathFileConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.agents.model.PathFileConfig" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
+<p>Configuration model representing a log file to be monitored.</p>
+<p>This model defines a file path along with runtime metadata used by
+agents to track read position and file rotation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>) – Logical name of the path file, used as a reference
+in regex configurations.</p></li>
+<li><p><strong>path</strong> (<em>pathlib.Path</em>) – Filesystem path to the log file.</p></li>
+<li><p><strong>cursor</strong> (<em>int</em>) – Byte position used to track the last read offset.</p></li>
+<li><p><strong>id</strong> (<em>Optional</em><em>[</em><em>int</em><em>]</em>) – Identifier of the file used to detect file rotation.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.agents.model.PathFileConfig.name">
+<span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#apps_logging_app.agents.model.PathFileConfig.name" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.agents.model.PathFileConfig.path">
+<span class="sig-name descname"><span class="pre">path</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Path</span></span><a class="headerlink" href="#apps_logging_app.agents.model.PathFileConfig.path" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.agents.model.PathFileConfig.cursor">
+<span class="sig-name descname"><span class="pre">cursor</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></span><a class="headerlink" href="#apps_logging_app.agents.model.PathFileConfig.cursor" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.agents.model.PathFileConfig.id">
+<span class="sig-name descname"><span class="pre">id</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#apps_logging_app.agents.model.PathFileConfig.id" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="apps_logging_app.agents.model.PathFileConfig.validate_name">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">validate_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/agents/model.html#PathFileConfig.validate_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.agents.model.PathFileConfig.validate_name" title="Link to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="apps_logging_app.agents.model.PathFileConfig.validate_path">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">validate_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/agents/model.html#PathFileConfig.validate_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.agents.model.PathFileConfig.validate_path" title="Link to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><em>Path</em></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.agents.model.PathFileConfig.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></span><a class="headerlink" href="#apps_logging_app.agents.model.PathFileConfig.model_config" title="Link to this definition">¶</a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="apps_logging_app.agents.model.RegexPatternConfig">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">apps_logging_app.agents.model.</span></span><span class="sig-name descname"><span class="pre">RegexPatternConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_file_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">regex_pattern</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/agents/model.html#RegexPatternConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.agents.model.RegexPatternConfig" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
+<p>Configuration model defining a regex pattern applied to a log file.</p>
+<p>This model links a regular expression to a specific
+<a class="reference internal" href="#apps_logging_app.agents.model.PathFileConfig" title="apps_logging_app.agents.model.PathFileConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">PathFileConfig</span></code></a> via its name. The regex is compiled automatically
+if provided as a string.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>path_file_name</strong> (<em>str</em>) – Name of the path file this regex applies to.</p></li>
+<li><p><strong>regex_pattern</strong> (<em>Pattern</em><em>[</em><em>str</em><em>]</em>) – Compiled regular expression used to extract data.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.agents.model.RegexPatternConfig.path_file_name">
+<span class="sig-name descname"><span class="pre">path_file_name</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#apps_logging_app.agents.model.RegexPatternConfig.path_file_name" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.agents.model.RegexPatternConfig.regex_pattern">
+<span class="sig-name descname"><span class="pre">regex_pattern</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Pattern</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#apps_logging_app.agents.model.RegexPatternConfig.regex_pattern" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="apps_logging_app.agents.model.RegexPatternConfig.compile_regex">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">compile_regex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">v</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/agents/model.html#RegexPatternConfig.compile_regex"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.agents.model.RegexPatternConfig.compile_regex" title="Link to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><em>Pattern</em>[str]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.agents.model.RegexPatternConfig.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></span><a class="headerlink" href="#apps_logging_app.agents.model.RegexPatternConfig.model_config" title="Link to this definition">¶</a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="apps_logging_app.agents.model.QueryConfig">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">apps_logging_app.agents.model.</span></span><span class="sig-name descname"><span class="pre">QueryConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">query</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/agents/model.html#QueryConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.agents.model.QueryConfig" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
+<p>Configuration model defining a database query destination.</p>
+<p>This model specifies the database type, instance name, and query
+template to be executed when a data connection is processed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>type</strong> (<em>str</em>) – Type of the destination database.</p></li>
+<li><p><strong>name</strong> (<em>str</em>) – Name of the destination database instance.</p></li>
+<li><p><strong>query</strong> (<em>str</em>) – Query string to be executed.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.agents.model.QueryConfig.type">
+<span class="sig-name descname"><span class="pre">type</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#apps_logging_app.agents.model.QueryConfig.type" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.agents.model.QueryConfig.name">
+<span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#apps_logging_app.agents.model.QueryConfig.name" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.agents.model.QueryConfig.query">
+<span class="sig-name descname"><span class="pre">query</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#apps_logging_app.agents.model.QueryConfig.query" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.agents.model.QueryConfig.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></span><a class="headerlink" href="#apps_logging_app.agents.model.QueryConfig.model_config" title="Link to this definition">¶</a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="apps_logging_app.agents.model.DataConnectionConfig">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">apps_logging_app.agents.model.</span></span><span class="sig-name descname"><span class="pre">DataConnectionConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_error</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source_ref</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">destination_ref</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expired_time_int</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/agents/model.html#DataConnectionConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.agents.model.DataConnectionConfig" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
+<p>Configuration model defining a logical data connection.</p>
+<p>A data connection links a source (regex match on a log file) to an
+optional destination (database query) and defines how extracted
+data should be processed and routed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>name</strong> (<em>str</em>) – Unique name of the data connection.</p></li>
+<li><p><strong>is_error</strong> (<em>bool</em>) – Whether this data connection represents an error condition.</p></li>
+<li><p><strong>source_ref</strong> (<em>Optional</em><em>[</em><a class="reference internal" href="#apps_logging_app.agents.model.RegexPatternConfig" title="apps_logging_app.agents.model.RegexPatternConfig"><em>RegexPatternConfig</em></a><em>]</em>) – Regex-based source configuration.</p></li>
+<li><p><strong>destination_ref</strong> (<em>Optional</em><em>[</em><a class="reference internal" href="#apps_logging_app.agents.model.QueryConfig" title="apps_logging_app.agents.model.QueryConfig"><em>QueryConfig</em></a><em>]</em>) – Query-based destination configuration.</p></li>
+<li><p><strong>expired_time_int</strong> (<em>Optional</em><em>[</em><em>int</em><em>]</em>) – Expiration time in minutes for generated data.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.agents.model.DataConnectionConfig.name">
+<span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#apps_logging_app.agents.model.DataConnectionConfig.name" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.agents.model.DataConnectionConfig.is_error">
+<span class="sig-name descname"><span class="pre">is_error</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></span><a class="headerlink" href="#apps_logging_app.agents.model.DataConnectionConfig.is_error" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.agents.model.DataConnectionConfig.source_ref">
+<span class="sig-name descname"><span class="pre">source_ref</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#apps_logging_app.agents.model.RegexPatternConfig" title="apps_logging_app.agents.model.RegexPatternConfig"><span class="pre">RegexPatternConfig</span></a></span><a class="headerlink" href="#apps_logging_app.agents.model.DataConnectionConfig.source_ref" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.agents.model.DataConnectionConfig.destination_ref">
+<span class="sig-name descname"><span class="pre">destination_ref</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="#apps_logging_app.agents.model.QueryConfig" title="apps_logging_app.agents.model.QueryConfig"><span class="pre">QueryConfig</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#apps_logging_app.agents.model.DataConnectionConfig.destination_ref" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.agents.model.DataConnectionConfig.expired_time_int">
+<span class="sig-name descname"><span class="pre">expired_time_int</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#apps_logging_app.agents.model.DataConnectionConfig.expired_time_int" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.agents.model.DataConnectionConfig.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></span><a class="headerlink" href="#apps_logging_app.agents.model.DataConnectionConfig.model_config" title="Link to this definition">¶</a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="apps_logging_app.agents.model.ProducerConnectionConfig">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">apps_logging_app.agents.model.</span></span><span class="sig-name descname"><span class="pre">ProducerConnectionConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_connections</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/agents/model.html#ProducerConnectionConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.agents.model.ProducerConnectionConfig" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
+<p>Configuration model defining a producer and its associated data connections.</p>
+<p>This model groups multiple <a class="reference internal" href="#apps_logging_app.agents.model.DataConnectionConfig" title="apps_logging_app.agents.model.DataConnectionConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">DataConnectionConfig</span></code></a> instances
+under a single producer definition.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>type</strong> (<em>str</em>) – Type of the producer.</p></li>
+<li><p><strong>name</strong> (<em>str</em>) – Name of the producer instance.</p></li>
+<li><p><strong>data_connections</strong> (<em>List</em><em>[</em><a class="reference internal" href="#apps_logging_app.agents.model.DataConnectionConfig" title="apps_logging_app.agents.model.DataConnectionConfig"><em>DataConnectionConfig</em></a><em>]</em>) – List of data connections handled by the producer.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.agents.model.ProducerConnectionConfig.type">
+<span class="sig-name descname"><span class="pre">type</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#apps_logging_app.agents.model.ProducerConnectionConfig.type" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.agents.model.ProducerConnectionConfig.name">
+<span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#apps_logging_app.agents.model.ProducerConnectionConfig.name" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.agents.model.ProducerConnectionConfig.data_connections">
+<span class="sig-name descname"><span class="pre">data_connections</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#apps_logging_app.agents.model.DataConnectionConfig" title="apps_logging_app.agents.model.DataConnectionConfig"><span class="pre">DataConnectionConfig</span></a><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#apps_logging_app.agents.model.ProducerConnectionConfig.data_connections" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.agents.model.ProducerConnectionConfig.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></span><a class="headerlink" href="#apps_logging_app.agents.model.ProducerConnectionConfig.model_config" title="Link to this definition">¶</a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="apps_logging_app.agents.model.BaseAgentConfig">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">apps_logging_app.agents.model.</span></span><span class="sig-name descname"><span class="pre">BaseAgentConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">buffer_rows</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">500</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_files</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">producer_connections</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fetch_logs_interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">120</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">execute_query_interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">600</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/agents/model.html#BaseAgentConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.agents.model.BaseAgentConfig" title="Link to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseModel</span></code></p>
+<p>Base configuration model for agent instances.</p>
+<p>This model defines all common configuration options required by agents,
+including file monitoring, buffering behavior, producer connections,
+and execution intervals.</p>
+<p>It also enforces validation rules to ensure consistency between
+path files and regex references.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>type</strong> (<em>str</em>) – Type identifier of the agent.</p></li>
+<li><p><strong>name</strong> (<em>str</em>) – Name of the agent instance.</p></li>
+<li><p><strong>buffer_rows</strong> (<em>int</em>) – Number of log lines to read per batch.</p></li>
+<li><p><strong>path_files</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><a class="reference internal" href="#apps_logging_app.agents.model.PathFileConfig" title="apps_logging_app.agents.model.PathFileConfig"><em>PathFileConfig</em></a><em>]</em><em>]</em>) – List of configured log files to monitor.</p></li>
+<li><p><strong>producer_connections</strong> (<em>List</em><em>[</em><a class="reference internal" href="#apps_logging_app.agents.model.ProducerConnectionConfig" title="apps_logging_app.agents.model.ProducerConnectionConfig"><em>ProducerConnectionConfig</em></a><em>]</em>) – Producer connections handled by the agent.</p></li>
+<li><p><strong>fetch_logs_interval</strong> (<em>float</em>) – Interval in seconds between log fetch cycles.</p></li>
+<li><p><strong>execute_query_interval</strong> (<em>float</em>) – Interval in seconds between query executions.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.agents.model.BaseAgentConfig.type">
+<span class="sig-name descname"><span class="pre">type</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#apps_logging_app.agents.model.BaseAgentConfig.type" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.agents.model.BaseAgentConfig.name">
+<span class="sig-name descname"><span class="pre">name</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#apps_logging_app.agents.model.BaseAgentConfig.name" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.agents.model.BaseAgentConfig.buffer_rows">
+<span class="sig-name descname"><span class="pre">buffer_rows</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#apps_logging_app.agents.model.BaseAgentConfig.buffer_rows" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.agents.model.BaseAgentConfig.path_files">
+<span class="sig-name descname"><span class="pre">path_files</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#apps_logging_app.agents.model.PathFileConfig" title="apps_logging_app.agents.model.PathFileConfig"><span class="pre">PathFileConfig</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#apps_logging_app.agents.model.BaseAgentConfig.path_files" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.agents.model.BaseAgentConfig.producer_connections">
+<span class="sig-name descname"><span class="pre">producer_connections</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#apps_logging_app.agents.model.ProducerConnectionConfig" title="apps_logging_app.agents.model.ProducerConnectionConfig"><span class="pre">ProducerConnectionConfig</span></a><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#apps_logging_app.agents.model.BaseAgentConfig.producer_connections" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.agents.model.BaseAgentConfig.fetch_logs_interval">
+<span class="sig-name descname"><span class="pre">fetch_logs_interval</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><a class="headerlink" href="#apps_logging_app.agents.model.BaseAgentConfig.fetch_logs_interval" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.agents.model.BaseAgentConfig.execute_query_interval">
+<span class="sig-name descname"><span class="pre">execute_query_interval</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></span><a class="headerlink" href="#apps_logging_app.agents.model.BaseAgentConfig.execute_query_interval" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="apps_logging_app.agents.model.BaseAgentConfig.validate_buffer_rows">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">validate_buffer_rows</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/agents/model.html#BaseAgentConfig.validate_buffer_rows"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.agents.model.BaseAgentConfig.validate_buffer_rows" title="Link to this definition">¶</a></dt>
+<dd><p>Validate the buffer_rows field of the BaseAgentConfig model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>value</strong> – The value of the buffer_rows field.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If the buffer_rows is less than or equal to 0.</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The validated buffer_rows value.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="apps_logging_app.agents.model.BaseAgentConfig.validate_fetch_logs_interval">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">validate_fetch_logs_interval</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/agents/model.html#BaseAgentConfig.validate_fetch_logs_interval"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.agents.model.BaseAgentConfig.validate_fetch_logs_interval" title="Link to this definition">¶</a></dt>
+<dd><p>Validate the fetch_logs_interval field of the BaseAgentConfig model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>value</strong> – The value of the fetch_logs_interval field.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If the fetch_logs_interval is less than or equal to 0.</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The validated fetch_logs_interval value.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="apps_logging_app.agents.model.BaseAgentConfig.validate_execute_query_interval">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">validate_execute_query_interval</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/agents/model.html#BaseAgentConfig.validate_execute_query_interval"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.agents.model.BaseAgentConfig.validate_execute_query_interval" title="Link to this definition">¶</a></dt>
+<dd><p>Validate the execute_query_interval field of the BaseAgentConfig model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>value</strong> – The value of the execute_query_interval field.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If the execute_query_interval is less than or equal to 180.</p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The validated execute_query_interval value.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="apps_logging_app.agents.model.BaseAgentConfig.validate_regex_path_references">
+<span class="sig-name descname"><span class="pre">validate_regex_path_references</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/agents/model.html#BaseAgentConfig.validate_regex_path_references"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.agents.model.BaseAgentConfig.validate_regex_path_references" title="Link to this definition">¶</a></dt>
+<dd><p>Validate the regex path references in the BaseAgentConfig model.</p>
+<p>This validator checks if the path_file_name referenced in the data_connections
+of the producer_connections exist in the path_files of the agent.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – If the path_file_name referenced in the data_connections
+does not exist in the path_files of the agent.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The validated BaseAgentConfig model.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#apps_logging_app.agents.model.BaseAgentConfig" title="apps_logging_app.agents.model.BaseAgentConfig"><em>BaseAgentConfig</em></a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.agents.model.BaseAgentConfig.model_config">
+<span class="sig-name descname"><span class="pre">model_config</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></span><a class="headerlink" href="#apps_logging_app.agents.model.BaseAgentConfig.model_config" title="Link to this definition">¶</a></dt>
+<dd><p>Configuration for the model, should be a dictionary conforming to [<cite>ConfigDict</cite>][pydantic.config.ConfigDict].</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
 <section id="module-apps_logging_app.agents.registry">
 <span id="apps-logging-app-agents-registry-module"></span><h2>apps_logging_app.agents.registry module<a class="headerlink" href="#module-apps_logging_app.agents.registry" title="Link to this heading">¶</a></h2>
 <dl class="py class">
 <dt class="sig sig-object py" id="apps_logging_app.agents.registry.AgentEntry">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">apps_logging_app.agents.registry.</span></span><span class="sig-name descname"><span class="pre">AgentEntry</span></span><a class="reference internal" href="../_modules/apps_logging_app/agents/registry.html#AgentEntry"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.agents.registry.AgentEntry" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Generic</span></code>[<code class="xref py py-obj docutils literal notranslate"><span class="pre">C</span></code>]</p>
-<p>Represents a registry entry for an agent.</p>
-<p><code class="docutils literal notranslate"><span class="pre">AgentEntry</span></code> stores the mapping between an agent type, its configuration model,
-and the corresponding agent class. This class is used internally by the agent
-registry to manage agent types and their associated metadata.</p>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="apps_logging_app.agents.registry.AgentEntry.config_model">
-<span class="sig-name descname"><span class="pre">config_model</span></span><a class="headerlink" href="#apps_logging_app.agents.registry.AgentEntry.config_model" title="Link to this definition">¶</a></dt>
-<dd><p>The Pydantic configuration model class associated with the agent.</p>
+<p>Registry entry describing a registered agent type.</p>
+<p>The <a class="reference internal" href="#apps_logging_app.agents.registry.AgentEntry" title="apps_logging_app.agents.registry.AgentEntry"><code class="xref py py-class docutils literal notranslate"><span class="pre">AgentEntry</span></code></a> class represents a single entry in the
+global <code class="xref py py-data docutils literal notranslate"><span class="pre">AGENT_REGISTRY</span></code>. It associates an agent type with:</p>
+<ul class="simple">
+<li><p>the agent implementation class</p></li>
+<li><p>the corresponding configuration model</p></li>
+</ul>
+<p>This indirection allows agents to be dynamically instantiated
+from raw configuration data, while preserving strong typing
+between agent classes and their configuration models.</p>
+<p>Instances of this class are created internally by the
+<a class="reference internal" href="#apps_logging_app.agents.registry.register_agent" title="apps_logging_app.agents.registry.register_agent"><code class="xref py py-func docutils literal notranslate"><span class="pre">register_agent()</span></code></a> decorator and should not be instantiated
+directly by users.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Type[C]</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>config_model</strong> (<em>Type</em><em>[</em><a class="reference internal" href="#apps_logging_app.agents.model.BaseAgentConfig" title="apps_logging_app.agents.model.BaseAgentConfig"><em>BaseAgentConfig</em></a><em>]</em>) – Pydantic model used to validate the agent configuration.</p></li>
+<li><p><strong>agent_class</strong> (<em>Type</em><em>[</em><a class="reference internal" href="#apps_logging_app.agents.base.BaseAgent" title="apps_logging_app.agents.base.BaseAgent"><em>BaseAgent</em></a><em>]</em>) – Concrete agent class associated with the entry.</p></li>
+</ul>
 </dd>
 </dl>
-</dd></dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.agents.registry.AgentEntry.config_model">
+<span class="sig-name descname"><span class="pre">config_model</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><span class="pre">C</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#apps_logging_app.agents.registry.AgentEntry.config_model" title="Link to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="apps_logging_app.agents.registry.AgentEntry.agent_class">
-<span class="sig-name descname"><span class="pre">agent_class</span></span><a class="headerlink" href="#apps_logging_app.agents.registry.AgentEntry.agent_class" title="Link to this definition">¶</a></dt>
-<dd><p>The agent class corresponding to the agent type.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Type[<a class="reference internal" href="#apps_logging_app.agents.base.BaseAgent" title="apps_logging_app.agents.base.BaseAgent">BaseAgent</a>]</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id0">
-<span class="sig-name descname"><span class="pre">config_model</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><span class="pre">C</span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#id0" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">agent_class</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#apps_logging_app.agents.base.BaseAgent" title="apps_logging_app.agents.base.BaseAgent"><span class="pre">BaseAgent</span></a><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#apps_logging_app.agents.registry.AgentEntry.agent_class" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
-<dl class="py attribute">
-<dt class="sig sig-object py" id="id1">
-<span class="sig-name descname"><span class="pre">agent_class</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Type</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#apps_logging_app.agents.base.BaseAgent" title="apps_logging_app.agents.base.BaseAgent"><span class="pre">BaseAgent</span></a><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#id1" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="py data">
-<dt class="sig sig-object py" id="apps_logging_app.agents.registry.AGENT_REGISTRY">
-<span class="sig-prename descclassname"><span class="pre">apps_logging_app.agents.registry.</span></span><span class="sig-name descname"><span class="pre">AGENT_REGISTRY</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#apps_logging_app.agents.registry.AgentEntry" title="apps_logging_app.agents.registry.AgentEntry"><span class="pre">AgentEntry</span></a><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'sasdm':</span> <span class="pre">&lt;apps_logging_app.agents.registry.AgentEntry</span> <span class="pre">object&gt;,</span> <span class="pre">'spring':</span> <span class="pre">&lt;apps_logging_app.agents.registry.AgentEntry</span> <span class="pre">object&gt;}</span></span><a class="headerlink" href="#apps_logging_app.agents.registry.AGENT_REGISTRY" title="Link to this definition">¶</a></dt>
-<dd><p>A global registry that maps agent types (str) to their corresponding <code class="docutils literal notranslate"><span class="pre">AgentEntry</span></code> objects.</p>
-<p>This registry is used by factories like <code class="docutils literal notranslate"><span class="pre">AgentFactory</span></code> to look up and create agent
-instances based on their type.</p>
 </dd></dl>
 
 <dl class="py function">
@@ -1347,14 +1147,14 @@ instances based on their type.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>agent_type</strong> (<em>str</em>) – The type of the agent.</p></li>
-<li><p><strong>config_model</strong> (<em>Type</em><em>[</em><a class="reference internal" href="#apps_logging_app.agents.base.BaseAgentConfig" title="apps_logging_app.agents.base.BaseAgentConfig"><em>BaseAgentConfig</em></a><em>]</em>) – The config model for the agent.</p></li>
+<li><p><strong>config_model</strong> (<em>Type</em><em>[</em><a class="reference internal" href="#apps_logging_app.agents.model.BaseAgentConfig" title="apps_logging_app.agents.model.BaseAgentConfig"><em>BaseAgentConfig</em></a><em>]</em>) – The config model for the agent.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A decorator that registers the agent class with the given config model and type.</p>
+<dd class="field-even"><p>The registered agent class.</p>
 </dd>
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Callable[[Type[<a class="reference internal" href="#apps_logging_app.agents.base.BaseAgent" title="apps_logging_app.agents.base.BaseAgent">BaseAgent</a>]], Type[<a class="reference internal" href="#apps_logging_app.agents.base.BaseAgent" title="apps_logging_app.agents.base.BaseAgent">BaseAgent</a>]]</p>
+<dd class="field-odd"><p>Type[<a class="reference internal" href="#apps_logging_app.agents.base.BaseAgent" title="apps_logging_app.agents.base.BaseAgent">BaseAgent</a>]</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1424,80 +1224,40 @@ instances based on their type.</p>
 <li><a class="reference internal" href="#subpackages">Subpackages</a></li>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
 <li><a class="reference internal" href="#module-apps_logging_app.agents.base">apps_logging_app.agents.base module</a><ul>
-<li><a class="reference internal" href="#apps_logging_app.agents.base.PathFileConfig"><code class="docutils literal notranslate"><span class="pre">PathFileConfig</span></code></a><ul>
-<li><a class="reference internal" href="#apps_logging_app.agents.base.PathFileConfig.name"><code class="docutils literal notranslate"><span class="pre">PathFileConfig.name</span></code></a></li>
-<li><a class="reference internal" href="#apps_logging_app.agents.base.PathFileConfig.path"><code class="docutils literal notranslate"><span class="pre">PathFileConfig.path</span></code></a></li>
-<li><a class="reference internal" href="#apps_logging_app.agents.base.PathFileConfig.cursor"><code class="docutils literal notranslate"><span class="pre">PathFileConfig.cursor</span></code></a></li>
-<li><a class="reference internal" href="#apps_logging_app.agents.base.PathFileConfig.id"><code class="docutils literal notranslate"><span class="pre">PathFileConfig.id</span></code></a></li>
-<li><a class="reference internal" href="#apps_logging_app.agents.base.PathFileConfig.validate_name"><code class="docutils literal notranslate"><span class="pre">PathFileConfig.validate_name()</span></code></a></li>
-<li><a class="reference internal" href="#apps_logging_app.agents.base.PathFileConfig.validate_path"><code class="docutils literal notranslate"><span class="pre">PathFileConfig.validate_path()</span></code></a></li>
-<li><a class="reference internal" href="#apps_logging_app.agents.base.PathFileConfig.validate_inode"><code class="docutils literal notranslate"><span class="pre">PathFileConfig.validate_inode()</span></code></a></li>
-<li><a class="reference internal" href="#apps_logging_app.agents.base.PathFileConfig.model_config"><code class="docutils literal notranslate"><span class="pre">PathFileConfig.model_config</span></code></a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#apps_logging_app.agents.base.RegexPatternConfig"><code class="docutils literal notranslate"><span class="pre">RegexPatternConfig</span></code></a><ul>
-<li><a class="reference internal" href="#apps_logging_app.agents.base.RegexPatternConfig.path_file_name"><code class="docutils literal notranslate"><span class="pre">RegexPatternConfig.path_file_name</span></code></a></li>
-<li><a class="reference internal" href="#apps_logging_app.agents.base.RegexPatternConfig.regex_pattern"><code class="docutils literal notranslate"><span class="pre">RegexPatternConfig.regex_pattern</span></code></a></li>
-<li><a class="reference internal" href="#apps_logging_app.agents.base.RegexPatternConfig.compile_regex"><code class="docutils literal notranslate"><span class="pre">RegexPatternConfig.compile_regex()</span></code></a></li>
-<li><a class="reference internal" href="#apps_logging_app.agents.base.RegexPatternConfig.model_config"><code class="docutils literal notranslate"><span class="pre">RegexPatternConfig.model_config</span></code></a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#apps_logging_app.agents.base.QueryConfig"><code class="docutils literal notranslate"><span class="pre">QueryConfig</span></code></a><ul>
-<li><a class="reference internal" href="#apps_logging_app.agents.base.QueryConfig.type"><code class="docutils literal notranslate"><span class="pre">QueryConfig.type</span></code></a></li>
-<li><a class="reference internal" href="#apps_logging_app.agents.base.QueryConfig.name"><code class="docutils literal notranslate"><span class="pre">QueryConfig.name</span></code></a></li>
-<li><a class="reference internal" href="#apps_logging_app.agents.base.QueryConfig.query"><code class="docutils literal notranslate"><span class="pre">QueryConfig.query</span></code></a></li>
-<li><a class="reference internal" href="#apps_logging_app.agents.base.QueryConfig.validate_type"><code class="docutils literal notranslate"><span class="pre">QueryConfig.validate_type()</span></code></a></li>
-<li><a class="reference internal" href="#apps_logging_app.agents.base.QueryConfig.validate_name"><code class="docutils literal notranslate"><span class="pre">QueryConfig.validate_name()</span></code></a></li>
-<li><a class="reference internal" href="#apps_logging_app.agents.base.QueryConfig.validate_query"><code class="docutils literal notranslate"><span class="pre">QueryConfig.validate_query()</span></code></a></li>
-<li><a class="reference internal" href="#apps_logging_app.agents.base.QueryConfig.model_config"><code class="docutils literal notranslate"><span class="pre">QueryConfig.model_config</span></code></a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#apps_logging_app.agents.base.DataConnectionConfig"><code class="docutils literal notranslate"><span class="pre">DataConnectionConfig</span></code></a><ul>
-<li><a class="reference internal" href="#apps_logging_app.agents.base.DataConnectionConfig.name"><code class="docutils literal notranslate"><span class="pre">DataConnectionConfig.name</span></code></a></li>
-<li><a class="reference internal" href="#apps_logging_app.agents.base.DataConnectionConfig.is_error"><code class="docutils literal notranslate"><span class="pre">DataConnectionConfig.is_error</span></code></a></li>
-<li><a class="reference internal" href="#apps_logging_app.agents.base.DataConnectionConfig.source_ref"><code class="docutils literal notranslate"><span class="pre">DataConnectionConfig.source_ref</span></code></a></li>
-<li><a class="reference internal" href="#apps_logging_app.agents.base.DataConnectionConfig.destination_ref"><code class="docutils literal notranslate"><span class="pre">DataConnectionConfig.destination_ref</span></code></a></li>
-<li><a class="reference internal" href="#apps_logging_app.agents.base.DataConnectionConfig.expired_time_int"><code class="docutils literal notranslate"><span class="pre">DataConnectionConfig.expired_time_int</span></code></a></li>
-<li><a class="reference internal" href="#apps_logging_app.agents.base.DataConnectionConfig.validate_name"><code class="docutils literal notranslate"><span class="pre">DataConnectionConfig.validate_name()</span></code></a></li>
-<li><a class="reference internal" href="#apps_logging_app.agents.base.DataConnectionConfig.validate_is_error"><code class="docutils literal notranslate"><span class="pre">DataConnectionConfig.validate_is_error()</span></code></a></li>
-<li><a class="reference internal" href="#apps_logging_app.agents.base.DataConnectionConfig.validate_expired_time"><code class="docutils literal notranslate"><span class="pre">DataConnectionConfig.validate_expired_time()</span></code></a></li>
-<li><a class="reference internal" href="#apps_logging_app.agents.base.DataConnectionConfig.model_config"><code class="docutils literal notranslate"><span class="pre">DataConnectionConfig.model_config</span></code></a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#apps_logging_app.agents.base.ProducerConnectionConfig"><code class="docutils literal notranslate"><span class="pre">ProducerConnectionConfig</span></code></a><ul>
-<li><a class="reference internal" href="#apps_logging_app.agents.base.ProducerConnectionConfig.type"><code class="docutils literal notranslate"><span class="pre">ProducerConnectionConfig.type</span></code></a></li>
-<li><a class="reference internal" href="#apps_logging_app.agents.base.ProducerConnectionConfig.name"><code class="docutils literal notranslate"><span class="pre">ProducerConnectionConfig.name</span></code></a></li>
-<li><a class="reference internal" href="#apps_logging_app.agents.base.ProducerConnectionConfig.data_connections"><code class="docutils literal notranslate"><span class="pre">ProducerConnectionConfig.data_connections</span></code></a></li>
-<li><a class="reference internal" href="#apps_logging_app.agents.base.ProducerConnectionConfig.validate_type"><code class="docutils literal notranslate"><span class="pre">ProducerConnectionConfig.validate_type()</span></code></a></li>
-<li><a class="reference internal" href="#apps_logging_app.agents.base.ProducerConnectionConfig.validate_name"><code class="docutils literal notranslate"><span class="pre">ProducerConnectionConfig.validate_name()</span></code></a></li>
-<li><a class="reference internal" href="#apps_logging_app.agents.base.ProducerConnectionConfig.model_config"><code class="docutils literal notranslate"><span class="pre">ProducerConnectionConfig.model_config</span></code></a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#apps_logging_app.agents.base.BaseAgentConfig"><code class="docutils literal notranslate"><span class="pre">BaseAgentConfig</span></code></a><ul>
-<li><a class="reference internal" href="#apps_logging_app.agents.base.BaseAgentConfig.type"><code class="docutils literal notranslate"><span class="pre">BaseAgentConfig.type</span></code></a></li>
-<li><a class="reference internal" href="#apps_logging_app.agents.base.BaseAgentConfig.name"><code class="docutils literal notranslate"><span class="pre">BaseAgentConfig.name</span></code></a></li>
-<li><a class="reference internal" href="#apps_logging_app.agents.base.BaseAgentConfig.buffer_rows"><code class="docutils literal notranslate"><span class="pre">BaseAgentConfig.buffer_rows</span></code></a></li>
-<li><a class="reference internal" href="#apps_logging_app.agents.base.BaseAgentConfig.path_files"><code class="docutils literal notranslate"><span class="pre">BaseAgentConfig.path_files</span></code></a></li>
-<li><a class="reference internal" href="#apps_logging_app.agents.base.BaseAgentConfig.producer_connections"><code class="docutils literal notranslate"><span class="pre">BaseAgentConfig.producer_connections</span></code></a></li>
-<li><a class="reference internal" href="#apps_logging_app.agents.base.BaseAgentConfig.pool_interval"><code class="docutils literal notranslate"><span class="pre">BaseAgentConfig.pool_interval</span></code></a></li>
-<li><a class="reference internal" href="#apps_logging_app.agents.base.BaseAgentConfig.validate_type"><code class="docutils literal notranslate"><span class="pre">BaseAgentConfig.validate_type()</span></code></a></li>
-<li><a class="reference internal" href="#apps_logging_app.agents.base.BaseAgentConfig.validate_name"><code class="docutils literal notranslate"><span class="pre">BaseAgentConfig.validate_name()</span></code></a></li>
-<li><a class="reference internal" href="#apps_logging_app.agents.base.BaseAgentConfig.validate_buffer_rows"><code class="docutils literal notranslate"><span class="pre">BaseAgentConfig.validate_buffer_rows()</span></code></a></li>
-<li><a class="reference internal" href="#apps_logging_app.agents.base.BaseAgentConfig.validate_pool_interval"><code class="docutils literal notranslate"><span class="pre">BaseAgentConfig.validate_pool_interval()</span></code></a></li>
-<li><a class="reference internal" href="#apps_logging_app.agents.base.BaseAgentConfig.validate_regex_path_references"><code class="docutils literal notranslate"><span class="pre">BaseAgentConfig.validate_regex_path_references()</span></code></a></li>
-<li><a class="reference internal" href="#apps_logging_app.agents.base.BaseAgentConfig.model_config"><code class="docutils literal notranslate"><span class="pre">BaseAgentConfig.model_config</span></code></a></li>
-</ul>
-</li>
 <li><a class="reference internal" href="#apps_logging_app.agents.base.BaseAgent"><code class="docutils literal notranslate"><span class="pre">BaseAgent</span></code></a><ul>
-<li><a class="reference internal" href="#apps_logging_app.agents.base.BaseAgent.working_data_connections"><code class="docutils literal notranslate"><span class="pre">BaseAgent.working_data_connections</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.agents.base.BaseAgent.start"><code class="docutils literal notranslate"><span class="pre">BaseAgent.start()</span></code></a></li>
 <li><a class="reference internal" href="#apps_logging_app.agents.base.BaseAgent.stop"><code class="docutils literal notranslate"><span class="pre">BaseAgent.stop()</span></code></a></li>
 </ul>
 </li>
 </ul>
 </li>
 <li><a class="reference internal" href="#module-apps_logging_app.agents.data">apps_logging_app.agents.data module</a><ul>
+<li><a class="reference internal" href="#apps_logging_app.agents.data.WorkingDataStatus"><code class="docutils literal notranslate"><span class="pre">WorkingDataStatus</span></code></a><ul>
+<li><a class="reference internal" href="#apps_logging_app.agents.data.WorkingDataStatus.READY"><code class="docutils literal notranslate"><span class="pre">WorkingDataStatus.READY</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.agents.data.WorkingDataStatus.QUERY_RUNNING"><code class="docutils literal notranslate"><span class="pre">WorkingDataStatus.QUERY_RUNNING</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.agents.data.WorkingDataStatus.UPDATED"><code class="docutils literal notranslate"><span class="pre">WorkingDataStatus.UPDATED</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.agents.data.WorkingDataStatus.EXPIRED"><code class="docutils literal notranslate"><span class="pre">WorkingDataStatus.EXPIRED</span></code></a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#apps_logging_app.agents.data.WorkingDataConnection"><code class="docutils literal notranslate"><span class="pre">WorkingDataConnection</span></code></a><ul>
+<li><a class="reference internal" href="#apps_logging_app.agents.data.WorkingDataConnection.name"><code class="docutils literal notranslate"><span class="pre">WorkingDataConnection.name</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.agents.data.WorkingDataConnection.producer_type"><code class="docutils literal notranslate"><span class="pre">WorkingDataConnection.producer_type</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.agents.data.WorkingDataConnection.producer_name"><code class="docutils literal notranslate"><span class="pre">WorkingDataConnection.producer_name</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.agents.data.WorkingDataConnection.database_type"><code class="docutils literal notranslate"><span class="pre">WorkingDataConnection.database_type</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.agents.data.WorkingDataConnection.database_name"><code class="docutils literal notranslate"><span class="pre">WorkingDataConnection.database_name</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.agents.data.WorkingDataConnection.query"><code class="docutils literal notranslate"><span class="pre">WorkingDataConnection.query</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.agents.data.WorkingDataConnection.is_error"><code class="docutils literal notranslate"><span class="pre">WorkingDataConnection.is_error</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.agents.data.WorkingDataConnection.status"><code class="docutils literal notranslate"><span class="pre">WorkingDataConnection.status</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.agents.data.WorkingDataConnection.expired_time"><code class="docutils literal notranslate"><span class="pre">WorkingDataConnection.expired_time</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.agents.data.WorkingDataConnection.data_dict_match"><code class="docutils literal notranslate"><span class="pre">WorkingDataConnection.data_dict_match</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.agents.data.WorkingDataConnection.data_dict_query_source"><code class="docutils literal notranslate"><span class="pre">WorkingDataConnection.data_dict_query_source</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.agents.data.WorkingDataConnection.data_dict_result"><code class="docutils literal notranslate"><span class="pre">WorkingDataConnection.data_dict_result</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.agents.data.WorkingDataConnection.list_data_dict_query_result"><code class="docutils literal notranslate"><span class="pre">WorkingDataConnection.list_data_dict_query_result</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.agents.data.WorkingDataConnection.from_config"><code class="docutils literal notranslate"><span class="pre">WorkingDataConnection.from_config()</span></code></a></li>
 <li><a class="reference internal" href="#apps_logging_app.agents.data.WorkingDataConnection.update_expired_time"><code class="docutils literal notranslate"><span class="pre">WorkingDataConnection.update_expired_time()</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.agents.data.WorkingDataConnection.set_ready_status"><code class="docutils literal notranslate"><span class="pre">WorkingDataConnection.set_ready_status()</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.agents.data.WorkingDataConnection.on_query_done"><code class="docutils literal notranslate"><span class="pre">WorkingDataConnection.on_query_done()</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.agents.data.WorkingDataConnection.check_expired_time"><code class="docutils literal notranslate"><span class="pre">WorkingDataConnection.check_expired_time()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -1509,15 +1269,70 @@ instances based on their type.</p>
 </li>
 </ul>
 </li>
+<li><a class="reference internal" href="#module-apps_logging_app.agents.model">apps_logging_app.agents.model module</a><ul>
+<li><a class="reference internal" href="#apps_logging_app.agents.model.PathFileConfig"><code class="docutils literal notranslate"><span class="pre">PathFileConfig</span></code></a><ul>
+<li><a class="reference internal" href="#apps_logging_app.agents.model.PathFileConfig.name"><code class="docutils literal notranslate"><span class="pre">PathFileConfig.name</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.agents.model.PathFileConfig.path"><code class="docutils literal notranslate"><span class="pre">PathFileConfig.path</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.agents.model.PathFileConfig.cursor"><code class="docutils literal notranslate"><span class="pre">PathFileConfig.cursor</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.agents.model.PathFileConfig.id"><code class="docutils literal notranslate"><span class="pre">PathFileConfig.id</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.agents.model.PathFileConfig.validate_name"><code class="docutils literal notranslate"><span class="pre">PathFileConfig.validate_name()</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.agents.model.PathFileConfig.validate_path"><code class="docutils literal notranslate"><span class="pre">PathFileConfig.validate_path()</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.agents.model.PathFileConfig.model_config"><code class="docutils literal notranslate"><span class="pre">PathFileConfig.model_config</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#apps_logging_app.agents.model.RegexPatternConfig"><code class="docutils literal notranslate"><span class="pre">RegexPatternConfig</span></code></a><ul>
+<li><a class="reference internal" href="#apps_logging_app.agents.model.RegexPatternConfig.path_file_name"><code class="docutils literal notranslate"><span class="pre">RegexPatternConfig.path_file_name</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.agents.model.RegexPatternConfig.regex_pattern"><code class="docutils literal notranslate"><span class="pre">RegexPatternConfig.regex_pattern</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.agents.model.RegexPatternConfig.compile_regex"><code class="docutils literal notranslate"><span class="pre">RegexPatternConfig.compile_regex()</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.agents.model.RegexPatternConfig.model_config"><code class="docutils literal notranslate"><span class="pre">RegexPatternConfig.model_config</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#apps_logging_app.agents.model.QueryConfig"><code class="docutils literal notranslate"><span class="pre">QueryConfig</span></code></a><ul>
+<li><a class="reference internal" href="#apps_logging_app.agents.model.QueryConfig.type"><code class="docutils literal notranslate"><span class="pre">QueryConfig.type</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.agents.model.QueryConfig.name"><code class="docutils literal notranslate"><span class="pre">QueryConfig.name</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.agents.model.QueryConfig.query"><code class="docutils literal notranslate"><span class="pre">QueryConfig.query</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.agents.model.QueryConfig.model_config"><code class="docutils literal notranslate"><span class="pre">QueryConfig.model_config</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#apps_logging_app.agents.model.DataConnectionConfig"><code class="docutils literal notranslate"><span class="pre">DataConnectionConfig</span></code></a><ul>
+<li><a class="reference internal" href="#apps_logging_app.agents.model.DataConnectionConfig.name"><code class="docutils literal notranslate"><span class="pre">DataConnectionConfig.name</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.agents.model.DataConnectionConfig.is_error"><code class="docutils literal notranslate"><span class="pre">DataConnectionConfig.is_error</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.agents.model.DataConnectionConfig.source_ref"><code class="docutils literal notranslate"><span class="pre">DataConnectionConfig.source_ref</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.agents.model.DataConnectionConfig.destination_ref"><code class="docutils literal notranslate"><span class="pre">DataConnectionConfig.destination_ref</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.agents.model.DataConnectionConfig.expired_time_int"><code class="docutils literal notranslate"><span class="pre">DataConnectionConfig.expired_time_int</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.agents.model.DataConnectionConfig.model_config"><code class="docutils literal notranslate"><span class="pre">DataConnectionConfig.model_config</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#apps_logging_app.agents.model.ProducerConnectionConfig"><code class="docutils literal notranslate"><span class="pre">ProducerConnectionConfig</span></code></a><ul>
+<li><a class="reference internal" href="#apps_logging_app.agents.model.ProducerConnectionConfig.type"><code class="docutils literal notranslate"><span class="pre">ProducerConnectionConfig.type</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.agents.model.ProducerConnectionConfig.name"><code class="docutils literal notranslate"><span class="pre">ProducerConnectionConfig.name</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.agents.model.ProducerConnectionConfig.data_connections"><code class="docutils literal notranslate"><span class="pre">ProducerConnectionConfig.data_connections</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.agents.model.ProducerConnectionConfig.model_config"><code class="docutils literal notranslate"><span class="pre">ProducerConnectionConfig.model_config</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#apps_logging_app.agents.model.BaseAgentConfig"><code class="docutils literal notranslate"><span class="pre">BaseAgentConfig</span></code></a><ul>
+<li><a class="reference internal" href="#apps_logging_app.agents.model.BaseAgentConfig.type"><code class="docutils literal notranslate"><span class="pre">BaseAgentConfig.type</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.agents.model.BaseAgentConfig.name"><code class="docutils literal notranslate"><span class="pre">BaseAgentConfig.name</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.agents.model.BaseAgentConfig.buffer_rows"><code class="docutils literal notranslate"><span class="pre">BaseAgentConfig.buffer_rows</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.agents.model.BaseAgentConfig.path_files"><code class="docutils literal notranslate"><span class="pre">BaseAgentConfig.path_files</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.agents.model.BaseAgentConfig.producer_connections"><code class="docutils literal notranslate"><span class="pre">BaseAgentConfig.producer_connections</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.agents.model.BaseAgentConfig.fetch_logs_interval"><code class="docutils literal notranslate"><span class="pre">BaseAgentConfig.fetch_logs_interval</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.agents.model.BaseAgentConfig.execute_query_interval"><code class="docutils literal notranslate"><span class="pre">BaseAgentConfig.execute_query_interval</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.agents.model.BaseAgentConfig.validate_buffer_rows"><code class="docutils literal notranslate"><span class="pre">BaseAgentConfig.validate_buffer_rows()</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.agents.model.BaseAgentConfig.validate_fetch_logs_interval"><code class="docutils literal notranslate"><span class="pre">BaseAgentConfig.validate_fetch_logs_interval()</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.agents.model.BaseAgentConfig.validate_execute_query_interval"><code class="docutils literal notranslate"><span class="pre">BaseAgentConfig.validate_execute_query_interval()</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.agents.model.BaseAgentConfig.validate_regex_path_references"><code class="docutils literal notranslate"><span class="pre">BaseAgentConfig.validate_regex_path_references()</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.agents.model.BaseAgentConfig.model_config"><code class="docutils literal notranslate"><span class="pre">BaseAgentConfig.model_config</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li><a class="reference internal" href="#module-apps_logging_app.agents.registry">apps_logging_app.agents.registry module</a><ul>
 <li><a class="reference internal" href="#apps_logging_app.agents.registry.AgentEntry"><code class="docutils literal notranslate"><span class="pre">AgentEntry</span></code></a><ul>
 <li><a class="reference internal" href="#apps_logging_app.agents.registry.AgentEntry.config_model"><code class="docutils literal notranslate"><span class="pre">AgentEntry.config_model</span></code></a></li>
 <li><a class="reference internal" href="#apps_logging_app.agents.registry.AgentEntry.agent_class"><code class="docutils literal notranslate"><span class="pre">AgentEntry.agent_class</span></code></a></li>
-<li><a class="reference internal" href="#id0"><code class="docutils literal notranslate"><span class="pre">AgentEntry.config_model</span></code></a></li>
-<li><a class="reference internal" href="#id1"><code class="docutils literal notranslate"><span class="pre">AgentEntry.agent_class</span></code></a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#apps_logging_app.agents.registry.AGENT_REGISTRY"><code class="docutils literal notranslate"><span class="pre">AGENT_REGISTRY</span></code></a></li>
 <li><a class="reference internal" href="#apps_logging_app.agents.registry.register_agent"><code class="docutils literal notranslate"><span class="pre">register_agent()</span></code></a></li>
 </ul>
 </li>

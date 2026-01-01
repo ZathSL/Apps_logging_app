@@ -28,6 +28,22 @@ apps\_logging\_app.databases.factory module
    :show-inheritance:
    :undoc-members:
 
+apps\_logging\_app.databases.model module
+-----------------------------------------
+
+.. automodule:: apps_logging_app.databases.model
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+apps\_logging\_app.databases.orchestrator module
+------------------------------------------------
+
+.. automodule:: apps_logging_app.databases.orchestrator
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 apps\_logging\_app.databases.registry module
 --------------------------------------------
 

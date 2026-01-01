@@ -277,6 +277,7 @@
 <li class="toctree-l4"><a class="reference internal" href="../../../modules/apps_logging_app.databases.oracle.html">apps_logging_app.databases.oracle package</a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="../../../modules/apps_logging_app.orchestration.html">apps_logging_app.orchestration package</a></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="../../../modules/apps_logging_app.producers.html">apps_logging_app.producers package</a><input aria-label="Toggle navigation of apps_logging_app.producers package" class="toctree-checkbox" id="toctree-checkbox-20" name="toctree-checkbox-20" role="switch" type="checkbox"/><label for="toctree-checkbox-20"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l4"><a class="reference internal" href="../../../modules/apps_logging_app.producers.kafka_handler.html">apps_logging_app.producers.kafka_handler package</a></li>
 </ul>
@@ -294,6 +295,7 @@
 <li class="toctree-l5"><a class="reference internal" href="../../../modules/apps_logging_app.databases.oracle.html">apps_logging_app.databases.oracle package</a></li>
 </ul>
 </li>
+<li class="toctree-l4"><a class="reference internal" href="../../../modules/apps_logging_app.orchestration.html">apps_logging_app.orchestration package</a></li>
 <li class="toctree-l4 has-children"><a class="reference internal" href="../../../modules/apps_logging_app.producers.html">apps_logging_app.producers package</a><input aria-label="Toggle navigation of apps_logging_app.producers package" class="toctree-checkbox" id="toctree-checkbox-25" name="toctree-checkbox-25" role="switch" type="checkbox"/><label for="toctree-checkbox-25"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l5"><a class="reference internal" href="../../../modules/apps_logging_app.producers.kafka_handler.html">apps_logging_app.producers.kafka_handler package</a></li>
 </ul>
@@ -338,557 +340,209 @@
         <article role="main" id="furo-main-content">
           <h1>Source code for apps_logging_app.databases.base</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">field_validator</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">queue</span><span class="w"> </span><span class="kn">import</span> <span class="n">Queue</span><span class="p">,</span> <span class="n">Empty</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">threading</span><span class="w"> </span><span class="kn">import</span> <span class="n">Thread</span><span class="p">,</span> <span class="n">Event</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">concurrent.futures</span><span class="w"> </span><span class="kn">import</span> <span class="n">Future</span><span class="p">,</span> <span class="n">ThreadPoolExecutor</span>
-
-
-
-<div class="viewcode-block" id="QueryTask">
-<a class="viewcode-back" href="../../../modules/apps_logging_app.databases.html#apps_logging_app.databases.base.QueryTask">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">QueryTask</span><span class="p">:</span>
-
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Represents a database query task to be executed asynchronously.</span>
-
-<span class="sd">    ``QueryTask`` encapsulates a SQL or database query along with optional</span>
-<span class="sd">    parameters and manages its execution state through a Future object.</span>
-
-<span class="sd">    :param query: The SQL or database query string to be executed.</span>
-<span class="sd">    :type query: str</span>
-<span class="sd">    :param params: Optional dictionary of parameters to be passed to the query.</span>
-<span class="sd">    :type params: Optional[Dict[str, Any]]</span>
-
-<span class="sd">    Attributes:</span>
-<span class="sd">        future (Future): A concurrent.futures.Future object that will hold</span>
-<span class="sd">                         the result or exception of the query once executed.</span>
-<span class="sd">        retries (int): Counter for the number of times the query has been</span>
-<span class="sd">                       retried due to failure. Defaults to 0.</span>
-
-<span class="sd">    Example Usage:</span>
-
-<span class="sd">    .. code-block:: python</span>
-
-<span class="sd">        task = QueryTask(</span>
-<span class="sd">            query=&quot;SELECT * FROM users WHERE id = %(user_id)s&quot;,</span>
-<span class="sd">            params={&quot;user_id&quot;: 42}</span>
-<span class="sd">        )</span>
-
-<span class="sd">        future_result = task.future  # Will eventually contain query results</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initialize a QueryTask with a query and optional parameters.</span>
-
-<span class="sd">        :param query: Query to be executed.</span>
-<span class="sd">        :param params: Optional parameters to be passed to the query.</span>
-<span class="sd">        :ivar future: A Future object that will store the result of the query.</span>
-<span class="sd">        :ivar retries: The number of times the query has been retried due to a failure.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">query</span> <span class="o">=</span> <span class="n">query</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">params</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">future</span><span class="p">:</span> <span class="n">Future</span> <span class="o">=</span> <span class="n">Future</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">retries</span> <span class="o">=</span> <span class="mi">0</span></div>
-
-
-<div class="viewcode-block" id="ConnectionConfig">
-<a class="viewcode-back" href="../../../modules/apps_logging_app.databases.html#apps_logging_app.databases.base.ConnectionConfig">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">ConnectionConfig</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Configuration model for a single database connection.</span>
-
-<span class="sd">    ``ConnectionConfig`` defines the connection parameters required to</span>
-<span class="sd">    connect to a database instance, including host, port, and an optional</span>
-<span class="sd">    service name or database identifier.</span>
-
-<span class="sd">    :param host: Hostname or IP address of the database server.</span>
-<span class="sd">    :type host: str</span>
-<span class="sd">    :param port: Port number on which the database server is listening.</span>
-<span class="sd">                 Must be between 1 and 65535.</span>
-<span class="sd">    :type port: int</span>
-<span class="sd">    :param service_name: Optional service name, schema, or database name.</span>
-<span class="sd">    :type service_name: Optional[str]</span>
-
-<span class="sd">    Validators:</span>
-<span class="sd">        - host: Must be a non-empty valid hostname or IP address.</span>
-<span class="sd">        - port: Must be an integer between 1 and 65535.</span>
-
-<span class="sd">    Example Usage:</span>
-
-<span class="sd">    .. code-block:: python</span>
-
-<span class="sd">        primary_conn = ConnectionConfig(</span>
-<span class="sd">            host=&quot;localhost&quot;,</span>
-<span class="sd">            port=5432,</span>
-<span class="sd">            service_name=&quot;main_db&quot;</span>
-<span class="sd">        )</span>
-
-<span class="sd">        replica_conn = ConnectionConfig(</span>
-<span class="sd">            host=&quot;replica.local&quot;,</span>
-<span class="sd">            port=5432</span>
-<span class="sd">        )</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="n">host</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">port</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">service_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
-
-<div class="viewcode-block" id="ConnectionConfig.validate_host">
-<a class="viewcode-back" href="../../../modules/apps_logging_app.databases.html#apps_logging_app.databases.base.ConnectionConfig.validate_host">[docs]</a>
-    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;host&#39;</span><span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">validate_host</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Validate the host field of the ConnectionConfig model.</span>
-
-<span class="sd">        :param v: The value of the host field.</span>
-<span class="sd">        :raises ValueError: If the host is empty or not a valid hostname or IP address.</span>
-<span class="sd">        :return: The validated host value.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">v</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">v</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Host cannot be empty&#39;</span><span class="p">)</span>
-        <span class="c1"># Basic validation for hostname or IP</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^[a-zA-Z0-9.-]+$&#39;</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Host must be a valid hostname or IP address&#39;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">v</span></div>
-
-
-<div class="viewcode-block" id="ConnectionConfig.validate_port">
-<a class="viewcode-back" href="../../../modules/apps_logging_app.databases.html#apps_logging_app.databases.base.ConnectionConfig.validate_port">[docs]</a>
-    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;port&#39;</span><span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">validate_port</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Validate the port field of the ConnectionConfig model.</span>
-
-<span class="sd">        :param v: The value of the port field.</span>
-<span class="sd">        :raises ValueError: If the port is not an integer between 1 and 65535.</span>
-<span class="sd">        :return: The validated port value.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="mi">1</span> <span class="o">&lt;=</span> <span class="n">v</span> <span class="o">&lt;=</span> <span class="mi">65535</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Port must be an integer between 1 and 65535&#39;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">v</span></div>
-</div>
-
-
-<div class="viewcode-block" id="BaseDatabaseConfig">
-<a class="viewcode-back" href="../../../modules/apps_logging_app.databases.html#apps_logging_app.databases.base.BaseDatabaseConfig">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">BaseDatabaseConfig</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Configuration model for a database client.</span>
-
-<span class="sd">    ``BaseDatabaseConfig`` stores all the necessary connection and operational </span>
-<span class="sd">    parameters to initialize a database client. This includes credentials, </span>
-<span class="sd">    primary and replica connection details, retry policies, and concurrency settings.</span>
-
-<span class="sd">    :param type: Type of the database (e.g., &quot;postgres&quot;, &quot;mysql&quot;).</span>
-<span class="sd">    :type type: str</span>
-<span class="sd">    :param name: Unique name for the database configuration.</span>
-<span class="sd">    :type name: str</span>
-<span class="sd">    :param username: Username used to authenticate with the database.</span>
-<span class="sd">    :type username: str</span>
-<span class="sd">    :param password: Password used to authenticate with the database.</span>
-<span class="sd">    :type password: str</span>
-<span class="sd">    :param primary: Connection configuration for the primary database instance.</span>
-<span class="sd">    :type primary: ConnectionConfig</span>
-<span class="sd">    :param replica: Optional connection configuration for a replica database instance.</span>
-<span class="sd">    :type replica: Optional[ConnectionConfig]</span>
-<span class="sd">    :param max_retries: Maximum number of times to retry a failed connection.</span>
-<span class="sd">                        Defaults to 5.</span>
-<span class="sd">    :type max_retries: int</span>
-<span class="sd">    :param max_workers: Maximum number of worker threads for executing queries.</span>
-<span class="sd">                        Defaults to 10.</span>
-<span class="sd">    :type max_workers: int</span>
-
-<span class="sd">    Validators:</span>
-<span class="sd">        - type: Ensures the type is not None.</span>
-<span class="sd">        - name: Ensures the name is not None.</span>
-<span class="sd">        - username: Ensures the username is not None.</span>
-<span class="sd">        - password: Ensures the password is not None.</span>
-<span class="sd">        - max_retries: Must be greater than 0.</span>
-<span class="sd">        - max_workers: Must be greater than 0.</span>
-
-<span class="sd">    Example Usage:</span>
-
-<span class="sd">    .. code-block:: python</span>
-
-<span class="sd">        primary_conn = ConnectionConfig(host=&quot;localhost&quot;, port=5432, service_name=&quot;main_db&quot;)</span>
-<span class="sd">        replica_conn = ConnectionConfig(host=&quot;replica.local&quot;, port=5432, service_name=&quot;replica_db&quot;)</span>
-
-<span class="sd">        db_config = BaseDatabaseConfig(</span>
-<span class="sd">            type=&quot;postgres&quot;,</span>
-<span class="sd">            name=&quot;main&quot;,</span>
-<span class="sd">            username=&quot;user&quot;,</span>
-<span class="sd">            password=&quot;password&quot;,</span>
-<span class="sd">            primary=primary_conn,</span>
-<span class="sd">            replica=replica_conn,</span>
-<span class="sd">            max_retries=5,</span>
-<span class="sd">            max_workers=10</span>
-<span class="sd">        )</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">username</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">password</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">primary</span><span class="p">:</span> <span class="n">ConnectionConfig</span>
-    <span class="n">replica</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ConnectionConfig</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">max_retries</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span>
-    <span class="n">max_workers</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span>
-
-<div class="viewcode-block" id="BaseDatabaseConfig.validate_type">
-<a class="viewcode-back" href="../../../modules/apps_logging_app.databases.html#apps_logging_app.databases.base.BaseDatabaseConfig.validate_type">[docs]</a>
-    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;type&#39;</span><span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">validate_type</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Validate the type field of the BaseDatabaseConfig model.</span>
-
-<span class="sd">        :param value: The value of the type field.</span>
-<span class="sd">        :raises ValueError: If the type is None.</span>
-<span class="sd">        :return: The validated type value.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Type cannot be None&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">value</span></div>
-
-    
-<div class="viewcode-block" id="BaseDatabaseConfig.validate_name">
-<a class="viewcode-back" href="../../../modules/apps_logging_app.databases.html#apps_logging_app.databases.base.BaseDatabaseConfig.validate_name">[docs]</a>
-    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">validate_name</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Validate the name field of the BaseDatabaseConfig model.</span>
-
-<span class="sd">        :param value: The value of the name field.</span>
-<span class="sd">        :raises ValueError: If the name is None.</span>
-<span class="sd">        :return: The validated name value.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Name cannot be None&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">value</span></div>
-
-
-<div class="viewcode-block" id="BaseDatabaseConfig.validate_username">
-<a class="viewcode-back" href="../../../modules/apps_logging_app.databases.html#apps_logging_app.databases.base.BaseDatabaseConfig.validate_username">[docs]</a>
-    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;username&#39;</span><span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">validate_username</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Validate the username field of the BaseDatabaseConfig model.</span>
-
-<span class="sd">        :param value: The value of the username field.</span>
-<span class="sd">        :raises ValueError: If the username is None.</span>
-<span class="sd">        :return: The validated username value.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Username cannot be None&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">value</span></div>
-
-    
-<div class="viewcode-block" id="BaseDatabaseConfig.validate_password">
-<a class="viewcode-back" href="../../../modules/apps_logging_app.databases.html#apps_logging_app.databases.base.BaseDatabaseConfig.validate_password">[docs]</a>
-    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;password&#39;</span><span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">validate_password</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Validate the password field of the BaseDatabaseConfig model.</span>
-
-<span class="sd">        :param value: The value of the password field.</span>
-<span class="sd">        :raises ValueError: If the password is None.</span>
-<span class="sd">        :return: The validated password value.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Password cannot be None&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">value</span></div>
-
-    
-<div class="viewcode-block" id="BaseDatabaseConfig.validate_max_retries">
-<a class="viewcode-back" href="../../../modules/apps_logging_app.databases.html#apps_logging_app.databases.base.BaseDatabaseConfig.validate_max_retries">[docs]</a>
-    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;max_retries&#39;</span><span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">validate_max_retries</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Validate the max retries field of the BaseDatabaseConfig model.</span>
-
-<span class="sd">        :param value: The value of the max retries field.</span>
-<span class="sd">        :raises ValueError: If the max retries is less than or equal to 0.</span>
-<span class="sd">        :return: The validated max retries value.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">value</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Max retries must be greater than 0&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">value</span></div>
-
-    
-<div class="viewcode-block" id="BaseDatabaseConfig.validate_max_workers">
-<a class="viewcode-back" href="../../../modules/apps_logging_app.databases.html#apps_logging_app.databases.base.BaseDatabaseConfig.validate_max_workers">[docs]</a>
-    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;max_workers&#39;</span><span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">validate_max_workers</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Validate the max workers field of the BaseDatabaseConfig model.</span>
-
-<span class="sd">        :param value: The value of the max workers field.</span>
-<span class="sd">        :raises ValueError: If the max workers is less than or equal to 0.</span>
-<span class="sd">        :return: The validated max workers value.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">value</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Max workers must be greater than 0&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">value</span></div>
-</div>
-
+<span class="kn">from</span><span class="w"> </span><span class="nn">concurrent.futures</span><span class="w"> </span><span class="kn">import</span> <span class="n">ThreadPoolExecutor</span><span class="p">,</span> <span class="n">Future</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseDatabaseConfig</span><span class="p">,</span> <span class="n">QueryTask</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">random</span>
 
 <div class="viewcode-block" id="BaseDatabase">
 <a class="viewcode-back" href="../../../modules/apps_logging_app.databases.html#apps_logging_app.databases.base.BaseDatabase">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">BaseDatabase</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
-
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Abstract base class for database clients.</span>
+<span class="sd">    Abstract base class for asynchronous database clients.</span>
 
-<span class="sd">    ``BaseDatabase`` provides a framework for executing queries asynchronously</span>
-<span class="sd">    against a database. It manages a queue of query tasks, executes them in a</span>
-<span class="sd">    thread pool, handles retries and reconnections, and logs all relevant events.</span>
+<span class="sd">    The :class:`BaseDatabase` defines a common execution model for database</span>
+<span class="sd">    interactions based on an internal queue, a dispatcher thread, and a</span>
+<span class="sd">    thread pool executor. Queries are enqueued and executed asynchronously,</span>
+<span class="sd">    returning a :class:`concurrent.futures.Future` to the caller.</span>
 
-<span class="sd">    This class is designed to be extended for specific database types by</span>
-<span class="sd">    implementing the abstract methods ``_connect`` and ``_query``.</span>
-
-<span class="sd">    :param config: The database configuration containing connection details, credentials, </span>
-<span class="sd">                   and operational parameters.</span>
-<span class="sd">    :type config: BaseDatabaseConfig</span>
-
-<span class="sd">    Attributes:</span>
-<span class="sd">        config (BaseDatabaseConfig): The database configuration object.</span>
-<span class="sd">        logger (logging.Logger): Logger for database events.</span>
-<span class="sd">        _queue (Queue): Internal queue of pending query tasks.</span>
-<span class="sd">        _stop_event (Event): Event used to signal shutdown of the dispatcher thread.</span>
-<span class="sd">        _executor (ThreadPoolExecutor): Thread pool for executing queries.</span>
-<span class="sd">        _dispatcher (Thread): Background thread that dispatches query tasks.</span>
+<span class="sd">    This class is responsible for:</span>
 <span class="sd">    </span>
-<span class="sd">    Public Methods:</span>
-<span class="sd">        execute(query, params=None) -&gt; Future:</span>
-<span class="sd">            Adds a query to the execution queue and returns a Future for its result.</span>
-<span class="sd">        </span>
-<span class="sd">        shutdown() -&gt; None:</span>
-<span class="sd">            Shuts down the dispatcher thread, waits for all tasks to finish, </span>
-<span class="sd">            and shuts down the executor.</span>
+<span class="sd">    - Managing the lifecycle of the database connection</span>
+<span class="sd">    - Dispatching query tasks from a queue to a worker pool</span>
+<span class="sd">    - Handling retries with exponential backoff on failures</span>
+<span class="sd">    - Coordinating connection state via an external orchestrator</span>
+<span class="sd">    - Providing a uniform interface for different database implementations</span>
 
-<span class="sd">    Abstract Methods:</span>
-<span class="sd">        _connect() -&gt; None:</span>
-<span class="sd">            Establish a connection to the database. Must be implemented in subclasses.</span>
-<span class="sd">        </span>
-<span class="sd">        _query(query, params=None) -&gt; Dict[str, Any]:</span>
-<span class="sd">            Execute a query on the database and return the result as a dictionary.</span>
-<span class="sd">            Must be implemented in subclasses.</span>
+<span class="sd">    Concrete database implementations must provide:</span>
+<span class="sd">    </span>
+<span class="sd">    - Connection management logic</span>
+<span class="sd">    - Query execution logic</span>
 
-<span class="sd">    Internal Methods:</span>
-<span class="sd">        _dispatch() -&gt; None:</span>
-<span class="sd">            Internal loop that pulls query tasks from the queue and submits them</span>
-<span class="sd">            to the executor for execution.</span>
-<span class="sd">        </span>
-<span class="sd">        _safe_query(task: QueryTask) -&gt; Dict[str, Any]:</span>
-<span class="sd">            Executes a query safely, handling exceptions and logging results.</span>
-<span class="sd">        </span>
-<span class="sd">        _safe_connect() -&gt; None:</span>
-<span class="sd">            Attempts to establish a database connection with retries and error handling.</span>
+<span class="sd">    Subclasses are required to implement the following abstract methods:</span>
 
-<span class="sd">    Example Usage:</span>
+<span class="sd">    - :meth:`connect`</span>
+<span class="sd">    - :meth:`close`</span>
+<span class="sd">    - :meth:`_query`</span>
 
-<span class="sd">    .. code-block:: python</span>
+<span class="sd">    Instances of this class are typically created and managed by a</span>
+<span class="sd">    database factory and used by agents to execute queries asynchronously.</span>
 
-<span class="sd">        class MyDatabase(BaseDatabase):</span>
-<span class="sd">            def _connect(self):</span>
-<span class="sd">                # Implementation for connecting to the specific database</span>
-<span class="sd">                pass</span>
-
-<span class="sd">            def _query(self, query, params=None):</span>
-<span class="sd">                # Implementation for executing a query</span>
-<span class="sd">                return {&quot;result&quot;: &quot;success&quot;}</span>
-
-<span class="sd">        config = BaseDatabaseConfig(</span>
-<span class="sd">            type=&quot;my_db&quot;,</span>
-<span class="sd">            name=&quot;main&quot;,</span>
-<span class="sd">            username=&quot;user&quot;,</span>
-<span class="sd">            password=&quot;pass&quot;,</span>
-<span class="sd">            primary=ConnectionConfig(host=&quot;localhost&quot;, port=5432)</span>
-<span class="sd">        )</span>
-
-<span class="sd">        db = MyDatabase(config)</span>
-<span class="sd">        future = db.execute(&quot;SELECT * FROM table&quot;)</span>
-<span class="sd">        result = future.result()</span>
-<span class="sd">        db.shutdown()</span>
+<span class="sd">    :param config: Configuration object containing database connection</span>
+<span class="sd">        parameters and execution settings.</span>
+<span class="sd">    :type config: BaseDatabaseConfig</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">BaseDatabaseConfig</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">BaseDatabaseConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initialize the BaseDatabase with the given config.</span>
+<span class="sd">        Initializes the BaseDatabase with the given config.</span>
 
-<span class="sd">        :param config: The config for the database.</span>
-
-<span class="sd">        Initializes the database with the given config, sets up the logger, and starts the dispatcher thread.</span>
+<span class="sd">        :param config: The database configuration containing connection details, credentials,</span>
+<span class="sd">            and operational parameters.</span>
+<span class="sd">        :type config: BaseDatabaseConfig</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;__main__.&quot;</span> <span class="o">+</span><span class="vm">__name__</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Initialized database: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_queue</span> <span class="o">=</span> <span class="n">Queue</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_stop_event</span> <span class="o">=</span> <span class="n">Event</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_executor</span> <span class="o">=</span> <span class="n">ThreadPoolExecutor</span><span class="p">(</span><span class="n">max_workers</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">max_workers</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_dispatcher</span> <span class="o">=</span> <span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_dispatch</span><span class="p">,</span> <span class="n">daemon</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_dispatcher</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
-
+        <span class="bp">self</span><span class="o">.</span><span class="n">orchestrator</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Initialized database: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
     <span class="c1"># PUBLIC API</span>
 
-<div class="viewcode-block" id="BaseDatabase.execute">
-<a class="viewcode-back" href="../../../modules/apps_logging_app.databases.html#apps_logging_app.databases.base.BaseDatabase.execute">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<div class="viewcode-block" id="BaseDatabase.start">
+<a class="viewcode-back" href="../../../modules/apps_logging_app.databases.html#apps_logging_app.databases.base.BaseDatabase.start">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Execute a query with the given parameters and return the result as a Future.</span>
-
-<span class="sd">        The query will be executed in a separate thread, allowing the caller to</span>
-<span class="sd">        continue without blocking.</span>
-
-<span class="sd">        :param query: The query to execute.</span>
-<span class="sd">        :param params: Optional parameters to pass to the query.</span>
-<span class="sd">        :return: A Future object that will contain the result of the query.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">task</span> <span class="o">=</span> <span class="n">QueryTask</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_queue</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">task</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">task</span><span class="o">.</span><span class="n">future</span></div>
+<span class="sd">        Starts the database dispatcher thread, which picks up queries from the queue</span>
+<span class="sd">        and submits them to the thread pool executor for execution.</span>
+<span class="sd">        &quot;&quot;&quot;</span>        
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dispatcher</span><span class="o">.</span><span class="n">start</span><span class="p">()</span></div>
 
 
-<div class="viewcode-block" id="BaseDatabase.shutdown">
-<a class="viewcode-back" href="../../../modules/apps_logging_app.databases.html#apps_logging_app.databases.base.BaseDatabase.shutdown">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">shutdown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="BaseDatabase.enqueue_query">
+<a class="viewcode-back" href="../../../modules/apps_logging_app.databases.html#apps_logging_app.databases.base.BaseDatabase.enqueue_query">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">enqueue_query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Future</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Shut down the database.</span>
+<span class="sd">        Enqueues a query to be executed by the database dispatcher thread.</span>
 
-<span class="sd">        This method stops the dispatcher thread and waits for it to finish,</span>
-<span class="sd">        then joins the queue and shuts down the executor, waiting for all</span>
-<span class="sd">        tasks to finish.</span>
-
-<span class="sd">        :return: None</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_stop_event</span><span class="o">.</span><span class="n">set</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_dispatcher</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">_queue</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_executor</span><span class="o">.</span><span class="n">shutdown</span><span class="p">(</span><span class="n">wait</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Database </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> shut down&quot;</span><span class="p">)</span></div>
-
-    <span class="c1"># INTERNALS</span>
-
-    <span class="nd">@abstractmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_connect</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Abstract method to connect to the database.</span>
-
-<span class="sd">        This method is called by the _dispatch method and should establish a</span>
-<span class="sd">        connection to the database. It should not return a value.</span>
-
-<span class="sd">        :return: None</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">pass</span>
-
-
-    <span class="nd">@abstractmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Abstract method to execute a query on the database.</span>
-
-<span class="sd">        This method is called by the dispatch method and should execute the given</span>
-<span class="sd">        query on the database with the given parameters. It should return a</span>
-<span class="sd">        dictionary containing the result of the query.</span>
-
-<span class="sd">        :param query: The query to be executed.</span>
-<span class="sd">        :param params: Optional parameters to be passed to the query.</span>
-<span class="sd">        :return: A dictionary containing the result of the query.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">pass</span>
-    
-    <span class="k">def</span><span class="w"> </span><span class="nf">_dispatch</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Connects to the database, then enters a loop to process tasks</span>
-<span class="sd">        from the queue. Each task is dispatched to the executor and</span>
-<span class="sd">        executed in a separate thread. If the task completes successfully,</span>
-<span class="sd">        the result is set on the task&#39;s future. If the task fails, an</span>
-<span class="sd">        exception is set on the task&#39;s future.</span>
-
-<span class="sd">        :return: None</span>
+<span class="sd">        :param query: The SQL or database query string to be executed.</span>
+<span class="sd">        :type query: str</span>
+<span class="sd">        :param params: Optional dictionary of parameters to be passed to the query.</span>
+<span class="sd">        :type params: Optional[Dict[str, Any]]</span>
+<span class="sd">        :return: A concurrent.futures.Future object that will hold the result of the query.</span>
+<span class="sd">        :rtype: Future[List[Dict[str, Any]]]</span>
+<span class="sd">        :raises: Exception if the queue is full or an error occurs while putting the query.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_safe_connect</span><span class="p">()</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Client DB </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: Connected&quot;</span><span class="p">)</span>
+            <span class="n">task</span> <span class="o">=</span> <span class="n">QueryTask</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_queue</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">task</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">task</span><span class="o">.</span><span class="n">future</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Client DB </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: Failed to connect: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Client DB </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: Queue full or error putting query: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span></div>
 
+
+<div class="viewcode-block" id="BaseDatabase.stop">
+<a class="viewcode-back" href="../../../modules/apps_logging_app.databases.html#apps_logging_app.databases.base.BaseDatabase.stop">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Shuts down the database dispatcher thread, waits for all queued tasks to finish,</span>
+<span class="sd">        joins the queue, shuts down the executor, and closes the database connection.</span>
+
+<span class="sd">        :param timeout: Optional timeout in seconds to wait for the dispatcher thread to finish.</span>
+<span class="sd">        :type timeout: float | None</span>
+<span class="sd">        :return: None</span>
+<span class="sd">        :raises: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stop_event</span><span class="o">.</span><span class="n">set</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dispatcher</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_queue</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_executor</span><span class="o">.</span><span class="n">shutdown</span><span class="p">(</span><span class="n">wait</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Database </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> shut down&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BaseDatabase.connect">
+<a class="viewcode-back" href="../../../modules/apps_logging_app.databases.html#apps_logging_app.databases.base.BaseDatabase.connect">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">connect</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Establish a connection to the database.</span>
+
+<span class="sd">        :raises: Exception if connection fails</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="BaseDatabase.close">
+<a class="viewcode-back" href="../../../modules/apps_logging_app.databases.html#apps_logging_app.databases.base.BaseDatabase.close">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Closes the database connection.</span>
+
+<span class="sd">        :raises: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+
+    <span class="c1"># INTERNALS</span>
+    
+    <span class="k">def</span><span class="w"> </span><span class="nf">_dispatch</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Internal loop that pulls query tasks from the queue and submits them</span>
+<span class="sd">        to the executor for execution. Ensures the orchestrator is connected before</span>
+<span class="sd">        submitting queries. If a query fails, marks the orchestrator as disconnected</span>
+<span class="sd">        and retries the query up to max_retries times with exponential backoff.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">orchestrator</span><span class="o">.</span><span class="n">ensure_connected</span><span class="p">()</span>
 
         <span class="k">while</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stop_event</span><span class="o">.</span><span class="n">is_set</span><span class="p">():</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">task</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_queue</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
             <span class="k">except</span> <span class="n">Empty</span><span class="p">:</span>
                 <span class="k">continue</span>
-            <span class="n">future</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_executor</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_safe_query</span><span class="p">,</span> <span class="n">task</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">orchestrator</span><span class="o">.</span><span class="n">ensure_connected</span><span class="p">()</span>
+            <span class="n">future</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_executor</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_query</span><span class="p">,</span> <span class="n">task</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Client DB </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: Query dispatched: </span><span class="si">{</span><span class="n">task</span><span class="o">.</span><span class="n">query</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
            
             <span class="k">def</span><span class="w"> </span><span class="nf">_callback</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">task</span><span class="o">=</span><span class="n">task</span><span class="p">):</span>
                 <span class="k">try</span><span class="p">:</span>
-                    <span class="n">task</span><span class="o">.</span><span class="n">future</span><span class="o">.</span><span class="n">set_result</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">result</span><span class="p">())</span>
+                    <span class="n">result</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
+                    <span class="n">task</span><span class="o">.</span><span class="n">future</span><span class="o">.</span><span class="n">set_result</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Client DB </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: Query completed: </span><span class="si">{</span><span class="n">task</span><span class="o">.</span><span class="n">query</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
                 <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                    <span class="n">task</span><span class="o">.</span><span class="n">future</span><span class="o">.</span><span class="n">set_exception</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Client DB </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: Query failed: </span><span class="si">{</span><span class="n">task</span><span class="o">.</span><span class="n">query</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">orchestrator</span><span class="o">.</span><span class="n">mark_disconnected</span><span class="p">()</span>
+
+                    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">task</span><span class="p">,</span> <span class="s1">&#39;retry_count&#39;</span><span class="p">):</span>
+                        <span class="n">task</span><span class="o">.</span><span class="n">retry_count</span> <span class="o">=</span> <span class="mi">0</span>
+
+                    <span class="k">if</span> <span class="n">task</span><span class="o">.</span><span class="n">retry_count</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">max_retries</span><span class="p">:</span>
+                        <span class="n">task</span><span class="o">.</span><span class="n">retry_count</span> <span class="o">+=</span> <span class="mi">1</span>
+                        <span class="n">backoff</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span> <span class="o">**</span> <span class="n">task</span><span class="o">.</span><span class="n">retry_count</span><span class="p">)</span> <span class="o">+</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Client DB </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: Retrying query in </span><span class="si">{</span><span class="n">backoff</span><span class="si">}</span><span class="s2"> seconds: </span><span class="si">{</span><span class="n">task</span><span class="o">.</span><span class="n">query</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">backoff</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_queue</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">task</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Client DB </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: Max retry reached for query: </span><span class="si">{</span><span class="n">task</span><span class="o">.</span><span class="n">query</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                        <span class="n">task</span><span class="o">.</span><span class="n">future</span><span class="o">.</span><span class="n">set_exception</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
                 <span class="k">finally</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_queue</span><span class="o">.</span><span class="n">task_done</span><span class="p">()</span>
             
             <span class="n">future</span><span class="o">.</span><span class="n">add_done_callback</span><span class="p">(</span><span class="n">_callback</span><span class="p">)</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_safe_query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">task</span><span class="p">:</span> <span class="n">QueryTask</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">task</span><span class="p">:</span> <span class="n">QueryTask</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Execute a query on the database in a safe manner.</span>
+<span class="sd">        Internal method that executes a query task on the database.</span>
 
-<span class="sd">        This method is called by the dispatch method and should execute the given</span>
-<span class="sd">        query on the database with the given parameters. If the query</span>
-<span class="sd">        completes successfully, the result is returned as a dictionary. If the</span>
-<span class="sd">        query fails, an exception is logged and the database connection is</span>
-<span class="sd">        re-established.</span>
-
-<span class="sd">        :param task: The task to be executed, containing the query and</span>
-<span class="sd">            parameters.</span>
-<span class="sd">        :return: A dictionary containing the result of the query.</span>
+<span class="sd">        :param task: The QueryTask object to be executed.</span>
+<span class="sd">        :type task: QueryTask</span>
+<span class="sd">        :return: A list of dictionaries containing the result of the query.</span>
+<span class="sd">        :rtype: List[Dict[str, Any]]</span>
+<span class="sd">        :raises: Exception if the query fails</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">result_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_query</span><span class="p">(</span><span class="n">task</span><span class="o">.</span><span class="n">query</span><span class="p">,</span> <span class="n">task</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Client DB </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: Query result: </span><span class="si">{</span><span class="n">result_dict</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">result_dict</span>
-        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Client DB </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: Failed to execute query: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_safe_connect</span><span class="p">()</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">_safe_connect</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Tries to connect to the database. If an error occurs while connecting, it will</span>
-<span class="sd">        retry the connection up to the specified max retries. If the max retries is</span>
-<span class="sd">        exceeded, it will wait for 60 seconds and then reconnect.</span>
-
-<span class="sd">        Raises:</span>
-<span class="sd">            Exception: If an error occurs while connecting to the underlying connection.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_connect</span><span class="p">()</span>
-        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Client DB </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: Failed to connect: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">max_retries</span><span class="p">):</span>
-                <span class="k">try</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_connect</span><span class="p">()</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Client DB </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: Connected&quot;</span><span class="p">)</span>
-                    <span class="k">break</span>
-                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Client DB </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: Failed to connect: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">max_retries</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
-                        <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Client DB </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: Waiting 60 seconds..&quot;</span><span class="p">)</span>
-                        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">60</span><span class="p">)</span></div>
+        <span class="k">pass</span></div>
 
 </pre></div>
         </article>

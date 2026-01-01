@@ -3,7 +3,7 @@
   <head><meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="prev" title="apps_logging_app package" href="apps_logging_app.html">
+<link rel="index" title="Index" href="../genindex.html"><link rel="search" title="Search" href="../search.html"><link rel="prev" title="apps_logging_app.orchestration package" href="apps_logging_app.orchestration.html">
 
     <!-- Generated with Sphinx 9.0.4 and Furo 2025.12.19 -->
         <title>apps_logging_app - APPS LOGGING APP 1.0.0 documentation</title>
@@ -278,6 +278,7 @@
 <li class="toctree-l4"><a class="reference internal" href="apps_logging_app.databases.oracle.html">apps_logging_app.databases.oracle package</a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="apps_logging_app.orchestration.html">apps_logging_app.orchestration package</a></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="apps_logging_app.producers.html">apps_logging_app.producers package</a><input aria-label="Toggle navigation of apps_logging_app.producers package" class="toctree-checkbox" id="toctree-checkbox-20" name="toctree-checkbox-20" role="switch" type="checkbox"/><label for="toctree-checkbox-20"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l4"><a class="reference internal" href="apps_logging_app.producers.kafka_handler.html">apps_logging_app.producers.kafka_handler package</a></li>
 </ul>
@@ -295,6 +296,7 @@
 <li class="toctree-l5"><a class="reference internal" href="apps_logging_app.databases.oracle.html">apps_logging_app.databases.oracle package</a></li>
 </ul>
 </li>
+<li class="toctree-l4"><a class="reference internal" href="apps_logging_app.orchestration.html">apps_logging_app.orchestration package</a></li>
 <li class="toctree-l4 has-children"><a class="reference internal" href="apps_logging_app.producers.html">apps_logging_app.producers package</a><input aria-label="Toggle navigation of apps_logging_app.producers package" class="toctree-checkbox" id="toctree-checkbox-25" name="toctree-checkbox-25" role="switch" type="checkbox"/><label for="toctree-checkbox-25"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l5"><a class="reference internal" href="apps_logging_app.producers.kafka_handler.html">apps_logging_app.producers.kafka_handler package</a></li>
 </ul>
@@ -355,6 +357,7 @@
 <li class="toctree-l4"><a class="reference internal" href="apps_logging_app.agents.html#module-apps_logging_app.agents.base">apps_logging_app.agents.base module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="apps_logging_app.agents.html#module-apps_logging_app.agents.data">apps_logging_app.agents.data module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="apps_logging_app.agents.html#module-apps_logging_app.agents.factory">apps_logging_app.agents.factory module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="apps_logging_app.agents.html#module-apps_logging_app.agents.model">apps_logging_app.agents.model module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="apps_logging_app.agents.html#module-apps_logging_app.agents.registry">apps_logging_app.agents.registry module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="apps_logging_app.agents.html#module-apps_logging_app.agents">Module contents</a></li>
 </ul>
@@ -364,8 +367,16 @@
 <li class="toctree-l4"><a class="reference internal" href="apps_logging_app.databases.html#submodules">Submodules</a></li>
 <li class="toctree-l4"><a class="reference internal" href="apps_logging_app.databases.html#module-apps_logging_app.databases.base">apps_logging_app.databases.base module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="apps_logging_app.databases.html#module-apps_logging_app.databases.factory">apps_logging_app.databases.factory module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="apps_logging_app.databases.html#module-apps_logging_app.databases.model">apps_logging_app.databases.model module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="apps_logging_app.databases.html#module-apps_logging_app.databases.orchestrator">apps_logging_app.databases.orchestrator module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="apps_logging_app.databases.html#module-apps_logging_app.databases.registry">apps_logging_app.databases.registry module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="apps_logging_app.databases.html#module-apps_logging_app.databases">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="apps_logging_app.orchestration.html">apps_logging_app.orchestration package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="apps_logging_app.orchestration.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="apps_logging_app.orchestration.html#module-apps_logging_app.orchestration.orchestrator">apps_logging_app.orchestration.orchestrator module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="apps_logging_app.orchestration.html#module-apps_logging_app.orchestration">Module contents</a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="apps_logging_app.producers.html">apps_logging_app.producers package</a><ul>
@@ -373,6 +384,8 @@
 <li class="toctree-l4"><a class="reference internal" href="apps_logging_app.producers.html#submodules">Submodules</a></li>
 <li class="toctree-l4"><a class="reference internal" href="apps_logging_app.producers.html#module-apps_logging_app.producers.base">apps_logging_app.producers.base module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="apps_logging_app.producers.html#module-apps_logging_app.producers.factory">apps_logging_app.producers.factory module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="apps_logging_app.producers.html#module-apps_logging_app.producers.model">apps_logging_app.producers.model module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="apps_logging_app.producers.html#module-apps_logging_app.producers.orchestrator">apps_logging_app.producers.orchestrator module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="apps_logging_app.producers.html#module-apps_logging_app.producers.registry">apps_logging_app.producers.registry module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="apps_logging_app.producers.html#module-apps_logging_app.producers">Module contents</a></li>
 </ul>
@@ -401,14 +414,14 @@
         
         <div class="related-pages">
           
-          <a class="prev-page" href="apps_logging_app.html">
+          <a class="prev-page" href="apps_logging_app.orchestration.html">
               <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
               <div class="page-info">
                 <div class="context">
                   <span>Previous</span>
                 </div>
                 
-                <div class="title">apps_logging_app package</div>
+                <div class="title">apps_logging_app.orchestration package</div>
                 
               </div>
             </a>

@@ -278,6 +278,7 @@
 <li class="toctree-l4"><a class="reference internal" href="apps_logging_app.databases.oracle.html">apps_logging_app.databases.oracle package</a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="apps_logging_app.orchestration.html">apps_logging_app.orchestration package</a></li>
 <li class="toctree-l3 current has-children"><a class="reference internal" href="apps_logging_app.producers.html">apps_logging_app.producers package</a><input aria-label="Toggle navigation of apps_logging_app.producers package" checked="" class="toctree-checkbox" id="toctree-checkbox-20" name="toctree-checkbox-20" role="switch" type="checkbox"/><label for="toctree-checkbox-20"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
 <li class="toctree-l4 current"><a class="current reference internal" href="#">apps_logging_app.producers.kafka_handler package</a></li>
 </ul>
@@ -295,6 +296,7 @@
 <li class="toctree-l5"><a class="reference internal" href="apps_logging_app.databases.oracle.html">apps_logging_app.databases.oracle package</a></li>
 </ul>
 </li>
+<li class="toctree-l4"><a class="reference internal" href="apps_logging_app.orchestration.html">apps_logging_app.orchestration package</a></li>
 <li class="toctree-l4 current has-children"><a class="reference internal" href="apps_logging_app.producers.html">apps_logging_app.producers package</a><input aria-label="Toggle navigation of apps_logging_app.producers package" checked="" class="toctree-checkbox" id="toctree-checkbox-25" name="toctree-checkbox-25" role="switch" type="checkbox"/><label for="toctree-checkbox-25"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul class="current">
 <li class="toctree-l5 current current-page"><a class="current reference internal" href="#">apps_logging_app.producers.kafka_handler package</a></li>
 </ul>
@@ -353,7 +355,7 @@
 <dl class="py class">
 <dt class="sig sig-object py" id="apps_logging_app.producers.kafka_handler.config.KafkaHandlerConfig">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">apps_logging_app.producers.kafka_handler.config.</span></span><span class="sig-name descname"><span class="pre">KafkaHandlerConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_retries</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">brokers</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">security_protocol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'SSL'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ssl_cafile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ssl_certfile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ssl_keyfile</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ssl_password</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">topic</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">acks</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'all'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">retries</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">16384</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">linger_ms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">buffer_memory</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">33554432</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/producers/kafka_handler/config.html#KafkaHandlerConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.producers.kafka_handler.config.KafkaHandlerConfig" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="apps_logging_app.producers.html#apps_logging_app.producers.base.BaseProducerConfig" title="apps_logging_app.producers.base.BaseProducerConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseProducerConfig</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="apps_logging_app.producers.html#apps_logging_app.producers.model.BaseProducerConfig" title="apps_logging_app.producers.model.BaseProducerConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseProducerConfig</span></code></a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -438,46 +440,22 @@
 <dl class="py method">
 <dt class="sig sig-object py" id="apps_logging_app.producers.kafka_handler.config.KafkaHandlerConfig.validate_brokers">
 <span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">validate_brokers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">v</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/producers/kafka_handler/config.html#KafkaHandlerConfig.validate_brokers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.producers.kafka_handler.config.KafkaHandlerConfig.validate_brokers" title="Link to this definition">¶</a></dt>
-<dd><p>Validate that the brokers configuration option is a non-empty list of broker addresses.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Raises<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>ValueError</strong> – If the brokers configuration option is not a non-empty list of broker addresses.</p>
-</dd>
-</dl>
-</dd></dl>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="apps_logging_app.producers.kafka_handler.config.KafkaHandlerConfig.validate_security_protocol">
 <span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">validate_security_protocol</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">v</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/producers/kafka_handler/config.html#KafkaHandlerConfig.validate_security_protocol"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.producers.kafka_handler.config.KafkaHandlerConfig.validate_security_protocol" title="Link to this definition">¶</a></dt>
-<dd><p>Validate that the security protocol configuration option is one of the supported security protocols.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Raises<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>ValueError</strong> – If the security protocol configuration option is not one of the supported security protocols.</p>
-</dd>
-</dl>
-</dd></dl>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="apps_logging_app.producers.kafka_handler.config.KafkaHandlerConfig.validate_acks">
 <span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">validate_acks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">v</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/producers/kafka_handler/config.html#KafkaHandlerConfig.validate_acks"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.producers.kafka_handler.config.KafkaHandlerConfig.validate_acks" title="Link to this definition">¶</a></dt>
-<dd><p>Validate that the acks configuration option is one of the supported acks values.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Raises<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>ValueError</strong> – If the acks configuration option is not one of the supported acks values.</p>
-</dd>
-</dl>
-</dd></dl>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="apps_logging_app.producers.kafka_handler.config.KafkaHandlerConfig.validate_positive_int">
 <span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">validate_positive_int</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">v</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">field</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/producers/kafka_handler/config.html#KafkaHandlerConfig.validate_positive_int"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.producers.kafka_handler.config.KafkaHandlerConfig.validate_positive_int" title="Link to this definition">¶</a></dt>
-<dd><p>Validate that the given field value is a non-negative integer.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Raises<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>ValueError</strong> – If the field value is a negative integer.</p>
-</dd>
-</dl>
-</dd></dl>
+<dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="apps_logging_app.producers.kafka_handler.config.KafkaHandlerConfig.model_config">
@@ -499,6 +477,38 @@
 <dd class="field-odd"><p><strong>config</strong> (<a class="reference internal" href="#apps_logging_app.producers.kafka_handler.config.KafkaHandlerConfig" title="apps_logging_app.producers.kafka_handler.config.KafkaHandlerConfig"><em>KafkaHandlerConfig</em></a>)</p>
 </dd>
 </dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="apps_logging_app.producers.kafka_handler.producer.KafkaHandlerProducer.connect">
+<span class="sig-name descname"><span class="pre">connect</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/producers/kafka_handler/producer.html#KafkaHandlerProducer.connect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.producers.kafka_handler.producer.KafkaHandlerProducer.connect" title="Link to this definition">¶</a></dt>
+<dd><p>Establish a connection to the underlying transport or service.</p>
+<p>This method is responsible for allocating any resources required by the producer
+and should be called when the producer is being initialized.</p>
+<p>Subclasses should implement this method to establish a connection to their
+underlying transport or service.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>Exception</strong> – If an error occurs while trying to connect to the underlying transport
+    or service.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="apps_logging_app.producers.kafka_handler.producer.KafkaHandlerProducer.close">
+<span class="sig-name descname"><span class="pre">close</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/producers/kafka_handler/producer.html#KafkaHandlerProducer.close"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.producers.kafka_handler.producer.KafkaHandlerProducer.close" title="Link to this definition">¶</a></dt>
+<dd><p>Close the underlying connection to the transport or service.</p>
+<p>This method is responsible for cleaning up any resources allocated by the producer
+and should be called when the producer is being shut down.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Exception</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py attribute">
 <dt class="sig sig-object py" id="apps_logging_app.producers.kafka_handler.producer.KafkaHandlerProducer.type">
 <span class="sig-name descname"><span class="pre">type</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'kafka_handler'</span></span><a class="headerlink" href="#apps_logging_app.producers.kafka_handler.producer.KafkaHandlerProducer.type" title="Link to this definition">¶</a></dt>
@@ -594,6 +604,8 @@
 </li>
 <li><a class="reference internal" href="#module-apps_logging_app.producers.kafka_handler.producer">apps_logging_app.producers.kafka_handler.producer module</a><ul>
 <li><a class="reference internal" href="#apps_logging_app.producers.kafka_handler.producer.KafkaHandlerProducer"><code class="docutils literal notranslate"><span class="pre">KafkaHandlerProducer</span></code></a><ul>
+<li><a class="reference internal" href="#apps_logging_app.producers.kafka_handler.producer.KafkaHandlerProducer.connect"><code class="docutils literal notranslate"><span class="pre">KafkaHandlerProducer.connect()</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.producers.kafka_handler.producer.KafkaHandlerProducer.close"><code class="docutils literal notranslate"><span class="pre">KafkaHandlerProducer.close()</span></code></a></li>
 <li><a class="reference internal" href="#apps_logging_app.producers.kafka_handler.producer.KafkaHandlerProducer.type"><code class="docutils literal notranslate"><span class="pre">KafkaHandlerProducer.type</span></code></a></li>
 </ul>
 </li>

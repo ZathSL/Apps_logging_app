@@ -277,6 +277,7 @@
 <li class="toctree-l4"><a class="reference internal" href="../../../modules/apps_logging_app.databases.oracle.html">apps_logging_app.databases.oracle package</a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="../../../modules/apps_logging_app.orchestration.html">apps_logging_app.orchestration package</a></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="../../../modules/apps_logging_app.producers.html">apps_logging_app.producers package</a><input aria-label="Toggle navigation of apps_logging_app.producers package" class="toctree-checkbox" id="toctree-checkbox-20" name="toctree-checkbox-20" role="switch" type="checkbox"/><label for="toctree-checkbox-20"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l4"><a class="reference internal" href="../../../modules/apps_logging_app.producers.kafka_handler.html">apps_logging_app.producers.kafka_handler package</a></li>
 </ul>
@@ -294,6 +295,7 @@
 <li class="toctree-l5"><a class="reference internal" href="../../../modules/apps_logging_app.databases.oracle.html">apps_logging_app.databases.oracle package</a></li>
 </ul>
 </li>
+<li class="toctree-l4"><a class="reference internal" href="../../../modules/apps_logging_app.orchestration.html">apps_logging_app.orchestration package</a></li>
 <li class="toctree-l4 has-children"><a class="reference internal" href="../../../modules/apps_logging_app.producers.html">apps_logging_app.producers package</a><input aria-label="Toggle navigation of apps_logging_app.producers package" class="toctree-checkbox" id="toctree-checkbox-25" name="toctree-checkbox-25" role="switch" type="checkbox"/><label for="toctree-checkbox-25"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l5"><a class="reference internal" href="../../../modules/apps_logging_app.producers.kafka_handler.html">apps_logging_app.producers.kafka_handler package</a></li>
 </ul>
@@ -342,51 +344,22 @@
 <div class="viewcode-block" id="AgentFactory">
 <a class="viewcode-back" href="../../../modules/apps_logging_app.agents.html#apps_logging_app.agents.factory.AgentFactory">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">AgentFactory</span><span class="p">:</span>
-
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Factory class responsible for creating agent instances from configuration</span>
-<span class="sd">    dictionaries.</span>
+<span class="sd">    Factory class responsible for creating agent instances.</span>
 
-<span class="sd">    ``AgentFactory`` is a stateless factory that instantiates agent objects</span>
-<span class="sd">    based on a raw configuration dictionary. It validates the configuration</span>
-<span class="sd">    against the agent&#39;s registered configuration model, initializes all</span>
-<span class="sd">    required shared resources (producers and databases), and returns a fully</span>
-<span class="sd">    configured agent instance.</span>
+<span class="sd">    The :class:`AgentFactory` instantiates agents based on a raw configuration</span>
+<span class="sd">    dictionary. It resolves the agent type using the global</span>
+<span class="sd">    :data:`AGENT_REGISTRY`, validates the configuration against the</span>
+<span class="sd">    corresponding config model, and ensures that all required producers</span>
+<span class="sd">    and databases are initialized before returning the agent instance.</span>
 
-<span class="sd">    This factory does **not** cache agent instances: each call to</span>
-<span class="sd">    :meth:`create` returns a new agent object. Shared resources such as</span>
-<span class="sd">    producers and databases are retrieved through their respective factories</span>
-<span class="sd">    and are internally cached.</span>
-
-<span class="sd">    The factory relies on:</span>
-
-<span class="sd">    - ``AGENT_REGISTRY``: a registry mapping agent types to their corresponding</span>
-<span class="sd">      configuration model and agent class.</span>
-<span class="sd">    - ``ProducerFactory``: used to initialize producer connections required</span>
-<span class="sd">      by the agent.</span>
-<span class="sd">    - ``DatabaseFactory``: used to initialize database connections referenced</span>
-<span class="sd">      by producer data connections.</span>
-
-<span class="sd">    **Responsibilities:**</span>
-
-<span class="sd">    - Validate the agent type from the configuration</span>
-<span class="sd">    - Validate the configuration using the registered config model</span>
-<span class="sd">    - Initialize all required producer instances</span>
-<span class="sd">    - Initialize all required database instances</span>
-<span class="sd">    - Instantiate and return a new agent instance</span>
-
-<span class="sd">    .. note::</span>
-
-<span class="sd">        ``AgentFactory`` is intentionally stateless and thread-safe, as it does</span>
-<span class="sd">        not maintain any internal cache. Resource lifecycle management is</span>
-<span class="sd">        delegated to the corresponding resource factories.</span>
-
+<span class="sd">    This class centralizes agent creation logic and guarantees that</span>
+<span class="sd">    dependencies are available at startup time.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 <div class="viewcode-block" id="AgentFactory.create">
 <a class="viewcode-back" href="../../../modules/apps_logging_app.agents.html#apps_logging_app.agents.factory.AgentFactory.create">[docs]</a>
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">create</span><span class="p">(</span><span class="n">raw_config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
-
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create an agent from a given configuration.</span>
 

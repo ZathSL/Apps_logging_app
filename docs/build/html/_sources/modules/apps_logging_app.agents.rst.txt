@@ -37,6 +37,14 @@ apps\_logging\_app.agents.factory module
    :show-inheritance:
    :undoc-members:
 
+apps\_logging\_app.agents.model module
+--------------------------------------
+
+.. automodule:: apps_logging_app.agents.model
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 apps\_logging\_app.agents.registry module
 -----------------------------------------
 

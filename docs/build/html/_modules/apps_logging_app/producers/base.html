@@ -277,6 +277,7 @@
 <li class="toctree-l4"><a class="reference internal" href="../../../modules/apps_logging_app.databases.oracle.html">apps_logging_app.databases.oracle package</a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="../../../modules/apps_logging_app.orchestration.html">apps_logging_app.orchestration package</a></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="../../../modules/apps_logging_app.producers.html">apps_logging_app.producers package</a><input aria-label="Toggle navigation of apps_logging_app.producers package" class="toctree-checkbox" id="toctree-checkbox-20" name="toctree-checkbox-20" role="switch" type="checkbox"/><label for="toctree-checkbox-20"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l4"><a class="reference internal" href="../../../modules/apps_logging_app.producers.kafka_handler.html">apps_logging_app.producers.kafka_handler package</a></li>
 </ul>
@@ -294,6 +295,7 @@
 <li class="toctree-l5"><a class="reference internal" href="../../../modules/apps_logging_app.databases.oracle.html">apps_logging_app.databases.oracle package</a></li>
 </ul>
 </li>
+<li class="toctree-l4"><a class="reference internal" href="../../../modules/apps_logging_app.orchestration.html">apps_logging_app.orchestration package</a></li>
 <li class="toctree-l4 has-children"><a class="reference internal" href="../../../modules/apps_logging_app.producers.html">apps_logging_app.producers package</a><input aria-label="Toggle navigation of apps_logging_app.producers package" class="toctree-checkbox" id="toctree-checkbox-25" name="toctree-checkbox-25" role="switch" type="checkbox"/><label for="toctree-checkbox-25"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l5"><a class="reference internal" href="../../../modules/apps_logging_app.producers.kafka_handler.html">apps_logging_app.producers.kafka_handler package</a></li>
 </ul>
@@ -338,316 +340,237 @@
         <article role="main" id="furo-main-content">
           <h1>Source code for apps_logging_app.producers.base</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">field_validator</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">queue</span><span class="w"> </span><span class="kn">import</span> <span class="n">Queue</span><span class="p">,</span> <span class="n">Empty</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">threading</span>
-
-<div class="viewcode-block" id="BaseProducerConfig">
-<a class="viewcode-back" href="../../../modules/apps_logging_app.producers.html#apps_logging_app.producers.base.BaseProducerConfig">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">BaseProducerConfig</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Configuration model for a message producer.</span>
-
-<span class="sd">    BaseProducerConfig defines the configuration parameters required</span>
-<span class="sd">    to initialize a producer, including its type, name, and retry behavior.</span>
-
-<span class="sd">    Attributes:</span>
-<span class="sd">        type (str): The type of the producer. Cannot be None.</span>
-<span class="sd">        name (str): The name of the producer. Cannot be None.</span>
-<span class="sd">        max_retries (int, default=5): Maximum number of retries for sending messages</span>
-<span class="sd">            or reconnecting in case of failure. Must be greater than 0.</span>
-
-<span class="sd">    Validators:</span>
-<span class="sd">        validate_type(cls, value):</span>
-<span class="sd">            Ensures that `type` is not None.</span>
-<span class="sd">        validate_name(cls, value):</span>
-<span class="sd">            Ensures that `name` is not None.</span>
-<span class="sd">        validate_max_retries(cls, value):</span>
-<span class="sd">            Ensures that `max_retries` is a positive integer greater than 0.</span>
-
-<span class="sd">    Usage:</span>
-<span class="sd">        This model is passed to the constructor of a BaseProducer subclass</span>
-<span class="sd">        to initialize the producer with validated configuration values.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">max_retries</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span>
-
-
-<div class="viewcode-block" id="BaseProducerConfig.validate_type">
-<a class="viewcode-back" href="../../../modules/apps_logging_app.producers.html#apps_logging_app.producers.base.BaseProducerConfig.validate_type">[docs]</a>
-    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;type&#39;</span><span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">validate_type</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Validate that the type of the producer is not None.</span>
-
-<span class="sd">        Raises:</span>
-<span class="sd">            ValueError: If the type is None.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Type cannot be None&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">value</span></div>
-
-    
-<div class="viewcode-block" id="BaseProducerConfig.validate_name">
-<a class="viewcode-back" href="../../../modules/apps_logging_app.producers.html#apps_logging_app.producers.base.BaseProducerConfig.validate_name">[docs]</a>
-    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">validate_name</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Validate that the name of the producer is not None.</span>
-
-<span class="sd">        Raises:</span>
-<span class="sd">            ValueError: If the name is None.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Name cannot be None&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">value</span></div>
-
-    
-<div class="viewcode-block" id="BaseProducerConfig.validate_max_retries">
-<a class="viewcode-back" href="../../../modules/apps_logging_app.producers.html#apps_logging_app.producers.base.BaseProducerConfig.validate_max_retries">[docs]</a>
-    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;max_retries&#39;</span><span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">validate_max_retries</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Validate that the max retries of the producer is greater than 0.</span>
-
-<span class="sd">        Raises:</span>
-<span class="sd">            ValueError: If the max retries is less than or equal to 0.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        
-        <span class="k">if</span> <span class="n">value</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Max retries must be greater than 0&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">value</span></div>
-</div>
-
+<span class="kn">from</span><span class="w"> </span><span class="nn">threading</span><span class="w"> </span><span class="kn">import</span> <span class="n">Thread</span><span class="p">,</span> <span class="n">Event</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseProducerConfig</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">random</span> 
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
 
 <div class="viewcode-block" id="BaseProducer">
 <a class="viewcode-back" href="../../../modules/apps_logging_app.producers.html#apps_logging_app.producers.base.BaseProducer">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">BaseProducer</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
-
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Abstract base class for a message producer.</span>
+<span class="sd">    Abstract base class for all producers.</span>
 
-<span class="sd">    The BaseProducer manages the lifecycle of a producer, including:</span>
-<span class="sd">        - Queueing messages</span>
-<span class="sd">        - Handling retries</span>
-<span class="sd">        - Connecting to the underlying transport or service</span>
-<span class="sd">        - Running a worker thread to process messages asynchronously</span>
-<span class="sd">        - Gracefully shutting down</span>
+<span class="sd">    The `BaseProducer` class defines the interface and common functionality for</span>
+<span class="sd">    asynchronous message producers that send data to an underlying transport or service.</span>
+<span class="sd">    It manages connection lifecycle, message queuing, retries, and worker threads.</span>
 
-<span class="sd">    Attributes:</span>
-<span class="sd">        config (BaseProducerConfig): Configuration for the producer, including type, name, and max_retries.</span>
-<span class="sd">        logger (logging.Logger): Logger for reporting events and errors.</span>
-<span class="sd">        _queue (Queue): Internal queue holding messages to be sent.</span>
-<span class="sd">        _stop_event (threading.Event): Event flag to signal the worker thread to stop.</span>
-<span class="sd">        _worker_thread (threading.Thread): Worker thread that processes messages from the queue.</span>
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    config : BaseProducerConfig</span>
+<span class="sd">        The configuration object for the producer, containing type, name, max retries, etc.</span>
+<span class="sd">    logger : logging.Logger</span>
+<span class="sd">        Logger used for internal logging of producer events.</span>
+<span class="sd">    _queue : queue.Queue</span>
+<span class="sd">        Internal queue that holds messages to be sent.</span>
+<span class="sd">    _stop_event : threading.Event</span>
+<span class="sd">        Event used to signal the worker thread to stop.</span>
+<span class="sd">    _worker_thread : threading.Thread</span>
+<span class="sd">        Background thread that processes messages from the queue.</span>
+<span class="sd">    orchestrator : Optional[BaseOrchestrator]</span>
+<span class="sd">        Optional orchestrator instance responsible for managing the producer&#39;s connection.</span>
 
-<span class="sd">    Public Methods:</span>
-<span class="sd">        produce(is_error: bool, message: Dict[str, Any]) -&gt; None:</span>
-<span class="sd">            Queue a message to be sent by the producer.</span>
-<span class="sd">        shutdown(timeout: float | None = None) -&gt; None:</span>
-<span class="sd">            Gracefully shut down the producer and stop the worker thread.</span>
+<span class="sd">    Methods</span>
+<span class="sd">    -------</span>
+<span class="sd">    start():</span>
+<span class="sd">        Starts the producer by launching the worker thread.</span>
+<span class="sd">    enqueue_message(is_error: bool, message: dict):</span>
+<span class="sd">        Puts a message into the internal queue for asynchronous sending.</span>
+<span class="sd">    stop(timeout: float | None = None):</span>
+<span class="sd">        Stops the producer, waits for the worker thread to finish, and closes connections.</span>
+<span class="sd">    connect():</span>
+<span class="sd">        Abstract method. Establishes a connection to the underlying transport or service.</span>
+<span class="sd">    close():</span>
+<span class="sd">        Abstract method. Closes the connection to the underlying transport or service.</span>
+<span class="sd">    _worker():</span>
+<span class="sd">        Internal method run by the worker thread to process messages from the queue.</span>
+<span class="sd">    _send(is_error: bool, message: Any):</span>
+<span class="sd">        Abstract method. Sends a message to the underlying transport or service.</span>
 
-<span class="sd">    Internal Methods (to be implemented by subclasses):</span>
-<span class="sd">        _connect() -&gt; None:</span>
-<span class="sd">            Establish a connection to the underlying transport or service.</span>
-<span class="sd">        _send(is_error: bool, message: Dict[str, Any]) -&gt; None:</span>
-<span class="sd">            Send a message to the underlying transport or service.</span>
-<span class="sd">        _close() -&gt; None:</span>
-<span class="sd">            Close the connection to the underlying transport or service.</span>
-
-<span class="sd">    Internal Worker Behavior:</span>
-<span class="sd">        - Runs in a separate daemon thread.</span>
-<span class="sd">        - Fetches messages from the internal queue and attempts to send them.</span>
-<span class="sd">        - Retries messages up to `max_retries` on failure.</span>
-<span class="sd">        - Reconnects to the underlying connection if sending fails after retries.</span>
-<span class="sd">        - Waits for 0.5 seconds when the queue is empty before polling again.</span>
-
-<span class="sd">    Connection Handling:</span>
-<span class="sd">        The producer uses `_safe_connect()` to ensure that connections are retried</span>
-<span class="sd">        up to `max_retries` times, with a 60-second wait after consecutive failures.</span>
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    - The producer handles automatic retries with exponential backoff if sending fails.</span>
+<span class="sd">    - The producer ensures that the orchestrator connection is active before sending messages.</span>
+<span class="sd">    - Subclasses must implement `connect`, `close`, and `_send` to provide transport-specific behavior.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">BaseProducerConfig</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initialize the BaseProducer with the given config.</span>
+<span class="sd">        Initializes the BaseProducer with the given config.</span>
 
-<span class="sd">        Args:</span>
-<span class="sd">            config (BaseProducerConfig): The config for the producer.</span>
-
-<span class="sd">        Initializes the producer with the given config and starts the worker thread.</span>
+<span class="sd">        :param config: The config for the producer.</span>
+<span class="sd">        :type config: BaseProducerConfig</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;__main__.&quot;</span> <span class="o">+</span><span class="vm">__name__</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Initialized producer: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_queue</span> <span class="o">=</span> <span class="n">Queue</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_stop_event</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Event</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_worker_thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_stop_event</span> <span class="o">=</span> <span class="n">Event</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_worker_thread</span> <span class="o">=</span> <span class="n">Thread</span><span class="p">(</span>
             <span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_worker</span><span class="p">,</span>
             <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">-producer-worker&quot;</span><span class="p">,</span>
             <span class="n">daemon</span><span class="o">=</span><span class="kc">True</span>
         <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">orchestrator</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Initialized producer: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_worker_thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
 
     <span class="c1"># PUBLIC API</span>
 
-<div class="viewcode-block" id="BaseProducer.produce">
-<a class="viewcode-back" href="../../../modules/apps_logging_app.producers.html#apps_logging_app.producers.base.BaseProducer.produce">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">produce</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">is_error</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<div class="viewcode-block" id="BaseProducer.start">
+<a class="viewcode-back" href="../../../modules/apps_logging_app.producers.html#apps_logging_app.producers.base.BaseProducer.start">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Produce a message to the producer.</span>
+<span class="sd">        Starts the producer.</span>
+
+<span class="sd">        This method starts the worker thread which will execute the producer&#39;s</span>
+<span class="sd">        processing loop.</span>
+
+<span class="sd">        :return: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_worker_thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="BaseProducer.enqueue_message">
+<a class="viewcode-back" href="../../../modules/apps_logging_app.producers.html#apps_logging_app.producers.base.BaseProducer.enqueue_message">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">enqueue_message</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">is_error</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Enqueue a message to be sent by the producer.</span>
+
+<span class="sd">        This method puts a message in the internal queue and logs the event.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            is_error (bool): Whether the message is an error or not.</span>
-<span class="sd">            message (Dict[str, Any]): The message to produce.</span>
+<span class="sd">            message (Dict[str, Any]): The message to enqueue.</span>
 
 <span class="sd">        Raises:</span>
 <span class="sd">            Exception: If the queue is full or there is an error while putting the message in the queue.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_queue</span><span class="o">.</span><span class="n">put</span><span class="p">({</span><span class="s2">&quot;is_error&quot;</span><span class="p">:</span> <span class="n">is_error</span><span class="p">,</span> <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="n">message</span><span class="p">,</span> <span class="s2">&quot;retries&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">})</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Producer </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: Message put in queue&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Putting message in queue: </span><span class="si">{</span><span class="n">message</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Producer </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: Queue full or error putting message: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="k">raise</span></div>
 
 
-<div class="viewcode-block" id="BaseProducer.shutdown">
-<a class="viewcode-back" href="../../../modules/apps_logging_app.producers.html#apps_logging_app.producers.base.BaseProducer.shutdown">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">shutdown</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<div class="viewcode-block" id="BaseProducer.stop">
+<a class="viewcode-back" href="../../../modules/apps_logging_app.producers.html#apps_logging_app.producers.base.BaseProducer.stop">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Shutdown the producer.</span>
+<span class="sd">        Shut down the producer.</span>
 
-<span class="sd">        This method sets the stop event, closes the underlying connection and</span>
-<span class="sd">        waits for the worker thread to finish. If a timeout is provided, it</span>
-<span class="sd">        will wait for the specified amount of time before exiting.</span>
+<span class="sd">        This method sets the stop event, closes the underlying connection, and</span>
+<span class="sd">        waits for the worker thread to finish (optionally with a timeout).</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            timeout (float | None, optional): The timeout in seconds to wait</span>
 <span class="sd">                for the worker thread to finish. Defaults to None.</span>
-
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Producer </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: Shutting down producer&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_stop_event</span><span class="o">.</span><span class="n">set</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_close</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_worker_thread</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Producer </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: Producer shut down&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="BaseProducer.connect">
+<a class="viewcode-back" href="../../../modules/apps_logging_app.producers.html#apps_logging_app.producers.base.BaseProducer.connect">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">connect</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Establish a connection to the underlying transport or service.</span>
+
+<span class="sd">        This method is responsible for allocating any resources required by the producer</span>
+<span class="sd">        and should be called when the producer is being initialized.</span>
+
+<span class="sd">        Subclasses should implement this method to establish a connection to their</span>
+<span class="sd">        underlying transport or service.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            Exception: If an error occurs while trying to connect to the underlying transport</span>
+<span class="sd">                or service.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="BaseProducer.close">
+<a class="viewcode-back" href="../../../modules/apps_logging_app.producers.html#apps_logging_app.producers.base.BaseProducer.close">[docs]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Close the underlying connection to the transport or service.</span>
+
+<span class="sd">        This method is responsible for cleaning up any resources allocated by the producer</span>
+<span class="sd">        and should be called when the producer is being shut down.</span>
+
+<span class="sd">        :raises: Exception</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
 
 
     <span class="c1"># INTERNALS</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_worker</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        The worker thread for the producer.</span>
+<span class="sd">        Internal worker thread that consumes messages from the queue and sends them to the</span>
+<span class="sd">        underlying transport or service.</span>
 
-<span class="sd">        This method is responsible for connecting to the underlying connection,</span>
-<span class="sd">        getting messages from the queue, sending them to the underlying connection and</span>
-<span class="sd">        handling any errors that occur.</span>
+<span class="sd">        This method is responsible for:</span>
 
-<span class="sd">        If the queue is empty, it will wait for 0.5 seconds before checking again.</span>
-<span class="sd">        If an error occurs while sending a message, it will retry the message up to</span>
-<span class="sd">        the specified max retries. If the max retries is exceeded, it will close the</span>
-<span class="sd">        underlying connection, wait for 60 seconds and then reconnect.</span>
+<span class="sd">        - Fetching messages from the queue</span>
+<span class="sd">        - Sending messages via `_send`</span>
+<span class="sd">        - Retrying messages up to `max_retries`</span>
+<span class="sd">        - Reconnecting on failures and waiting 60 seconds if maximum retries are exceeded</span>
 
-<span class="sd">        Once the stop event is set, this method will exit and wait for the worker</span>
-<span class="sd">        thread to finish before returning.</span>
-
-<span class="sd">        Raises:</span>
-<span class="sd">            Exception: If an error occurs while connecting to the underlying connection</span>
-<span class="sd">                or sending a message.</span>
+<span class="sd">        This design ensures that the producer operates asynchronously and robustly in the face of</span>
+<span class="sd">        transient errors.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_safe_connect</span><span class="p">()</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Started producer: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">-producer-worker&quot;</span><span class="p">)</span>
-        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Producer </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: Failed to connect: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        
+        <span class="bp">self</span><span class="o">.</span><span class="n">orchestrator</span><span class="o">.</span><span class="n">ensure_connected</span><span class="p">()</span>
+
         <span class="k">while</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stop_event</span><span class="o">.</span><span class="n">is_set</span><span class="p">():</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">payload</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_queue</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
             <span class="k">except</span> <span class="n">Empty</span><span class="p">:</span>
                 <span class="k">continue</span>
             <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">orchestrator</span><span class="o">.</span><span class="n">ensure_connected</span><span class="p">()</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_send</span><span class="p">(</span><span class="n">payload</span><span class="p">[</span><span class="s1">&#39;is_error&#39;</span><span class="p">],</span> <span class="n">payload</span><span class="p">[</span><span class="s1">&#39;message&#39;</span><span class="p">])</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Producer </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: Message sent: </span><span class="si">{</span><span class="n">payload</span><span class="p">[</span><span class="s1">&#39;message&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Producer </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: Failed to send message&quot;</span><span class="p">)</span>
-                <span class="k">if</span> <span class="n">payload</span><span class="p">[</span><span class="s1">&#39;retries&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">max_retries</span><span class="p">:</span>
-                    <span class="n">payload</span><span class="p">[</span><span class="s1">&#39;retries&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Producer </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: Retrying message&quot;</span><span class="p">)</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">payload</span><span class="p">[</span><span class="s1">&#39;retries&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Producer </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: Message retries exceeded&quot;</span><span class="p">)</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Producer </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: Trying to reconnect..&quot;</span><span class="p">)</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_safe_connect</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Producer </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: Failed to send message&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">orchestrator</span><span class="o">.</span><span class="n">mark_disconnected</span><span class="p">()</span>
                 
-                <span class="bp">self</span><span class="o">.</span><span class="n">_queue</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+                <span class="n">retries</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;retries&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">retries</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">max_retries</span><span class="p">:</span>
+                    <span class="n">payload</span><span class="p">[</span><span class="s1">&#39;retries&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">retries</span> <span class="o">+</span> <span class="mi">1</span>
+                    <span class="n">backoff</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span> <span class="o">**</span> <span class="n">retries</span><span class="p">)</span> <span class="o">+</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Producer </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: Retrying message in </span><span class="si">{</span><span class="n">backoff</span><span class="si">}</span><span class="s2"> seconds: </span><span class="si">{</span><span class="n">payload</span><span class="p">[</span><span class="s1">&#39;message&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">backoff</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_queue</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Producer </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: Max retry reached for message: </span><span class="si">{</span><span class="n">payload</span><span class="p">[</span><span class="s1">&#39;message&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="k">raise</span>
             <span class="k">finally</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_queue</span><span class="o">.</span><span class="n">task_done</span><span class="p">()</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_safe_connect</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Tries to connect to the underlying connection. If an error occurs while connecting, it will retry the connection up to the specified max retries. If the max retries is exceeded, it will wait for 60 seconds and then reconnect.</span>
-
-<span class="sd">        Raises:</span>
-<span class="sd">            Exception: If an error occurs while connecting to the underlying connection.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_connect</span><span class="p">()</span>
-        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Producer </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: Failed to connect: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">max_retries</span><span class="p">):</span>
-                <span class="k">try</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Producer </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: Trying to reconnect..&quot;</span><span class="p">)</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_connect</span><span class="p">()</span>
-                    <span class="k">break</span>
-                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Producer </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: Failed to connect: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">max_retries</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
-                        <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Producer </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: Waiting 60 seconds..&quot;</span><span class="p">)</span>
-                        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">60</span><span class="p">)</span>
-
-
-
     <span class="nd">@abstractmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_connect</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_send</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">is_error</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Connects to the underlying connection.</span>
-
-<span class="sd">        Raises:</span>
-<span class="sd">            Exception: If an error occurs while connecting to the underlying connection.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">pass</span>
-
-    <span class="nd">@abstractmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_send</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">is_error</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Sends a message to the underlying connection.</span>
+<span class="sd">        Sends a message to the underlying transport or service.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            is_error (bool): Whether the message is an error or not.</span>
-<span class="sd">            message (Dict[str, Any]): The message to send.</span>
+<span class="sd">            message (Any): The message to send.</span>
 
 <span class="sd">        Raises:</span>
-<span class="sd">            Exception: If an error occurs while sending the message to the underlying connection.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">pass</span>
-    
-    <span class="nd">@abstractmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_close</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Closes the underlying connection.</span>
-
-<span class="sd">        Raises:</span>
-<span class="sd">            Exception: If an error occurs while closing the underlying connection.</span>
+<span class="sd">            Exception: If an error occurs while sending the message.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">pass</span></div>
 
+    
 </pre></div>
         </article>
       </div>

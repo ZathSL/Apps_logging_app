@@ -9,6 +9,7 @@ Subpackages
 
    apps_logging_app.agents
    apps_logging_app.databases
+   apps_logging_app.orchestration
    apps_logging_app.producers
 
 Submodules

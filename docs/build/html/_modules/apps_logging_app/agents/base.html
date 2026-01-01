@@ -277,6 +277,7 @@
 <li class="toctree-l4"><a class="reference internal" href="../../../modules/apps_logging_app.databases.oracle.html">apps_logging_app.databases.oracle package</a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="../../../modules/apps_logging_app.orchestration.html">apps_logging_app.orchestration package</a></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="../../../modules/apps_logging_app.producers.html">apps_logging_app.producers package</a><input aria-label="Toggle navigation of apps_logging_app.producers package" class="toctree-checkbox" id="toctree-checkbox-20" name="toctree-checkbox-20" role="switch" type="checkbox"/><label for="toctree-checkbox-20"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l4"><a class="reference internal" href="../../../modules/apps_logging_app.producers.kafka_handler.html">apps_logging_app.producers.kafka_handler package</a></li>
 </ul>
@@ -294,6 +295,7 @@
 <li class="toctree-l5"><a class="reference internal" href="../../../modules/apps_logging_app.databases.oracle.html">apps_logging_app.databases.oracle package</a></li>
 </ul>
 </li>
+<li class="toctree-l4"><a class="reference internal" href="../../../modules/apps_logging_app.orchestration.html">apps_logging_app.orchestration package</a></li>
 <li class="toctree-l4 has-children"><a class="reference internal" href="../../../modules/apps_logging_app.producers.html">apps_logging_app.producers package</a><input aria-label="Toggle navigation of apps_logging_app.producers package" class="toctree-checkbox" id="toctree-checkbox-25" name="toctree-checkbox-25" role="switch" type="checkbox"/><label for="toctree-checkbox-25"><span class="icon"><svg><use href="#svg-arrow-right"></use></svg></span></label><ul>
 <li class="toctree-l5"><a class="reference internal" href="../../../modules/apps_logging_app.producers.kafka_handler.html">apps_logging_app.producers.kafka_handler package</a></li>
 </ul>
@@ -339,711 +341,83 @@
           <h1>Source code for apps_logging_app.agents.base</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">field_validator</span><span class="p">,</span> <span class="n">model_validator</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Pattern</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Tuple</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">concurrent.futures</span><span class="w"> </span><span class="kn">import</span> <span class="n">Future</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">partial</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timedelta</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">WorkingDataConnection</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">threading</span><span class="w"> </span><span class="kn">import</span> <span class="n">Thread</span><span class="p">,</span> <span class="n">Event</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">WorkingDataConnection</span><span class="p">,</span> <span class="n">WorkingDataStatus</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">..utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_file_id</span>
-
-<div class="viewcode-block" id="PathFileConfig">
-<a class="viewcode-back" href="../../../modules/apps_logging_app.agents.html#apps_logging_app.agents.base.PathFileConfig">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">PathFileConfig</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Configuration model for a monitored file path.</span>
-
-<span class="sd">    ``PathFileConfig`` defines a file that is monitored by an agent. It stores</span>
-<span class="sd">    both static configuration (file path and logical name) and runtime state</span>
-<span class="sd">    (read cursor and file identifier) required to read files incrementally</span>
-<span class="sd">    and to correctly handle file rotations.</span>
-
-<span class="sd">    Each file configuration is referenced by name from</span>
-<span class="sd">    :class:`RegexPatternConfig` to associate regex patterns with specific</span>
-<span class="sd">    input files.</span>
-
-<span class="sd">    **Responsibilities:**</span>
-
-<span class="sd">    - Identify a monitored file via a logical name</span>
-<span class="sd">    - Store the filesystem path of the file</span>
-<span class="sd">    - Track the current read position (cursor) between polling cycles</span>
-<span class="sd">    - Detect file rotations using a file identifier</span>
-
-<span class="sd">    **Runtime behavior:**</span>
-
-<span class="sd">    - The ``cursor`` field represents the byte offset of the last read</span>
-<span class="sd">      position and is updated after each read operation</span>
-<span class="sd">    - The ``id`` field stores a file identifier (e.g. inode or platform-</span>
-<span class="sd">      specific file ID) and is used to detect file rotations</span>
-
-<span class="sd">    **Validation rules:**</span>
-
-<span class="sd">    - ``name`` must not be ``None``</span>
-<span class="sd">    - ``path`` must be a valid existing :class:`pathlib.Path`</span>
-<span class="sd">    - ``id`` must be an integer when provided</span>
-
-<span class="sd">    :param name: Logical name of the monitored file, used for cross-referencing</span>
-<span class="sd">                 by regex configurations</span>
-<span class="sd">    :type name: str</span>
-
-<span class="sd">    :param path: Filesystem path of the file to be monitored</span>
-<span class="sd">    :type path: pathlib.Path</span>
-
-<span class="sd">    :param cursor: Byte offset indicating the current read position in the file</span>
-<span class="sd">    :type cursor: int, optional</span>
-
-<span class="sd">    :param id: File identifier used to detect file rotations</span>
-<span class="sd">    :type id: int, optional</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">path</span><span class="p">:</span> <span class="n">Path</span>
-    <span class="n">cursor</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="nb">id</span><span class="p">:</span> <span class="n">Tuple</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-    
-<div class="viewcode-block" id="PathFileConfig.validate_name">
-<a class="viewcode-back" href="../../../modules/apps_logging_app.agents.html#apps_logging_app.agents.base.PathFileConfig.validate_name">[docs]</a>
-    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">validate_name</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Validate the name field of the PathFileConfig model.</span>
-
-<span class="sd">        :param value: The value of the name field.</span>
-<span class="sd">        :raises ValueError: If the name is None.</span>
-<span class="sd">        :return: The validated name value.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Name cannot be None&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">value</span></div>
-
-    
-<div class="viewcode-block" id="PathFileConfig.validate_path">
-<a class="viewcode-back" href="../../../modules/apps_logging_app.agents.html#apps_logging_app.agents.base.PathFileConfig.validate_path">[docs]</a>
-    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;path&#39;</span><span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">validate_path</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Validate the path field of the PathFileConfig model.</span>
-
-<span class="sd">        :param value: The value of the path field.</span>
-<span class="sd">        :raises ValueError: If the path is None, not a Path object, or does not exist.</span>
-<span class="sd">        :return: The validated path value.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-
-        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Path cannot be None&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">Path</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Path must be a Path object&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">value</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Path does not exist&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">value</span></div>
-
-    
-<div class="viewcode-block" id="PathFileConfig.validate_inode">
-<a class="viewcode-back" href="../../../modules/apps_logging_app.agents.html#apps_logging_app.agents.base.PathFileConfig.validate_inode">[docs]</a>
-    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;id&#39;</span><span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">validate_inode</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Validate the id field of the PathFileConfig model.</span>
-
-<span class="sd">        :param value: The value of the id field.</span>
-<span class="sd">        :raises ValueError: If the id is not None and not an integer.</span>
-<span class="sd">        :return: The validated id value.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">int</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;id must be an integer&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">value</span></div>
-</div>
-
-    
-
-<div class="viewcode-block" id="RegexPatternConfig">
-<a class="viewcode-back" href="../../../modules/apps_logging_app.agents.html#apps_logging_app.agents.base.RegexPatternConfig">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">RegexPatternConfig</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Configuration model for a regex-based data extraction pattern.</span>
-
-<span class="sd">    ``RegexPatternConfig`` defines how data is extracted from a specific input</span>
-<span class="sd">    file using a regular expression. It is used by</span>
-<span class="sd">    :class:`DataConnectionConfig` to match log lines and extract named capture</span>
-<span class="sd">    groups that will later be transformed, enriched, and forwarded to</span>
-<span class="sd">    producers.</span>
-
-<span class="sd">    The regular expression is expected to use **named capture groups**</span>
-<span class="sd">    (``?P&lt;name&gt;``), which are automatically converted into a dictionary</span>
-<span class="sd">    and stored as extracted data at runtime.</span>
-
-<span class="sd">    The regex pattern may be provided either as a compiled ``re.Pattern``</span>
-<span class="sd">    or as a string. When provided as a string, it is automatically compiled</span>
-<span class="sd">    during model validation.</span>
-
-<span class="sd">    **Responsibilities:**</span>
-
-<span class="sd">    - Bind a regex pattern to a specific configured file</span>
-<span class="sd">    - Define how log lines are matched and parsed</span>
-<span class="sd">    - Provide structured data extraction via named capture groups</span>
-
-<span class="sd">    **Validation and preprocessing:**</span>
-
-<span class="sd">    - If ``regex_pattern`` is provided as a string, it is compiled using</span>
-<span class="sd">      :func:`re.compile` before model creation</span>
-
-<span class="sd">    :param path_file_name: Name of the file configuration this regex applies to</span>
-<span class="sd">    :type path_file_name: str</span>
-
-<span class="sd">    :param regex_pattern: Regular expression used to match and extract data</span>
-<span class="sd">                          from log lines</span>
-<span class="sd">    :type regex_pattern: re.Pattern[str]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="n">path_file_name</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">regex_pattern</span><span class="p">:</span> <span class="n">Pattern</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
-    
-<div class="viewcode-block" id="RegexPatternConfig.compile_regex">
-<a class="viewcode-back" href="../../../modules/apps_logging_app.agents.html#apps_logging_app.agents.base.RegexPatternConfig.compile_regex">[docs]</a>
-    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;regex_pattern&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;before&#39;</span><span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">compile_regex</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Compile a regex pattern from a string.</span>
-
-<span class="sd">        This validator is executed before the model is created.</span>
-
-<span class="sd">        If the value is a string, it is compiled into a regex pattern</span>
-<span class="sd">        using the re.compile function. If the value is not a string, it</span>
-<span class="sd">        is returned unchanged.</span>
-
-<span class="sd">        :param v: The value of the regex_pattern field.</span>
-<span class="sd">        :return: The compiled regex pattern or the original value if it is not a string.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-            <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">v</span></div>
-</div>
-
-
-
-<div class="viewcode-block" id="QueryConfig">
-<a class="viewcode-back" href="../../../modules/apps_logging_app.agents.html#apps_logging_app.agents.base.QueryConfig">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">QueryConfig</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Configuration model for a database query.</span>
-
-<span class="sd">    ``QueryConfig`` defines how an agent executes a query against a specific</span>
-<span class="sd">    data source in order to enrich data previously extracted from input files.</span>
-<span class="sd">    It is typically referenced by a :class:`DataConnectionConfig` as a</span>
-<span class="sd">    destination configuration.</span>
-
-<span class="sd">    The query is executed at runtime using the database type and name to</span>
-<span class="sd">    resolve the appropriate database instance from the database factory.</span>
-
-<span class="sd">    **Responsibilities:**</span>
-
-<span class="sd">    - Define the database type used to execute the query</span>
-<span class="sd">    - Identify the target database instance</span>
-<span class="sd">    - Store the query string to be executed</span>
-<span class="sd">    - Provide a reusable query definition for data enrichment</span>
-
-<span class="sd">    **Validation rules:**</span>
-
-<span class="sd">    - ``type`` must not be ``None``</span>
-<span class="sd">    - ``name`` must not be ``None``</span>
-<span class="sd">    - ``query`` must not be ``None``</span>
-
-<span class="sd">    :param type: Type of the database backend (used to resolve the database</span>
-<span class="sd">                 implementation at runtime)</span>
-<span class="sd">    :type type: str</span>
-
-<span class="sd">    :param name: Name of the database instance to be used for query execution</span>
-<span class="sd">    :type name: str</span>
-
-<span class="sd">    :param query: Query string to be executed against the database</span>
-<span class="sd">    :type query: str</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">query</span><span class="p">:</span> <span class="nb">str</span>
-
-<div class="viewcode-block" id="QueryConfig.validate_type">
-<a class="viewcode-back" href="../../../modules/apps_logging_app.agents.html#apps_logging_app.agents.base.QueryConfig.validate_type">[docs]</a>
-    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;type&#39;</span><span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">validate_type</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Validate the type field of the QueryConfig model.</span>
-
-<span class="sd">        :param value: The value of the type field.</span>
-<span class="sd">        :raises ValueError: If the type is None.</span>
-<span class="sd">        :return: The validated type value.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Type cannot be None&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">value</span></div>
-
-    
-<div class="viewcode-block" id="QueryConfig.validate_name">
-<a class="viewcode-back" href="../../../modules/apps_logging_app.agents.html#apps_logging_app.agents.base.QueryConfig.validate_name">[docs]</a>
-    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">validate_name</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Validate the name field of the QueryConfig model.</span>
-
-<span class="sd">        :param value: The value of the name field.</span>
-<span class="sd">        :raises ValueError: If the name is None.</span>
-<span class="sd">        :return: The validated name value.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Name cannot be None&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">value</span></div>
-
-    
-<div class="viewcode-block" id="QueryConfig.validate_query">
-<a class="viewcode-back" href="../../../modules/apps_logging_app.agents.html#apps_logging_app.agents.base.QueryConfig.validate_query">[docs]</a>
-    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;query&#39;</span><span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">validate_query</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Validate the query field of the QueryConfig model.</span>
-
-<span class="sd">        :param value: The value of the query field.</span>
-<span class="sd">        :raises ValueError: If the query is None.</span>
-<span class="sd">        :return: The validated query value.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Query cannot be None&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">value</span></div>
-</div>
-
-
-<div class="viewcode-block" id="DataConnectionConfig">
-<a class="viewcode-back" href="../../../modules/apps_logging_app.agents.html#apps_logging_app.agents.base.DataConnectionConfig">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">DataConnectionConfig</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Configuration model for a data connection.</span>
-
-<span class="sd">    ``DataConnectionConfig`` defines a single data flow within a producer</span>
-<span class="sd">    connection. It describes how data is extracted from a source (typically</span>
-<span class="sd">    via a regular expression), optionally enriched using a database query,</span>
-<span class="sd">    and finally forwarded to a producer.</span>
-
-<span class="sd">    A data connection can operate in two modes:</span>
-
-<span class="sd">    - **Extraction only**: data is extracted from log lines using a regex</span>
-<span class="sd">      defined in :class:`RegexPatternConfig`</span>
-<span class="sd">    - **Extraction + enrichment**: extracted data is used as input for a</span>
-<span class="sd">      database query defined in :class:`QueryConfig`</span>
-
-<span class="sd">    The resulting data is wrapped into a working data connection at runtime</span>
-<span class="sd">    and managed until it expires.</span>
-
-<span class="sd">    **Responsibilities:**</span>
-
-<span class="sd">    - Define the logical name of the data connection</span>
-<span class="sd">    - Specify whether the produced message represents an error condition</span>
-<span class="sd">    - Configure the source of extracted data (regex-based)</span>
-<span class="sd">    - Configure an optional destination query for data enrichment</span>
-<span class="sd">    - Control the expiration time of the produced data</span>
-
-<span class="sd">    **Validation rules:**</span>
-
-<span class="sd">    - ``name`` must not be ``None``</span>
-<span class="sd">    - ``is_error`` must be a boolean</span>
-<span class="sd">    - ``expired_time`` must be an integer when provided</span>
-
-<span class="sd">    :param name: Logical name of the data connection</span>
-<span class="sd">    :type name: str</span>
-
-<span class="sd">    :param is_error: Indicates whether the produced message should be treated</span>
-<span class="sd">                     as an error by the producer</span>
-<span class="sd">    :type is_error: bool</span>
-
-<span class="sd">    :param source_ref: Configuration defining how data is extracted from input</span>
-<span class="sd">                       lines using a regular expression</span>
-<span class="sd">    :type source_ref: RegexPatternConfig, optional</span>
-
-<span class="sd">    :param destination_ref: Optional configuration defining a database query</span>
-<span class="sd">                            used to enrich extracted data</span>
-<span class="sd">    :type destination_ref: QueryConfig, optional</span>
-
-<span class="sd">    :param expired_time_int: Time-to-live of the data connection, expressed in</span>
-<span class="sd">                         minutes from creation time</span>
-<span class="sd">    :type expired_time_int: int, optional</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">is_error</span><span class="p">:</span> <span class="nb">bool</span>
-    <span class="n">source_ref</span><span class="p">:</span> <span class="n">RegexPatternConfig</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">destination_ref</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">QueryConfig</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">expired_time_int</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
-
-<div class="viewcode-block" id="DataConnectionConfig.validate_name">
-<a class="viewcode-back" href="../../../modules/apps_logging_app.agents.html#apps_logging_app.agents.base.DataConnectionConfig.validate_name">[docs]</a>
-    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">validate_name</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Validate the name field of the DataConnectionConfig model.</span>
-
-<span class="sd">        :param value: The value of the name field.</span>
-<span class="sd">        :raises ValueError: If the name is None.</span>
-<span class="sd">        :return: The validated name value.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Name cannot be None&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">value</span></div>
-
-
-<div class="viewcode-block" id="DataConnectionConfig.validate_is_error">
-<a class="viewcode-back" href="../../../modules/apps_logging_app.agents.html#apps_logging_app.agents.base.DataConnectionConfig.validate_is_error">[docs]</a>
-    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;is_error&#39;</span><span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">validate_is_error</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Validate the is_error field of the DataConnectionConfig model.</span>
-
-<span class="sd">        :param value: The value of the is_error field.</span>
-<span class="sd">        :raises ValueError: If the is_error is not a boolean.</span>
-<span class="sd">        :return: The validated is_error value.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">bool</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;is_error must be a boolean&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">value</span></div>
-
-    
-<div class="viewcode-block" id="DataConnectionConfig.validate_expired_time">
-<a class="viewcode-back" href="../../../modules/apps_logging_app.agents.html#apps_logging_app.agents.base.DataConnectionConfig.validate_expired_time">[docs]</a>
-    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;expired_time_int&#39;</span><span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">validate_expired_time</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Validate the expired_time_int field of the DataConnectionConfig model.</span>
-
-<span class="sd">        :param value: The value of the expired_time_int field.</span>
-<span class="sd">        :raises ValueError: If the expired_time_int is not an integer.</span>
-<span class="sd">        :return: The validated expired_time_int value.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">int</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;expired_time_int must be an integer&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">value</span></div>
-</div>
-
-    
-<div class="viewcode-block" id="ProducerConnectionConfig">
-<a class="viewcode-back" href="../../../modules/apps_logging_app.agents.html#apps_logging_app.agents.base.ProducerConnectionConfig">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">ProducerConnectionConfig</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Configuration model for a producer connection.</span>
-
-<span class="sd">    ``ProducerConnectionConfig`` defines how an agent connects to a specific</span>
-<span class="sd">    producer and which data connections are associated with it. A producer</span>
-<span class="sd">    represents the final destination of processed data, such as a message</span>
-<span class="sd">    broker, alerting system, or external service.</span>
-
-<span class="sd">    Each producer connection groups one or more</span>
-<span class="sd">    :class:`DataConnectionConfig` instances that describe how data is extracted,</span>
-<span class="sd">    optionally enriched, and forwarded to the producer.</span>
-
-<span class="sd">    This model is validated using **Pydantic** to ensure that the producer</span>
-<span class="sd">    identity is correctly defined before the agent starts.</span>
-
-<span class="sd">    **Responsibilities:**</span>
-
-<span class="sd">    - Define the producer type and name</span>
-<span class="sd">    - Group related data connections under a single producer</span>
-<span class="sd">    - Provide a structured configuration for message dispatching</span>
-
-<span class="sd">    **Validation rules:**</span>
-
-<span class="sd">    - ``type`` must not be ``None``</span>
-<span class="sd">    - ``name`` must not be ``None``</span>
-
-<span class="sd">    :param type: Logical type of the producer (used to resolve the producer</span>
-<span class="sd">                 implementation at runtime)</span>
-<span class="sd">    :type type: str</span>
-
-<span class="sd">    :param name: Unique name of the producer instance</span>
-<span class="sd">    :type name: str</span>
-
-<span class="sd">    :param data_connections: List of data connection configurations associated</span>
-<span class="sd">                             with this producer</span>
-<span class="sd">    :type data_connections: list[DataConnectionConfig]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">data_connections</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">DataConnectionConfig</span><span class="p">]</span>
-
-<div class="viewcode-block" id="ProducerConnectionConfig.validate_type">
-<a class="viewcode-back" href="../../../modules/apps_logging_app.agents.html#apps_logging_app.agents.base.ProducerConnectionConfig.validate_type">[docs]</a>
-    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;type&#39;</span><span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">validate_type</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Validate the type field of the ProducerConnectionConfig model.</span>
-
-<span class="sd">        :param value: The value of the type field.</span>
-<span class="sd">        :raises ValueError: If the type is None.</span>
-<span class="sd">        :return: The validated type value.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Type cannot be None&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">value</span></div>
-
-    
-<div class="viewcode-block" id="ProducerConnectionConfig.validate_name">
-<a class="viewcode-back" href="../../../modules/apps_logging_app.agents.html#apps_logging_app.agents.base.ProducerConnectionConfig.validate_name">[docs]</a>
-    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">validate_name</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Validate the name field of the ProducerConnectionConfig model.</span>
-
-<span class="sd">        :param value: The value of the name field.</span>
-<span class="sd">        :raises ValueError: If the name is None.</span>
-<span class="sd">        :return: The validated name value.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Name cannot be None&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">value</span></div>
-</div>
-
-
-
-<div class="viewcode-block" id="BaseAgentConfig">
-<a class="viewcode-back" href="../../../modules/apps_logging_app.agents.html#apps_logging_app.agents.base.BaseAgentConfig">[docs]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">BaseAgentConfig</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-<span class="w">    </span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Base configuration model for all agents.</span>
-
-<span class="sd">    ``BaseAgentConfig`` defines the common configuration parameters required</span>
-<span class="sd">    to initialize and run an agent. It describes how the agent identifies</span>
-<span class="sd">    itself, which files it monitors, how often it processes data, and how</span>
-<span class="sd">    extracted data is routed to producers.</span>
-
-<span class="sd">    This model is implemented using **Pydantic** and includes both field-level</span>
-<span class="sd">    and model-level validation to ensure configuration consistency before the</span>
-<span class="sd">    agent starts running.</span>
-
-<span class="sd">    **Key responsibilities:**</span>
-
-<span class="sd">    - Define the agent identity (type and name)</span>
-<span class="sd">    - Configure file monitoring and buffering behavior</span>
-<span class="sd">    - Declare producer connections and their data flows</span>
-<span class="sd">    - Control the polling interval of the agent processing loop</span>
-<span class="sd">    - Validate cross-references between file configurations and regex sources</span>
-
-<span class="sd">    **Validation rules:**</span>
-
-<span class="sd">    - ``type`` and ``name`` must not be ``None``</span>
-<span class="sd">    - ``buffer_rows`` must be greater than zero</span>
-<span class="sd">    - ``pool_interval`` must be greater than zero</span>
-<span class="sd">    - Any ``path_file_name`` referenced by a regex source must exist in</span>
-<span class="sd">      ``path_files``</span>
-
-<span class="sd">    :param type: Logical type of the agent (used to select the agent</span>
-<span class="sd">                 implementation and producers)</span>
-<span class="sd">    :type type: str</span>
-
-<span class="sd">    :param name: Unique name of the agent instance</span>
-<span class="sd">    :type name: str</span>
-
-<span class="sd">    :param buffer_rows: Maximum number of lines read from each file per polling</span>
-<span class="sd">                        cycle</span>
-<span class="sd">    :type buffer_rows: int, optional</span>
-
-<span class="sd">    :param path_files: List of file path configurations monitored by the agent</span>
-<span class="sd">    :type path_files: list[PathFileConfig], optional</span>
-
-<span class="sd">    :param producer_connections: Definitions of producer connections and their</span>
-<span class="sd">                                 associated data connections</span>
-<span class="sd">    :type producer_connections: list[ProducerConnectionConfig]</span>
-
-<span class="sd">    :param pool_interval: Time in seconds to wait between consecutive polling</span>
-<span class="sd">                          cycles</span>
-<span class="sd">    :type pool_interval: float</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span> <span class="c1"># type of agent</span>
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">buffer_rows</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">500</span>
-    <span class="n">path_files</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">PathFileConfig</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">producer_connections</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">ProducerConnectionConfig</span><span class="p">]</span>
-    <span class="n">pool_interval</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span>
-    
-
-<div class="viewcode-block" id="BaseAgentConfig.validate_type">
-<a class="viewcode-back" href="../../../modules/apps_logging_app.agents.html#apps_logging_app.agents.base.BaseAgentConfig.validate_type">[docs]</a>
-    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;type&#39;</span><span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">validate_type</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Validate the type field of the BaseAgentConfig model.</span>
-
-<span class="sd">        :param value: The value of the type field.</span>
-<span class="sd">        :raises ValueError: If the type is None.</span>
-<span class="sd">        :return: The validated type value.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Type cannot be None&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">value</span></div>
-
-    
-<div class="viewcode-block" id="BaseAgentConfig.validate_name">
-<a class="viewcode-back" href="../../../modules/apps_logging_app.agents.html#apps_logging_app.agents.base.BaseAgentConfig.validate_name">[docs]</a>
-    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">validate_name</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Validate the name field of the BaseAgentConfig model.</span>
-
-<span class="sd">        :param value: The value of the name field.</span>
-<span class="sd">        :raises ValueError: If the name is None.</span>
-<span class="sd">        :return: The validated name value.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Name cannot be None&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">value</span></div>
-
-
-<div class="viewcode-block" id="BaseAgentConfig.validate_buffer_rows">
-<a class="viewcode-back" href="../../../modules/apps_logging_app.agents.html#apps_logging_app.agents.base.BaseAgentConfig.validate_buffer_rows">[docs]</a>
-    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;buffer_rows&#39;</span><span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">validate_buffer_rows</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Validate the buffer_rows field of the BaseAgentConfig model.</span>
-
-<span class="sd">        :param value: The value of the buffer_rows field.</span>
-<span class="sd">        :raises ValueError: If the buffer_rows is less than or equal to 0.</span>
-<span class="sd">        :return: The validated buffer_rows value.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">value</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Buffer rows must be greater than 0&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">value</span></div>
-
-    
-<div class="viewcode-block" id="BaseAgentConfig.validate_pool_interval">
-<a class="viewcode-back" href="../../../modules/apps_logging_app.agents.html#apps_logging_app.agents.base.BaseAgentConfig.validate_pool_interval">[docs]</a>
-    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;pool_interval&#39;</span><span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">validate_pool_interval</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Validate the pool_interval field of the BaseAgentConfig model.</span>
-
-<span class="sd">        :param value: The value of the pool_interval field.</span>
-<span class="sd">        :raises ValueError: If the pool_interval is less than or equal to 0.</span>
-<span class="sd">        :return: The validated pool_interval value.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">value</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Pool interval must be greater than 0&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">value</span></div>
-
-    
-
-<div class="viewcode-block" id="BaseAgentConfig.validate_regex_path_references">
-<a class="viewcode-back" href="../../../modules/apps_logging_app.agents.html#apps_logging_app.agents.base.BaseAgentConfig.validate_regex_path_references">[docs]</a>
-    <span class="nd">@model_validator</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;after&#39;</span><span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">validate_regex_path_references</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Validate the regex path references in the BaseAgentConfig model.</span>
-
-<span class="sd">        This validator checks if the path_file_name referenced in the data_connections</span>
-<span class="sd">        of the producer_connections exist in the path_files of the agent.</span>
-
-<span class="sd">        :raises ValueError: If the path_file_name referenced in the data_connections</span>
-<span class="sd">            does not exist in the path_files of the agent.</span>
-<span class="sd">        :return: The validated BaseAgentConfig model.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_files</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span>
-
-        <span class="n">valid_names</span> <span class="o">=</span> <span class="p">{</span><span class="n">pf</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">pf</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_files</span><span class="p">}</span>
-
-        <span class="k">for</span> <span class="n">producer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">producer_connections</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">dc</span> <span class="ow">in</span> <span class="n">producer</span><span class="o">.</span><span class="n">data_connections</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">dc</span><span class="o">.</span><span class="n">source_ref</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="n">dc</span><span class="o">.</span><span class="n">source_ref</span><span class="o">.</span><span class="n">path_file_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">valid_names</span><span class="p">:</span>
-                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                            <span class="sa">f</span><span class="s2">&quot;Invalid path_file_name &#39;</span><span class="si">{</span><span class="n">dc</span><span class="o">.</span><span class="n">source_ref</span><span class="o">.</span><span class="n">path_file_name</span><span class="si">}</span><span class="s2">&#39;. &quot;</span>
-                            <span class="sa">f</span><span class="s2">&quot;Valid values: </span><span class="si">{</span><span class="n">valid_names</span><span class="si">}</span><span class="s2">&quot;</span>
-                        <span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span></div>
-</div>
-
+<span class="kn">from</span><span class="w"> </span><span class="nn">.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseAgentConfig</span><span class="p">,</span> <span class="n">PathFileConfig</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timedelta</span>
 
 <div class="viewcode-block" id="BaseAgent">
 <a class="viewcode-back" href="../../../modules/apps_logging_app.agents.html#apps_logging_app.agents.base.BaseAgent">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">BaseAgent</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
-
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Abstract base class for all agents.</span>
+<span class="sd">    Abstract base class for all agent implementations.</span>
 
-<span class="sd">    The ``BaseAgent`` defines the common runtime behavior and lifecycle for</span>
-<span class="sd">    agents that monitor one or more files, extract data using regular</span>
-<span class="sd">    expressions, optionally enrich the extracted data via database queries,</span>
-<span class="sd">    and forward the resulting messages to producers.</span>
+<span class="sd">    The :class:`BaseAgent` defines the core lifecycle, threading model, and</span>
+<span class="sd">    data-processing pipeline for agents. Concrete agents must extend this</span>
+<span class="sd">    class and implement the abstract transformation and filtering logic.</span>
 
-<span class="sd">    The agent runs in a dedicated background thread and periodically executes</span>
-<span class="sd">    its processing loop until it is explicitly stopped.</span>
+<span class="sd">    Responsibilities of this class include:</span>
 
-<span class="sd">    **Main responsibilities:**</span>
+<span class="sd">    - Initializing and managing :class:`WorkingDataConnection` instances</span>
+<span class="sd">    - Monitoring and reading log files with rotation handling</span>
+<span class="sd">    - Matching data via regular expressions</span>
+<span class="sd">    - Executing database queries asynchronously</span>
+<span class="sd">    - Sending processed data to producers</span>
+<span class="sd">    - Managing agent lifecycle (start/stop) in a background thread</span>
 
-<span class="sd">    - Monitor configured file paths and detect file rotations</span>
-<span class="sd">    - Read log files incrementally using a cursor-based approach</span>
-<span class="sd">    - Match lines against configured regular expressions</span>
-<span class="sd">    - Create and manage :class:`WorkingDataConnection` instances</span>
-<span class="sd">    - Execute optional database queries associated with matched data</span>
-<span class="sd">    - Dispatch processed messages to configured producers</span>
-<span class="sd">    - Clean up expired working data connections</span>
+<span class="sd">    Each agent runs in its own worker thread and periodically processes</span>
+<span class="sd">    configured log files according to the provided configuration.</span>
 
-<span class="sd">    **Threading model:**</span>
+<span class="sd">    Subclasses must implement the</span>
+<span class="sd">    :meth:`_data_connections_transformation_and_filtering` method.</span>
 
-<span class="sd">    - Each agent runs a single daemon worker thread</span>
-<span class="sd">    - The worker thread periodically invokes the internal processing loop</span>
-<span class="sd">      based on the configured polling interval</span>
-<span class="sd">    - Thread termination is controlled via a stop event</span>
-
-<span class="sd">    **Extensibility:**</span>
-
-<span class="sd">    This class is abstract and must be subclassed.</span>
-<span class="sd">    Subclasses are required to implement the</span>
-<span class="sd">    :meth:`_data_connections_transformation_and_filtering` method in order to</span>
-<span class="sd">    apply domain-specific transformations and filtering logic to matched data.</span>
-
-<span class="sd">    **Lifecycle:**</span>
-
-<span class="sd">    1. The agent is initialized with a :class:`BaseAgentConfig`</span>
-<span class="sd">    2. A background worker thread is started automatically</span>
-<span class="sd">    3. The agent periodically processes input files and data connections</span>
-<span class="sd">    4. The agent can be stopped gracefully by calling :meth:`stop`</span>
-
-<span class="sd">    :param config: Configuration object defining agent behavior, file paths,</span>
-<span class="sd">                   producer connections, polling interval, and buffering rules</span>
+<span class="sd">    :param config: Configuration object used to initialize the agent.</span>
 <span class="sd">    :type config: BaseAgentConfig</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">BaseAgentConfig</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">BaseAgentConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initialize the BaseAgent with the given config.</span>
+<span class="sd">        Initializes the BaseAgent with the given config.</span>
 
 <span class="sd">        :param config: The config for the agent.</span>
-
-<span class="sd">        Initializes the agent with the given config, sets up the logger, and starts the worker thread.</span>
+<span class="sd">        :type config: BaseAgentConfig</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">:</span> <span class="n">BaseAgentConfig</span> <span class="o">=</span> <span class="n">config</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;__main__.&quot;</span> <span class="o">+</span><span class="vm">__name__</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Initialized agent: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">working_data_connections</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">WorkingDataConnection</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_working_data_connections</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_stop_event</span> <span class="o">=</span> <span class="n">Event</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_thread</span> <span class="o">=</span> <span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_worker</span><span class="p">,</span> <span class="n">daemon</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">next_execute_query_time</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Initialized agent: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
 
     <span class="c1"># PUBLIC API</span>
 
+<div class="viewcode-block" id="BaseAgent.start">
+<a class="viewcode-back" href="../../../modules/apps_logging_app.agents.html#apps_logging_app.agents.base.BaseAgent.start">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Starts the agent.</span>
+
+<span class="sd">        This method starts the worker thread which will execute the agent&#39;s</span>
+<span class="sd">        processing loop.</span>
+
+<span class="sd">        :return: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span></div>
+
+
 <div class="viewcode-block" id="BaseAgent.stop">
 <a class="viewcode-back" href="../../../modules/apps_logging_app.agents.html#apps_logging_app.agents.base.BaseAgent.stop">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Stop the agent.</span>
+<span class="sd">        Stops the agent.</span>
 
 <span class="sd">        This method sets the stop event and waits for the worker thread to finish.</span>
 
@@ -1055,12 +429,33 @@
 
     <span class="c1"># INTERNALS</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_worker</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_initialize_working_data_connections</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        The worker thread for the agent.</span>
+<span class="sd">        Initializes the working data connections for the agent.</span>
 
-<span class="sd">        This method is responsible for running the agent&#39;s code in a loop until the stop event is set.</span>
-<span class="sd">        It will run the _run_once method and then wait for the specified pool interval before running it again.</span>
+<span class="sd">        This method iterates over the producer connections and data connections in the</span>
+<span class="sd">        agent&#39;s config and creates a WorkingDataConnection for each data connection.</span>
+<span class="sd">        The WorkingDataConnection is set to the READY status and added to the</span>
+<span class="sd">        agent&#39;s list of working data connections.</span>
+
+<span class="sd">        :return: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">producer_connection</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">producer_connections</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">data_connection</span> <span class="ow">in</span> <span class="n">producer_connection</span><span class="o">.</span><span class="n">data_connections</span><span class="p">:</span>
+                <span class="n">working_data_connection</span> <span class="o">=</span> <span class="n">WorkingDataConnection</span><span class="o">.</span><span class="n">from_config</span><span class="p">(</span><span class="n">producer_connection</span><span class="o">.</span><span class="n">type</span><span class="p">,</span> <span class="n">producer_connection</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">data_connection</span><span class="p">)</span>
+                <span class="n">working_data_connection</span><span class="o">.</span><span class="n">set_ready_status</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">working_data_connections</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">working_data_connection</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_worker</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Runs the agent&#39;s processing loop in a separate thread.</span>
+
+<span class="sd">        This method starts a logging message indicating that the agent has</span>
+<span class="sd">        started and then enters a loop where it calls `_run_once` to process</span>
+<span class="sd">        data and then waits for the specified fetch logs interval before</span>
+<span class="sd">        repeating the loop.</span>
+
+<span class="sd">        The loop exits when the stop event is set.</span>
 
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1068,18 +463,25 @@
 
         <span class="k">while</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stop_event</span><span class="o">.</span><span class="n">is_set</span><span class="p">():</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_run_once</span><span class="p">()</span>
-            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">pool_interval</span><span class="p">)</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">fetch_logs_interval</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_run_once</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Run the agent&#39;s code once.</span>
+<span class="sd">        Runs the agent&#39;s processing loop once.</span>
 
-<span class="sd">        This method reads the specified number of lines from each path file and then</span>
-<span class="sd">        calls the _data_connections_flow method to process the lines.</span>
+<span class="sd">        This method iterates over the configured path files, detects file rotations, reads</span>
+<span class="sd">        log files in batches, and processes the extracted data using configured data</span>
+<span class="sd">        connections.</span>
 
-<span class="sd">        If a rotation is detected for a path file (i.e. the file ID does not match the current file ID),</span>
-<span class="sd">        the remaining lines from the old file are read and processed, and the cursor is reset to 0.</span>
+<span class="sd">        For each path file, it checks if the file ID has changed. If the file ID is</span>
+<span class="sd">        None, it sets the file ID to the current file ID and reads a batch of lines</span>
+<span class="sd">        from the file using `_read_batch_log`. If the file ID has changed, it reads any</span>
+<span class="sd">        remaining lines from the previous file using `_read_remaining_old_file`, resets</span>
+<span class="sd">        the cursor to 0, and sets the file ID to the current file ID. If the file ID</span>
+<span class="sd">        has not changed, it reads a batch of lines from the file using `_read_batch_log`.</span>
+
+<span class="sd">        After reading the lines, it calls `_data_connections_flow` to process the lines</span>
+<span class="sd">        using the configured data connections.</span>
 
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1101,10 +503,9 @@
             
             <span class="bp">self</span><span class="o">.</span><span class="n">_data_connections_flow</span><span class="p">(</span><span class="n">path_file</span><span class="p">,</span> <span class="n">lines</span><span class="p">)</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_read_remaining_old_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path_file</span><span class="p">:</span> <span class="n">PathFileConfig</span><span class="p">):</span>
-
+    <span class="k">def</span><span class="w"> </span><span class="nf">_read_remaining_old_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path_file</span><span class="p">:</span> <span class="n">PathFileConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Read the remaining lines from an old file after a rotation is detected.</span>
+<span class="sd">        Reads the remaining lines from a previous file with the same file_id as the given path_file.</span>
 
 <span class="sd">        Given a PathFileConfig, this method searches for an old file with the same file_id</span>
 <span class="sd">        in the same directory. If an old file is found, it reads the remaining lines from the</span>
@@ -1149,7 +550,7 @@
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_read_batch_log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path_file</span><span class="p">:</span> <span class="n">PathFileConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Read a batch of lines from a log file.</span>
+<span class="sd">        Reads a batch of lines from a log file.</span>
 
 <span class="sd">        Given a PathFileConfig, this method reads the specified number of lines from the file and</span>
 <span class="sd">        updates the cursor of the PathFileConfig to the position after the last read line.</span>
@@ -1160,7 +561,7 @@
 <span class="sd">        :param path_file: The PathFileConfig for which the lines should be read.</span>
 <span class="sd">        :return: A list of lines read from the file.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">lines</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">lines</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path_file</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="n">f</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="n">path_file</span><span class="o">.</span><span class="n">cursor</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">buffer_rows</span><span class="p">):</span>
@@ -1171,8 +572,7 @@
             <span class="n">path_file</span><span class="o">.</span><span class="n">cursor</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">tell</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">lines</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_data_connections_flow</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path_file</span><span class="p">:</span> <span class="n">PathFileConfig</span><span class="p">,</span> <span class="n">lines</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]):</span>
-
+    <span class="k">def</span><span class="w"> </span><span class="nf">_data_connections_flow</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path_file</span><span class="p">:</span> <span class="n">PathFileConfig</span><span class="p">,</span> <span class="n">lines</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Process the data connections matched by the regex in the read lines.</span>
 
@@ -1186,46 +586,38 @@
 <span class="sd">        :param lines: The list of lines read from the file.</span>
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Agent: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: Processing file: </span><span class="si">{</span><span class="n">path_file</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2"> with cursor at </span><span class="si">{</span><span class="n">path_file</span><span class="o">.</span><span class="n">cursor</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Agent: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: Extracted </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span><span class="si">}</span><span class="s2"> lines from </span><span class="si">{</span><span class="n">path_file</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-
         <span class="n">working_data_connections</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data_connections_match_regex</span><span class="p">(</span><span class="n">path_file</span><span class="p">,</span> <span class="n">lines</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Agent: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: Matched </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">working_data_connections</span><span class="p">)</span><span class="si">}</span><span class="s2"> regex in read lines&quot;</span><span class="p">)</span>
-
-        <span class="n">working_data_connections</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data_connections_transformation_and_filtering</span><span class="p">(</span><span class="n">working_data_connections</span><span class="p">)</span>
-
-        <span class="k">for</span> <span class="n">working_data_connection</span> <span class="ow">in</span> <span class="n">working_data_connections</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">working_data_connection</span><span class="o">.</span><span class="n">data_dict_result</span><span class="p">:</span>
-                <span class="n">working_data_connection</span><span class="o">.</span><span class="n">is_updated</span> <span class="o">=</span> <span class="kc">True</span>
-                
-
+        <span class="k">for</span> <span class="n">wdc</span> <span class="ow">in</span> <span class="n">working_data_connections</span><span class="p">:</span>
+            <span class="n">data_dict_tmp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data_connections_transformation_and_filtering</span><span class="p">(</span><span class="n">wdc</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">wdc</span><span class="o">.</span><span class="n">query</span><span class="p">:</span>
+                <span class="n">wdc</span><span class="o">.</span><span class="n">data_dict_query_source</span> <span class="o">=</span> <span class="n">data_dict_tmp</span>
+                <span class="n">wdc</span><span class="o">.</span><span class="n">set_ready_status</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">data_dict_tmp</span> <span class="o">!=</span> <span class="n">wdc</span><span class="o">.</span><span class="n">data_dict_result</span><span class="p">:</span>
+                    <span class="n">wdc</span><span class="o">.</span><span class="n">data_dict_result</span> <span class="o">=</span> <span class="n">data_dict_tmp</span>
+                    <span class="n">wdc</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">WorkingDataStatus</span><span class="o">.</span><span class="n">UPDATED</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">wdc</span><span class="o">.</span><span class="n">set_ready_status</span><span class="p">()</span>
+ 
         <span class="bp">self</span><span class="o">.</span><span class="n">working_data_connections</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">working_data_connections</span><span class="p">)</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Agent: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: Applied transformations and filtering to data connections&quot;</span><span class="p">)</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">_data_connections_execute_queries</span><span class="p">()</span>
-
-        <span class="n">len_working_query</span> <span class="o">=</span> <span class="nb">len</span><span class="p">([</span><span class="n">working_data_connection</span> <span class="k">for</span> <span class="n">working_data_connection</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">working_data_connections</span> <span class="k">if</span> <span class="p">(</span><span class="n">working_data_connection</span><span class="o">.</span><span class="n">database_name</span> <span class="ow">and</span> <span class="n">working_data_connection</span><span class="o">.</span><span class="n">is_updated</span><span class="p">)])</span>
-        
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Agent: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: Executed </span><span class="si">{</span><span class="n">len_working_query</span><span class="si">}</span><span class="s2"> queries using data connections&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">next_execute_query_time</span> <span class="o">&lt;=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_data_connections_execute_queries</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">next_execute_query_time</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">execute_query_interval</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_send_messages_to_producers</span><span class="p">()</span>
-        
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Agent: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: Sent </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">working_data_connections</span><span class="p">)</span><span class="si">}</span><span class="s2"> messages extracted from regex and queries to producers&quot;</span><span class="p">)</span>
-
         <span class="bp">self</span><span class="o">.</span><span class="n">_clean_working_data_connections</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Agent: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: Cleaned working data connections&quot;</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_data_connections_match_regex</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path_file</span><span class="p">:</span> <span class="n">PathFileConfig</span><span class="p">,</span> <span class="n">lines</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">WorkingDataConnection</span><span class="p">]:</span>
-
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Match the data connections with the regex in the read lines.</span>
+<span class="sd">        Matches data using regex patterns defined in DataConnectionConfig.</span>
 
-<span class="sd">        Given a PathFileConfig and a list of lines as input, this method processes the data</span>
-<span class="sd">        connections matched by the regex in the read lines.</span>
+<span class="sd">        This method takes a PathFileConfig and a list of lines as input, and processes</span>
+<span class="sd">        the data connections matched by the regex in the read lines. It iterates over the</span>
+<span class="sd">        given lines and the data connections in the agent&#39;s config, and for each data</span>
+<span class="sd">        connection with a matching regex pattern, it creates a WorkingDataConnection and</span>
+<span class="sd">        adds it to the list of working data connections.</span>
 
 <span class="sd">        :param path_file: The PathFileConfig for which the lines should be processed.</span>
 <span class="sd">        :param lines: The list of lines read from the file.</span>
@@ -1239,139 +631,106 @@
         <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">producer_connection</span> <span class="ow">in</span> <span class="n">producer_connections</span><span class="p">:</span>
                 <span class="k">for</span> <span class="n">data_connection</span> <span class="ow">in</span> <span class="n">producer_connection</span><span class="o">.</span><span class="n">data_connections</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="n">data_connection</span><span class="o">.</span><span class="n">destination_ref</span><span class="p">:</span>                
-                        <span class="n">working_data_connection</span> <span class="o">=</span> <span class="n">WorkingDataConnection</span><span class="p">(</span>
-                            <span class="n">name</span><span class="o">=</span><span class="n">data_connection</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
-                            <span class="n">producer_type</span><span class="o">=</span><span class="n">producer_connection</span><span class="o">.</span><span class="n">type</span><span class="p">,</span>
-                            <span class="n">producer_name</span><span class="o">=</span><span class="n">producer_connection</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
-                            <span class="n">database_type</span><span class="o">=</span><span class="n">data_connection</span><span class="o">.</span><span class="n">destination_ref</span><span class="o">.</span><span class="n">type</span> <span class="k">if</span> <span class="n">data_connection</span><span class="o">.</span><span class="n">destination_ref</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
-                            <span class="n">database_name</span><span class="o">=</span><span class="n">data_connection</span><span class="o">.</span><span class="n">destination_ref</span><span class="o">.</span><span class="n">name</span> <span class="k">if</span> <span class="n">data_connection</span><span class="o">.</span><span class="n">destination_ref</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
-                            <span class="n">query</span><span class="o">=</span><span class="n">data_connection</span><span class="o">.</span><span class="n">destination_ref</span><span class="o">.</span><span class="n">query</span> <span class="k">if</span> <span class="n">data_connection</span><span class="o">.</span><span class="n">destination_ref</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
-                            <span class="n">is_error</span><span class="o">=</span><span class="n">data_connection</span><span class="o">.</span><span class="n">is_error</span><span class="p">,</span>
-                            <span class="n">expired_time</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">minutes</span><span class="o">=</span><span class="n">data_connection</span><span class="o">.</span><span class="n">expired_time_int</span><span class="p">)</span>
-                        <span class="p">)</span>
-                    <span class="k">else</span><span class="p">:</span>
-                        <span class="n">working_data_connection</span> <span class="o">=</span> <span class="n">WorkingDataConnection</span><span class="p">(</span>
-                            <span class="n">name</span><span class="o">=</span><span class="n">data_connection</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
-                            <span class="n">producer_type</span><span class="o">=</span><span class="n">producer_connection</span><span class="o">.</span><span class="n">type</span><span class="p">,</span>
-                            <span class="n">producer_name</span><span class="o">=</span><span class="n">producer_connection</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
-                            <span class="n">is_error</span><span class="o">=</span><span class="n">data_connection</span><span class="o">.</span><span class="n">is_error</span><span class="p">,</span>
-                            <span class="n">expired_time</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">minutes</span><span class="o">=</span><span class="n">data_connection</span><span class="o">.</span><span class="n">expired_time_int</span><span class="p">)</span>
-                        <span class="p">)</span>
                     <span class="k">if</span> <span class="n">data_connection</span><span class="o">.</span><span class="n">source_ref</span> <span class="ow">and</span> \
-                        <span class="n">data_connection</span><span class="o">.</span><span class="n">source_ref</span><span class="o">.</span><span class="n">path_file_name</span> <span class="o">==</span> <span class="n">path_file</span><span class="o">.</span><span class="n">name</span> <span class="ow">and</span> \
-                            <span class="ow">not</span> <span class="n">data_connection</span><span class="o">.</span><span class="n">destination_ref</span><span class="p">:</span>
+                        <span class="n">data_connection</span><span class="o">.</span><span class="n">source_ref</span><span class="o">.</span><span class="n">path_file_name</span> <span class="o">==</span> <span class="n">path_file</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
                         <span class="n">regex_pattern</span> <span class="o">=</span> <span class="n">data_connection</span><span class="o">.</span><span class="n">source_ref</span><span class="o">.</span><span class="n">regex_pattern</span>
                         <span class="n">match</span> <span class="o">=</span> <span class="n">regex_pattern</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
                         <span class="k">if</span> <span class="n">match</span><span class="p">:</span>
+                            <span class="n">working_data_connection</span> <span class="o">=</span> <span class="n">WorkingDataConnection</span><span class="o">.</span><span class="n">from_config</span><span class="p">(</span><span class="n">producer_connection</span><span class="o">.</span><span class="n">type</span><span class="p">,</span> 
+                                                                                        <span class="n">producer_connection</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> 
+                                                                                        <span class="n">data_connection</span><span class="p">)</span>
                             <span class="n">working_data_connection</span><span class="o">.</span><span class="n">data_dict_match</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">groupdict</span><span class="p">()</span>
-                    <span class="k">elif</span> <span class="n">data_connection</span><span class="o">.</span><span class="n">source_ref</span> <span class="ow">and</span> \
-                        <span class="n">data_connection</span><span class="o">.</span><span class="n">source_ref</span><span class="o">.</span><span class="n">path_file_name</span> <span class="o">==</span> <span class="n">path_file</span><span class="o">.</span><span class="n">name</span> <span class="ow">and</span> \
-                            <span class="n">data_connection</span><span class="o">.</span><span class="n">destination_ref</span><span class="p">:</span>
-                        <span class="n">regex_pattern</span> <span class="o">=</span> <span class="n">data_connection</span><span class="o">.</span><span class="n">source_ref</span><span class="o">.</span><span class="n">regex_pattern</span>
-                        <span class="n">match</span> <span class="o">=</span> <span class="n">regex_pattern</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
-                        <span class="k">if</span> <span class="n">match</span><span class="p">:</span>
-                            <span class="n">working_data_connection</span><span class="o">.</span><span class="n">data_dict_match</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">groupdict</span><span class="p">()</span>
-                    <span class="n">working_data_connections</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">working_data_connection</span><span class="p">)</span>
+                            <span class="n">working_data_connections</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">working_data_connection</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Found </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">working_data_connections</span><span class="p">)</span><span class="si">}</span><span class="s2"> working data connections through regex in </span><span class="si">{</span><span class="n">path_file</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">working_data_connections</span>
 
     <span class="nd">@abstractmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_data_connections_transformation_and_filtering</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">working_data_connections</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">WorkingDataConnection</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">WorkingDataConnection</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_data_connections_transformation_and_filtering</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">working_data_connection</span><span class="p">:</span> <span class="n">WorkingDataConnection</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Abstract method to transform and filter the given working data connections.</span>
 
-<span class="sd">        :param working_data_connections: The list of working data connections to transform and filter.</span>
-<span class="sd">        :return: The list of transformed and filtered working data connections.</span>
+<span class="sd">        :param working_data_connection: The working data connection to transform and filter.</span>
+<span class="sd">        :return: A dictionary containing the transformed and filtered data.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        
         <span class="k">pass</span>
-        
-    <span class="k">def</span><span class="w"> </span><span class="nf">_on_done</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">working_data_connection</span><span class="p">:</span> <span class="n">WorkingDataConnection</span><span class="p">,</span> <span class="n">fut</span><span class="p">:</span> <span class="n">Future</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Called when the Future for a query has finished executing. Sets the query result on the WorkingDataConnection and updates its status.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">result</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">fut</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
-            <span class="k">if</span> <span class="n">result</span> <span class="ow">and</span> <span class="n">working_data_connection</span><span class="o">.</span><span class="n">data_dict_result</span> <span class="o">!=</span> <span class="n">result</span><span class="p">:</span>
-                <span class="n">working_data_connection</span><span class="o">.</span><span class="n">data_dict_result</span> <span class="o">=</span> <span class="n">result</span>
-                <span class="n">working_data_connection</span><span class="o">.</span><span class="n">is_updated</span> <span class="o">=</span> <span class="kc">True</span>
-                <span class="n">working_data_connection</span><span class="o">.</span><span class="n">query_in_progress</span> <span class="o">=</span> <span class="kc">False</span>
-            <span class="k">elif</span> <span class="n">result</span> <span class="ow">and</span> <span class="n">working_data_connection</span><span class="o">.</span><span class="n">data_dict_result</span> <span class="o">==</span> <span class="n">result</span><span class="p">:</span>
-                <span class="n">working_data_connection</span><span class="o">.</span><span class="n">is_updated</span> <span class="o">=</span> <span class="kc">False</span>
-                <span class="n">working_data_connection</span><span class="o">.</span><span class="n">query_in_progress</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Agent: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: Failed to execute query: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="n">working_data_connection</span><span class="o">.</span><span class="n">is_updated</span> <span class="o">=</span> <span class="kc">False</span>
-            <span class="n">working_data_connection</span><span class="o">.</span><span class="n">query_in_progress</span> <span class="o">=</span> <span class="kc">False</span>
-
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_data_connections_execute_queries</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Executes queries for data connections if the data connection has a database name and</span>
-<span class="sd">        is not currently in progress.</span>
+<span class="sd">        Executes queries using the data connections.</span>
 
-<span class="sd">        It iterates over all working data connections and for each one, it gets the</span>
-<span class="sd">        database instance from the DatabaseFactory and executes the query. It then</span>
-<span class="sd">        sets the query_in_progress flag on the data connection to True and adds a done callback</span>
-<span class="sd">        to the Future returned by the database instance. The done callback is a partial</span>
-<span class="sd">        function of _on_done with the working data connection as an argument.</span>
+<span class="sd">        This method iterates over the working data connections that have a database name</span>
+<span class="sd">        and are in the READY status. It executes the query for each data connection using</span>
+<span class="sd">        the corresponding database instance, and sets the query running status for each</span>
+<span class="sd">        data connection. If an exception occurs during the query execution, it sets</span>
+<span class="sd">        the ready status for the data connection and logs the error.</span>
 
-<span class="sd">        If an error occurs while executing the query, it logs the error.</span>
+<span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">..databases.factory</span><span class="w"> </span><span class="kn">import</span> <span class="n">DatabaseFactory</span>
 
         <span class="k">for</span> <span class="n">working_data_connection</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">working_data_connections</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">working_data_connection</span><span class="o">.</span><span class="n">database_name</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">working_data_connection</span><span class="o">.</span><span class="n">query_in_progress</span><span class="p">:</span>                
+            <span class="k">if</span> <span class="n">working_data_connection</span><span class="o">.</span><span class="n">database_name</span> <span class="ow">and</span> <span class="n">working_data_connection</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="n">WorkingDataStatus</span><span class="o">.</span><span class="n">READY</span><span class="p">:</span>                
                 <span class="n">database_instance</span> <span class="o">=</span> <span class="n">DatabaseFactory</span><span class="o">.</span><span class="n">get_instance</span><span class="p">(</span>
                     <span class="n">working_data_connection</span><span class="o">.</span><span class="n">database_type</span><span class="p">,</span>
                     <span class="n">working_data_connection</span><span class="o">.</span><span class="n">database_name</span>
                 <span class="p">)</span>
-                <span class="n">working_data_connection</span><span class="o">.</span><span class="n">query_in_progress</span> <span class="o">=</span> <span class="kc">True</span>
-                <span class="n">future</span> <span class="o">=</span> <span class="n">database_instance</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">working_data_connection</span><span class="o">.</span><span class="n">query</span><span class="p">,</span> <span class="n">working_data_connection</span><span class="o">.</span><span class="n">data_dict_query_source</span><span class="p">)</span>
-                <span class="n">future</span><span class="o">.</span><span class="n">add_done_callback</span><span class="p">(</span><span class="n">partial</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_on_done</span><span class="p">,</span> <span class="n">working_data_connection</span><span class="p">))</span>
+
+                <span class="k">def</span><span class="w"> </span><span class="nf">_on_done</span><span class="p">(</span><span class="n">future</span><span class="p">:</span> <span class="n">Future</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]],</span> <span class="n">wdc</span><span class="p">:</span> <span class="n">WorkingDataConnection</span> <span class="o">=</span> <span class="n">working_data_connection</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">wdc</span><span class="o">.</span><span class="n">on_query_done</span><span class="p">(</span><span class="n">future</span><span class="p">)</span>
+
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">future</span> <span class="o">=</span> <span class="n">database_instance</span><span class="o">.</span><span class="n">enqueue_query</span><span class="p">(</span><span class="n">working_data_connection</span><span class="o">.</span><span class="n">query</span><span class="p">,</span> <span class="n">working_data_connection</span><span class="o">.</span><span class="n">data_dict_query_source</span><span class="p">)</span>
+                    <span class="n">future</span><span class="o">.</span><span class="n">add_done_callback</span><span class="p">(</span><span class="n">_on_done</span><span class="p">)</span>
+                    <span class="n">working_data_connection</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">WorkingDataStatus</span><span class="o">.</span><span class="n">QUERY_RUNNING</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                    <span class="n">working_data_connection</span><span class="o">.</span><span class="n">set_ready_status</span><span class="p">()</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Agent: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: Error executing query: </span><span class="si">{</span><span class="n">working_data_connection</span><span class="o">.</span><span class="n">query</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_send_messages_to_producers</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Sends messages to producers.</span>
+<span class="sd">        Sends the extracted messages to the configured producers.</span>
 
-<span class="sd">        It iterates over all working data connections and for each one, it gets the producer instance from</span>
-<span class="sd">        the ProducerFactory and sends the message to the producer if the working data connection has a result</span>
-<span class="sd">        and is updated. It then resets the is_updated flag on the working data connection.</span>
+<span class="sd">        This method iterates over the working data connections, and for each data connection with a</span>
+<span class="sd">        producer type and name, it sends the extracted messages to the corresponding producer. If an</span>
+<span class="sd">        exception occurs during the message sending, it sets the expired status for the data</span>
+<span class="sd">        connection and logs the error.</span>
 
-<span class="sd">        If an error occurs while sending the message to the producer, it logs the error.</span>
+<span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">..producers.factory</span><span class="w"> </span><span class="kn">import</span> <span class="n">ProducerFactory</span>
-        
+
         <span class="k">for</span> <span class="n">working_data_connection</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">working_data_connections</span><span class="p">:</span>
             <span class="n">producer_instance</span> <span class="o">=</span> <span class="n">ProducerFactory</span><span class="o">.</span><span class="n">get_instance</span><span class="p">(</span>
                 <span class="n">working_data_connection</span><span class="o">.</span><span class="n">producer_type</span><span class="p">,</span> 
                 <span class="n">working_data_connection</span><span class="o">.</span><span class="n">producer_name</span>
             <span class="p">)</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">working_data_connection</span><span class="o">.</span><span class="n">data_dict_result</span> <span class="ow">and</span> <span class="n">working_data_connection</span><span class="o">.</span><span class="n">is_updated</span><span class="p">:</span>
-                    <span class="n">producer_instance</span><span class="o">.</span><span class="n">produce</span><span class="p">(</span><span class="n">working_data_connection</span><span class="o">.</span><span class="n">is_error</span><span class="p">,</span> <span class="n">working_data_connection</span><span class="o">.</span><span class="n">data_dict_result</span><span class="p">)</span>
-                    <span class="n">working_data_connection</span><span class="o">.</span><span class="n">is_updated</span> <span class="o">=</span> <span class="kc">False</span>
-            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Agent: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: Failed to send message to producer: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">working_data_connection</span><span class="o">.</span><span class="n">data_dict_result</span> <span class="ow">and</span> <span class="n">working_data_connection</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="n">WorkingDataStatus</span><span class="o">.</span><span class="n">UPDATED</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Agent: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: Sending message to producer: data with name: </span><span class="si">{</span><span class="n">working_data_connection</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> with status </span><span class="si">{</span><span class="n">working_data_connection</span><span class="o">.</span><span class="n">status</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="n">producer_instance</span><span class="o">.</span><span class="n">enqueue_message</span><span class="p">(</span><span class="n">working_data_connection</span><span class="o">.</span><span class="n">is_error</span><span class="p">,</span> <span class="n">working_data_connection</span><span class="o">.</span><span class="n">data_dict_result</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="n">working_data_connection</span><span class="o">.</span><span class="n">list_data_dict_query_result</span> <span class="ow">and</span> <span class="n">working_data_connection</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="n">WorkingDataStatus</span><span class="o">.</span><span class="n">UPDATED</span><span class="p">:</span>
+                    <span class="n">producer_instance</span><span class="o">.</span><span class="n">enqueue_message</span><span class="p">(</span><span class="n">working_data_connection</span><span class="o">.</span><span class="n">is_error</span><span class="p">,</span> <span class="n">working_data_connection</span><span class="o">.</span><span class="n">list_data_dict_query_result</span><span class="p">)</span>
+                <span class="n">working_data_connection</span><span class="o">.</span><span class="n">set_ready_status</span><span class="p">()</span>
+                <span class="n">working_data_connection</span><span class="o">.</span><span class="n">check_expired_time</span><span class="p">()</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="n">working_data_connection</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">WorkingDataStatus</span><span class="o">.</span><span class="n">EXPIRED</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Agent: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: Error sending message to producer: </span><span class="si">{</span><span class="n">working_data_connection</span><span class="o">.</span><span class="n">producer_type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">working_data_connection</span><span class="o">.</span><span class="n">producer_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_clean_working_data_connections</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Cleans expired working data connections from the list of working data connections.</span>
 
-<span class="sd">        It iterates over a copy of the working data connections and for each one, it checks</span>
-<span class="sd">        if the expired time is less than the current datetime. If it is, it removes the</span>
+<span class="sd">        This method iterates over the list of working data connections and for each one, it checks</span>
+<span class="sd">        if the status of the working data connection is expired. If it is, it removes the</span>
 <span class="sd">        working data connection from the list of working data connections.</span>
-
-<span class="sd">        This method is called every time the agent is about to process a new set of lines from</span>
-<span class="sd">        a file. It ensures that the list of working data connections does not grow indefinitely</span>
-<span class="sd">        and that expired data connections are removed from the list.</span>
 
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">datetime_now</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
-
-        <span class="k">for</span> <span class="n">working_data_connection</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">working_data_connections</span><span class="p">[:]:</span>  <span class="c1"># copy</span>
-            <span class="k">if</span> <span class="n">working_data_connection</span><span class="o">.</span><span class="n">expired_time</span> <span class="o">&lt;</span> <span class="n">datetime_now</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">working_data_connection</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">working_data_connections</span><span class="p">[:]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">working_data_connection</span><span class="o">.</span><span class="n">status</span><span class="si">}</span><span class="s2"> + </span><span class="si">{</span><span class="n">working_data_connection</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">working_data_connection</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="n">WorkingDataStatus</span><span class="o">.</span><span class="n">EXPIRED</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Agent: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: Removing expired working data connection: </span><span class="si">{</span><span class="n">working_data_connection</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">working_data_connections</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">working_data_connection</span><span class="p">)</span></div>
 
 </pre></div>
