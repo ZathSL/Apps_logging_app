@@ -9,12 +9,56 @@ if TYPE_CHECKING:
     from .base import BaseDatabase
 
 class DatabaseFactory:
+    """
+    Factory and singleton manager for database instances.
+
+    The :class:`DatabaseFactory` is responsible for creating and managing
+    shared instances of databases based on their type and name. Each
+    database instance is created once and cached globally to ensure that
+    the same connection and execution resources are reused across the
+    application.
+
+    Database configurations are loaded lazily from a YAML configuration
+    file and validated using the configuration model registered in
+    :data:`DATABASE_REGISTRY`.
+
+    Thread safety is guaranteed during instance creation via a class-level
+    lock.
+
+    Responsibilities include:
+
+    - Loading database configurations from YAML
+    - Validating configurations using registered config models
+    - Instantiating concrete database implementations
+    - Wiring databases with a :class:`DatabaseOrchestrator`
+    - Starting database dispatcher threads
+    - Caching and returning shared database instances
+
+    Database types must be registered in :data:`DATABASE_REGISTRY`
+    prior to usage.
+
+    This class should not be instantiated.
+    All interactions are performed via class methods.
+    """
     _instances: Dict[Tuple[str, str], "BaseDatabase"] = {}
     _lock = threading.Lock()
     _config = None
 
     @classmethod
     def get_instance(cls, database_type: str, database_name: str) -> "BaseDatabase":
+        """
+        Returns a shared database instance for the given type and name.
+
+        The instance is cached globally, and subsequent calls with the same
+        database type and name will return the same instance.
+
+        Args:
+            database_type (str): The type of the database (must be registered in DATABASE_REGISTRY).
+            database_name (str): The name of the database (must exist in the YAML config).
+
+        Returns:
+            BaseDatabase: The shared database instance.
+        """
         key = (database_type, database_name)
 
         if key in cls._instances:
@@ -28,11 +72,28 @@ class DatabaseFactory:
 
     @classmethod
     def _create(cls, database_type: str, database_name: str) -> "BaseDatabase":
+        """
+        Creates a new database instance using the configuration from the YAML file.
+
+        Args:
+            database_type (str): The type of the database (must be registered in DATABASE_REGISTRY).
+            database_name (str): The name of the database (must exist in the YAML config).
+
+        Raises:
+            ValueError: If the database configuration is not found in the YAML file.
+            ValueError: If the database type is not registered in DATABASE_REGISTRY.
+
+        Returns:
+            BaseDatabase: The instantiated database class.
+        """
         config_path = Path(__file__).parent.parent / 'configs' / 'databases.yaml'
         if cls._config is None:
-            with open(config_path) as f:
-                cls._config = yaml.safe_load(f)["databases"]
-
+            try:
+                with open(config_path) as f:
+                    cls._config = yaml.safe_load(f)["databases"]
+            except FileNotFoundError:
+                cls._config = []
+                
         raw_config = next(
             (d for d in cls._config
              if d["type"] == database_type and d["name"] == database_name),

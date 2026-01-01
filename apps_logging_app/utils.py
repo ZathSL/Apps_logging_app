@@ -2,6 +2,17 @@ import os
 import platform
 
 def get_file_id(path: str):
+    """
+    Return a tuple of file identifiers for the given path.
+
+    On Linux/Darwin, the identifiers are the inode and device number.
+    On Windows, the identifiers are the file size and creation time.
+    On other systems, the identifiers are the file size and last modification time.
+
+    :param path: the path to the file
+    :return: a tuple of file identifiers
+    :rtype: tuple
+    """
     stat = os.stat(path)
     system = platform.system()
 

@@ -11,7 +11,7 @@ import json
 )
 class SasdmAgent(BaseAgent):
  
-    def __init__(self, config: SasdmAgentConfig):
+    def __init__(self, config: SasdmAgentConfig) -> None:
         super().__init__(config)
 
     def _data_connections_transformation_and_filtering(self, working_data_connection: WorkingDataConnection) -> Dict[str, Any]:

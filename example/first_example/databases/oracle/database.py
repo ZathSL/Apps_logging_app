@@ -11,7 +11,7 @@ import oracledb
     config_model=OracleDatabaseConfig,
 )
 class OracleDatabase(BaseDatabase):
-    def __init__(self, config: OracleDatabaseConfig):
+    def __init__(self, config: OracleDatabaseConfig) -> None:
         """
         Initializes an OracleDatabase instance with the given configuration.
 
@@ -21,7 +21,7 @@ class OracleDatabase(BaseDatabase):
         """
         super().__init__(config)
 
-    def _build_dsn(self):
+    def _build_dsn(self) -> str:
         """
         Builds a DSN string for connecting to the database.
 
@@ -55,7 +55,7 @@ class OracleDatabase(BaseDatabase):
         )
         """
 
-    def connect(self):
+    def connect(self) -> None:
         """
         Connects to the Oracle Database using the built DSN string and configuration.
 

@@ -2,6 +2,8 @@ agents:
   - type: sasdm
     name: sasdm-agent
     buffer_rows: 500
+    fetch_logs_interval: 10
+    execute_query_interval: 400
     path_files:
       - name: onprem_direct
         path: /app/apps_logging_app/logs/prova.log
@@ -38,7 +40,7 @@ agents:
             destination_ref:
               type: oracle
               name: sasdb_ciexpit_owner
-              query: SELECT * FROM dual
+              query: SELECT count(*) FROM dual
           - name: normal_query
             is_error: false
             expired_time_int: 1440
