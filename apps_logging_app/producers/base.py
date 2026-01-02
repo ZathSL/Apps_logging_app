@@ -1,65 +1,65 @@
 from abc import ABC, abstractmethod
 import logging
-from typing import Dict, Any
 from queue import Queue, Empty
 from threading import Thread, Event
 from .model import BaseProducerConfig
 import random 
 import time
 
+from .data import Message
+
 class BaseProducer(ABC):
     """
-    Abstract base class for all producers.
+    Abstract base class for message producers with asynchronous processing and retry logic.
 
-    The `BaseProducer` class defines the interface and common functionality for
-    asynchronous message producers that send data to an underlying transport or service.
-    It manages connection lifecycle, message queuing, retries, and worker threads.
+    `BaseProducer` provides a framework for sending messages to external systems
+    in a reliable, thread-safe manner. It manages an internal message queue,
+    processes messages in a background worker thread, and integrates with a
+    connection orchestrator to ensure that the producer is connected before sending.
 
-    Attributes
-    ----------
-    config : BaseProducerConfig
-        The configuration object for the producer, containing type, name, max retries, etc.
-    logger : logging.Logger
-        Logger used for internal logging of producer events.
-    _queue : queue.Queue
-        Internal queue that holds messages to be sent.
-    _stop_event : threading.Event
-        Event used to signal the worker thread to stop.
-    _worker_thread : threading.Thread
-        Background thread that processes messages from the queue.
-    orchestrator : Optional[BaseOrchestrator]
-        Optional orchestrator instance responsible for managing the producer's connection.
+    Features:
+        - Threaded message processing with a worker thread.
+        - Queue-based message buffering.
+        - Automatic retries with exponential backoff for failed messages.
+        - Abstract methods for connection management and message sending, allowing
+          concrete subclasses to implement specific producer behavior.
+        - Logging of all important events, errors, and retry attempts.
 
-    Methods
-    -------
-    start():
-        Starts the producer by launching the worker thread.
-    enqueue_message(is_error: bool, message: dict):
-        Puts a message into the internal queue for asynchronous sending.
-    stop(timeout: float | None = None):
-        Stops the producer, waits for the worker thread to finish, and closes connections.
-    connect():
-        Abstract method. Establishes a connection to the underlying transport or service.
-    close():
-        Abstract method. Closes the connection to the underlying transport or service.
-    _worker():
-        Internal method run by the worker thread to process messages from the queue.
-    _send(is_error: bool, message: Any):
-        Abstract method. Sends a message to the underlying transport or service.
+    Attributes:
+        config (BaseProducerConfig): Configuration object containing producer parameters.
+        logger (logging.Logger): Logger for reporting events and errors.
+        _queue (Queue): Internal queue holding messages to be sent.
+        _stop_event (Event): Event used to signal the worker thread to stop.
+        _worker_thread (Thread): Background thread that processes messages from the queue.
+        orchestrator: Optional orchestrator used to ensure reliable connectivity.
 
-    Notes
-    -----
-    - The producer handles automatic retries with exponential backoff if sending fails.
-    - The producer ensures that the orchestrator connection is active before sending messages.
-    - Subclasses must implement `connect`, `close`, and `_send` to provide transport-specific behavior.
+    Methods:
+        start(): Starts the background worker thread for message processing.
+        enqueue_message(message): Adds a message to the internal queue.
+        stop(timeout=None): Stops the worker thread and closes the producer.
+        is_connected(): Abstract method to check connection status.
+        connect(): Abstract method to establish a connection.
+        close(): Abstract method to cleanly close the producer.
+        _send(message): Abstract method to send a message to the target system.
     """
-
     def __init__(self, config: BaseProducerConfig):
         """
-        Initializes the BaseProducer with the given config.
+        Initializes the BaseProducer with the given configuration.
 
-        :param config: The config for the producer.
-        :type config: BaseProducerConfig
+        Sets up the internal message queue, stop event, and background worker thread
+        for asynchronous message processing. Also initializes the logger and
+        prepares the producer for integration with an orchestrator.
+
+        Args:
+            config (BaseProducerConfig): Configuration object containing producer
+                parameters such as type, name, and maximum retries.
+
+        Behavior:
+            - Creates a thread-safe queue for storing messages to be sent.
+            - Creates an Event used to signal the worker thread to stop.
+            - Initializes a daemon thread that runs the `_worker` method for message processing.
+            - Sets the `orchestrator` attribute to None (can be assigned later).
+            - Logs an informational message indicating the producer has been initialized.
         """
         self.config = config
         self.logger = logging.getLogger("__main__." +__name__)
@@ -78,30 +78,35 @@ class BaseProducer(ABC):
 
     def start(self) -> None:
         """
-        Starts the producer.
+        Starts the background worker thread for processing queued messages.
 
-        This method starts the worker thread which will execute the producer's
-        processing loop.
+        Behavior:
+            - Launches the `_worker_thread` which continuously consumes messages
+            from the internal queue and sends them using the `_send` method.
+            - Must be called before enqueueing messages for processing.
 
-        :return: None
+        Raises:
+            RuntimeError: If the thread fails to start.
         """
         self._worker_thread.start()
 
-    def enqueue_message(self, is_error: bool, message: Dict[str, Any]) -> None:
+    def enqueue_message(self, message: Message) -> None:
         """
-        Enqueue a message to be sent by the producer.
-
-        This method puts a message in the internal queue and logs the event.
+        Adds a message to the producer's internal queue for asynchronous processing.
 
         Args:
-            is_error (bool): Whether the message is an error or not.
-            message (Dict[str, Any]): The message to enqueue.
+            message (Message): The message object to be sent by the producer.
+
+        Behavior:
+            - Puts the message into the thread-safe internal queue `_queue`.
+            - Logs an informational message indicating the message has been queued.
 
         Raises:
-            Exception: If the queue is full or there is an error while putting the message in the queue.
+            Exception: Propagates any exception raised while adding the message to the queue,
+                such as a full queue or other unexpected errors. Logs an error before raising.
         """
         try:
-            self._queue.put({"is_error": is_error, "message": message, "retries": 0})
+            self._queue.put(message)
             self.logger.info(f"Putting message in queue: {message}")
         except Exception as e:
             self.logger.error(f"Producer {self.config.type}-{self.config.name}: Queue full or error putting message: {e}")
@@ -109,14 +114,20 @@ class BaseProducer(ABC):
 
     def stop(self, timeout: float | None = None) -> None:
         """
-        Shut down the producer.
-
-        This method sets the stop event, closes the underlying connection, and
-        waits for the worker thread to finish (optionally with a timeout).
+        Stops the producer by signaling the worker thread to terminate and closing resources.
 
         Args:
-            timeout (float | None, optional): The timeout in seconds to wait
-                for the worker thread to finish. Defaults to None.
+            timeout (float | None): Maximum time in seconds to wait for the worker thread
+                to finish. If `None`, waits indefinitely.
+
+        Behavior:
+            - Sets the `_stop_event` to signal the worker thread to stop processing messages.
+            - Joins the `_worker_thread`, waiting up to `timeout` seconds for it to finish.
+            - Calls the `close()` method to cleanly release resources.
+            - Logs an informational message indicating that the producer has been shut down.
+
+        Notes:
+            - Any messages remaining in the queue may not be processed if the timeout is reached.
         """
         self._stop_event.set()
         self._worker_thread.join(timeout=timeout)
@@ -124,91 +135,133 @@ class BaseProducer(ABC):
         self.logger.info(f"Producer {self.config.type}-{self.config.name}: Producer shut down")
 
     @abstractmethod
+    def is_connected(self) -> bool:
+        """
+        Checks whether the producer is currently connected to its target system.
+
+        This method must be implemented by subclasses to provide a mechanism for
+        verifying the producer's connection status.
+
+        Returns:
+            bool: `True` if the producer is connected and ready to send messages,
+            `False` otherwise.
+
+        Notes:
+            - The default implementation returns `False`.
+            - Subclasses should implement proper connection checks specific to
+            the underlying system (e.g., Kafka, HTTP, database).
+        """
+        return False
+
+    @abstractmethod
     def connect(self) -> None:
         """
-        Establish a connection to the underlying transport or service.
+        Establishes a connection to the producer's target system.
 
-        This method is responsible for allocating any resources required by the producer
-        and should be called when the producer is being initialized.
+        This method must be implemented by subclasses to initialize any required
+        connections or resources needed for sending messages.
 
-        Subclasses should implement this method to establish a connection to their
-        underlying transport or service.
+        Behavior:
+            - Should prepare the producer to start sending messages.
+            - May raise exceptions if the connection cannot be established.
 
         Raises:
-            Exception: If an error occurs while trying to connect to the underlying transport
-                or service.
+            Exception: If the connection attempt fails.
         """
         pass
 
     @abstractmethod
     def close(self) -> None:
         """
-        Close the underlying connection to the transport or service.
+        Closes the producer and releases any resources or connections.
 
-        This method is responsible for cleaning up any resources allocated by the producer
-        and should be called when the producer is being shut down.
+        This method must be implemented by subclasses to perform any necessary
+        cleanup, such as closing network connections, flushing buffers, or
+        terminating threads.
 
-        :raises: Exception
+        Behavior:
+            - Ensures that the producer is properly shut down.
+            - Should be idempotent, allowing multiple calls without adverse effects.
+
+        Raises:
+            Exception: If an error occurs during the cleanup process.
         """
         pass
 
     # INTERNALS
 
     def _worker(self) -> None:
-
         """
-        Internal worker thread that consumes messages from the queue and sends them to the
-        underlying transport or service.
+        Background worker method that processes messages from the internal queue.
 
-        This method is responsible for:
+        Continuously runs in a separate thread, fetching messages from `_queue`,
+        ensuring the producer is connected via the orchestrator, and sending messages
+        using the `_send` method. Implements automatic retries with exponential
+        backoff for failed messages.
 
-        - Fetching messages from the queue
-        - Sending messages via `_send`
-        - Retrying messages up to `max_retries`
-        - Reconnecting on failures and waiting 60 seconds if maximum retries are exceeded
+        Behavior:
+            - Checks connection status using `self.orchestrator.ensure_connected()`.
+            - Retrieves messages from `_queue` with a 0.5 second timeout.
+            - Attempts to send each message; on failure, logs a warning and marks the
+            orchestrator as disconnected.
+            - Retries failed messages up to `config.max_retries` using exponential
+            backoff with a random jitter.
+            - Raises an exception if the maximum retry count is reached.
+            - Calls `_queue.task_done()` after processing each message.
 
-        This design ensures that the producer operates asynchronously and robustly in the face of
-        transient errors.
+        Notes:
+            - This method is intended to run in a daemon thread and should not be
+            called directly.
+            - Ensures that messages are retried in a fault-tolerant manner.
         """
         self.orchestrator.ensure_connected()
 
         while not self._stop_event.is_set():
             try:
-                payload = self._queue.get(timeout=0.5)
+                message = self._queue.get(timeout=0.5)
             except Empty:
                 continue
             try:
                 self.orchestrator.ensure_connected()
-                self._send(payload['is_error'], payload['message'])
-                self.logger.info(f"Producer {self.config.type}-{self.config.name}: Message sent: {payload['message']}")
+                self._send(message)
+                self.logger.info(f"Producer {self.config.type}-{self.config.name}: Message sent: {message.message}")
             except Exception:
                 self.logger.warning(f"Producer {self.config.type}-{self.config.name}: Failed to send message")
                 self.orchestrator.mark_disconnected()
                 
-                retries = payload.get('retries', 0)
+                retries = message.retries
+
                 if retries < self.config.max_retries:
-                    payload['retries'] = retries + 1
+                    message.retries = retries + 1
                     backoff = (2 ** retries) + random.uniform(0, 10)
-                    self.logger.info(f"Producer {self.config.type}-{self.config.name}: Retrying message in {backoff} seconds: {payload['message']}")
+                    self.logger.info(f"Producer {self.config.type}-{self.config.name}: Retrying message in {backoff} seconds: {message.message}")
                     time.sleep(backoff)
-                    self._queue.put(payload)
+                    self._queue.put(message)
                 else:
-                    self.logger.error(f"Producer {self.config.type}-{self.config.name}: Max retry reached for message: {payload['message']}")
+                    self.logger.error(f"Producer {self.config.type}-{self.config.name}: Max retry reached for message: {message.message}")
                     raise
             finally:
                 self._queue.task_done()
 
     @abstractmethod
-    def _send(self, is_error: bool, message: Any) -> None:
+    def _send(self, message: Message) -> None:
         """
-        Sends a message to the underlying transport or service.
+        Sends a single message to the target system.
+
+        This method must be implemented by subclasses to define the actual
+        message delivery logic (e.g., sending to Kafka, HTTP endpoint, database).
 
         Args:
-            is_error (bool): Whether the message is an error or not.
-            message (Any): The message to send.
+            message (Message): The message object containing the payload, topic,
+                and metadata to be sent.
+
+        Behavior:
+            - Called by the background `_worker` thread for each message in the queue.
+            - Should raise an exception if the message cannot be sent successfully,
+            allowing the worker to handle retries.
 
         Raises:
-            Exception: If an error occurs while sending the message.
+            Exception: If the message cannot be sent.
         """
         pass
     

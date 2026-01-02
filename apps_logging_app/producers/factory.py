@@ -11,60 +11,42 @@ if TYPE_CHECKING:
 
 class ProducerFactory:
     """
-    Factory class for creating and managing shared producer instances.
+    Factory class to create and manage producer instances in a thread-safe manner.
 
-    The `ProducerFactory` provides a centralized mechanism to create,
-    cache, and retrieve instances of producers defined in the system. It
-    ensures that there is only one shared instance per producer type and name.
+    This class ensures that each combination of `producer_type` and `producer_name`
+    has a single shared instance (singleton per key). It reads producer configurations
+    from a YAML file and integrates them with registered producer classes and orchestrators.
 
-    Attributes
-    ----------
-    _instances : Dict[Tuple[str, str], BaseProducer]
-        Internal cache mapping `(producer_type, producer_name)` tuples to
-        producer instances.
-    _lock : threading.Lock
-        Thread lock to ensure thread-safe access when creating new producer instances.
-    _config : Optional[list]
-        Cached configuration loaded from the YAML file for all producers.
-
-    Methods
-    -------
-    get_instance(producer_type: str, producer_name: str) -> BaseProducer
-        Returns a shared producer instance for the given type and name.
-        If the instance does not exist, it will be created and started.
-    _create(producer_type: str, producer_name: str) -> BaseProducer
-        Internal method to create a new producer instance based on the
-        configuration from the YAML file, register an orchestrator, and
-        start the producer.
-
-    Notes
-    -----
-    - The factory reads configuration from `configs/producers.yaml`.
-    - Producer instances are automatically wrapped with a `ProducerOrchestrator`
-      to manage connection lifecycle and retries.
-    - The class is thread-safe: multiple threads can request producer instances
-      without creating duplicates.
-    - Raises `ValueError` if the producer type is unknown or the configuration
-      is missing from the YAML file.
+    Attributes:
+        _instances (Dict[Tuple[str, str], "BaseProducer"]): Cached producer instances, keyed by (producer_type, producer_name).
+        _lock (threading.Lock): Lock to ensure thread-safe creation of producer instances.
+        _config (Optional[dict]): Cached configuration loaded from the producers YAML file.
     """
+
     _instances: Dict[Tuple[str, str], "BaseProducer"] = {}
     _lock = threading.Lock()
     _config = None
 
     @classmethod
-    def get_instance(cls, producer_type: str, producer_name: str):
+    def get_instance(cls, producer_type: str, producer_name: str, topic: str = None) -> "BaseProducer":
         """
-        Returns a shared producer instance for the given type and name.
+        Returns a singleton producer instance for the given type and name, creating it if necessary.
 
-        The instance is cached globally, and subsequent calls with the same
-        key will return the same instance.
+        This method ensures that only one instance exists per `(producer_type, producer_name)` key.
+        It is thread-safe, using a lock to synchronize creation when multiple threads request the
+        same producer simultaneously.
 
         Args:
-            producer_type (str): The type of the producer to be created.
-            producer_name (str): The name of the producer to be created.
+            producer_type (str): The type of the producer to retrieve.
+            producer_name (str): The name of the producer to retrieve.
+            topic (str, optional): Optional topic that the producer should be associated with.
+                Defaults to None.
 
         Returns:
-            BaseProducer: The shared producer instance.
+            BaseProducer: The producer instance corresponding to the given type and name.
+
+        Raises:
+            ValueError: If the producer configuration or topic is invalid, as raised by `_create`.
         """
         key = (producer_type, producer_name)
 
@@ -73,24 +55,33 @@ class ProducerFactory:
         
         with cls._lock:
             if key not in cls._instances:
-                cls._instances[key] = cls._create(producer_type, producer_name)
+                cls._instances[key] = cls._create(producer_type, producer_name, topic)
         return cls._instances[key]
     
     @classmethod
-    def _create(cls, producer_type: str, producer_name: str):
+    def _create(cls, producer_type: str, producer_name: str, topic: str = None):
         """
-        Creates a new producer instance based on the configuration from the YAML file.
+        Creates a new producer instance based on the provided type, name, and optional topic.
+
+        This method loads the producer configuration from a YAML file, validates the
+        producer type and topic, instantiates the producer class, attaches a
+        `ProducerOrchestrator`, starts the producer, and returns it. It is intended
+        to be used internally by `get_instance` and ensures proper initialization
+        of producer instances.
 
         Args:
-            producer_type (str): The type of the producer to be created.
-            producer_name (str): The name of the producer to be created.
+            producer_type (str): The type of the producer to create. Must exist in `PRODUCER_REGISTRY`.
+            producer_name (str): The name of the producer to create.
+            topic (str, optional): Optional topic to validate against the producer's allowed topics.
+                Defaults to None.
+
+        Returns:
+            BaseProducer: The newly created and started producer instance.
 
         Raises:
             ValueError: If the producer configuration is not found in the YAML file.
-            ValueError: If the producer type is not registered in PRODUCER_REGISTRY.
-
-        Returns:
-            BaseProducer: The created producer instance.
+            ValueError: If the producer type is not registered in `PRODUCER_REGISTRY`.
+            ValueError: If the provided topic is not included in the producer's configured topics.
         """
         config_path = Path(__file__).parent.parent / 'configs' / 'producers.yaml'
         if cls._config is None:
@@ -111,12 +102,17 @@ class ProducerFactory:
                 f"Producer config not found for type={producer_type}, name={producer_name}"
             )
         
+
         entry = PRODUCER_REGISTRY.get(producer_type)
         if not entry:
             raise ValueError(f"Unknown producer type: {producer_type}")
         
+
         producer_config = entry.config_model.model_validate(raw_config)
         
+        if producer_config.topics and topic not in producer_config.topics:
+            raise ValueError(f"Topic {topic} not found in producer {producer_type}")
+
         producer_ref = entry.producer_class(producer_config)
 
         orchestrator = ProducerOrchestrator(producer_ref)

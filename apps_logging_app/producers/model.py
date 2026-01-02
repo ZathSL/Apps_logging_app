@@ -1,47 +1,42 @@
 from pydantic import BaseModel, field_validator
+from typing import List
 
 class BaseProducerConfig(BaseModel):
     """
-    Base configuration model for a producer.
+    Configuration model for a producer.
 
-    This class defines the common configuration fields required by all producers
-    in the system. It is intended to be subclassed or used as a base for type-specific
-    producer configurations.
+    This class defines the basic configuration parameters required to
+    initialize a producer. It uses Pydantic for data validation and
+    ensures that the configuration values conform to expected types and constraints.
 
-    Attributes
-    ----------
-    type : str
-        The type of the producer. This is typically used to look up the corresponding
-        producer class in the registry.
-    name : str
-        The unique name of the producer instance.
-    max_retries : int, default=5
-        The maximum number of times a message should be retried in case of failure.
-        Must be greater than 0.
-
-    Validators
-    ----------
-    validate_max_retries
-        Ensures that `max_retries` is greater than 0. Raises a ValueError otherwise.
-
-    Notes
-    -----
-    - This class uses Pydantic for data validation and type enforcement.
-    - Subclasses can extend this configuration model with additional fields specific
-      to their producer type.
+    Attributes:
+        type (str): The type of the producer.
+        name (str): The name of the producer.
+        topics (List[str], optional): A list of topics that this producer can handle. Defaults to None.
+        max_retries (int, optional): Maximum number of retries for producer operations. Defaults to 5.
     """
     type: str
     name: str
+    topics: List[str] = None
     max_retries: int = 5
     
     @field_validator('max_retries')
     def validate_max_retries(cls, value):
         """
-        Validates the max retries field of the BaseProducerConfig model.
+        Validates that the `max_retries` field is greater than 0.
 
-        :param value: The value of the max retries field.
-        :raises ValueError: If the max retries is less than or equal to 0.
-        :return: The validated max retries value.
+        This validator is automatically called by Pydantic when a `BaseProducerConfig`
+        instance is created. It ensures that the maximum number of retries is a positive integer.
+
+        Args:
+            cls (Type[BaseProducerConfig]): The class being validated.
+            value (int): The value provided for `max_retries`.
+
+        Returns:
+            int: The validated `max_retries` value if it passes the check.
+
+        Raises:
+            ValueError: If `value` is less than or equal to 0.
         """
         if value <= 0:
             raise ValueError("Max retries must be greater than 0")

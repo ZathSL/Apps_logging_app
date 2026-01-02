@@ -12,33 +12,25 @@ class DatabaseFactory:
     """
     Factory and singleton manager for database instances.
 
-    The :class:`DatabaseFactory` is responsible for creating and managing
-    shared instances of databases based on their type and name. Each
-    database instance is created once and cached globally to ensure that
-    the same connection and execution resources are reused across the
-    application.
+    The DatabaseFactory is responsible for creating and managing shared 
+    instances of databases based on their type and name. Each database 
+    instance is created only once and cached to ensure that the same 
+    connection and execution resources are reused across the application.
 
-    Database configurations are loaded lazily from a YAML configuration
-    file and validated using the configuration model registered in
-    :data:`DATABASE_REGISTRY`.
+    Database configurations are loaded lazily from a YAML file and validated 
+    using the configuration model registered in DATABASE_REGISTRY. Thread 
+    safety is ensured during instance creation via a class-level lock.
 
-    Thread safety is guaranteed during instance creation via a class-level
-    lock.
+    This class should not be instantiated; all interactions are performed 
+    via class methods.
 
-    Responsibilities include:
-
-    - Loading database configurations from YAML
-    - Validating configurations using registered config models
-    - Instantiating concrete database implementations
-    - Wiring databases with a :class:`DatabaseOrchestrator`
-    - Starting database dispatcher threads
-    - Caching and returning shared database instances
-
-    Database types must be registered in :data:`DATABASE_REGISTRY`
-    prior to usage.
-
-    This class should not be instantiated.
-    All interactions are performed via class methods.
+    Attributes:
+        _instances (Dict[Tuple[str, str], BaseDatabase]): A cache of created 
+            database instances, keyed by (database_type, database_name).
+        _lock (threading.Lock): A class-level lock to guarantee thread-safe 
+            instance creation.
+        _config (Optional[dict]): Loaded database configurations from the 
+            YAML file. Initialized on first access.
     """
     _instances: Dict[Tuple[str, str], "BaseDatabase"] = {}
     _lock = threading.Lock()
@@ -47,17 +39,24 @@ class DatabaseFactory:
     @classmethod
     def get_instance(cls, database_type: str, database_name: str) -> "BaseDatabase":
         """
-        Returns a shared database instance for the given type and name.
+        Returns a shared database instance for the specified type and name.
 
-        The instance is cached globally, and subsequent calls with the same
-        database type and name will return the same instance.
+        If an instance with the given type and name already exists in the cache,
+        it is returned. Otherwise, a new instance is created using the internal
+        `_create` method, cached, and then returned.
+
+        Thread safety is ensured via a class-level lock to prevent multiple
+        threads from creating the same database instance simultaneously.
 
         Args:
             database_type (str): The type of the database (must be registered in DATABASE_REGISTRY).
-            database_name (str): The name of the database (must exist in the YAML config).
+            database_name (str): The name of the database configuration to use.
 
         Returns:
-            BaseDatabase: The shared database instance.
+            BaseDatabase: A singleton instance of the requested database.
+
+        Raises:
+            ValueError: If the database configuration is missing or the database type is unknown.
         """
         key = (database_type, database_name)
 
@@ -73,18 +72,32 @@ class DatabaseFactory:
     @classmethod
     def _create(cls, database_type: str, database_name: str) -> "BaseDatabase":
         """
-        Creates a new database instance using the configuration from the YAML file.
+        Creates a new database instance for the specified type and name.
+
+        This is an internal method used by `get_instance` to instantiate
+        databases that are not yet cached. It performs the following steps:
+
+        1. Loads database configurations from the YAML file (`configs/databases.yaml`) 
+        if they are not already loaded.
+        2. Searches for a configuration matching the given `database_type` and 
+        `database_name`.
+        3. Validates the configuration using the config model registered in 
+        `DATABASE_REGISTRY`.
+        4. Instantiates the concrete database class.
+        5. Creates a `DatabaseOrchestrator` for the database and assigns it.
+        6. Starts the database (e.g., dispatcher threads or connection handling).
+        7. Returns the newly created database instance.
 
         Args:
             database_type (str): The type of the database (must be registered in DATABASE_REGISTRY).
-            database_name (str): The name of the database (must exist in the YAML config).
-
-        Raises:
-            ValueError: If the database configuration is not found in the YAML file.
-            ValueError: If the database type is not registered in DATABASE_REGISTRY.
+            database_name (str): The name of the database configuration to use.
 
         Returns:
-            BaseDatabase: The instantiated database class.
+            BaseDatabase: A newly created instance of the requested database.
+
+        Raises:
+            ValueError: If no configuration is found for the given type and name,
+                        or if the database type is not registered in DATABASE_REGISTRY.
         """
         config_path = Path(__file__).parent.parent / 'configs' / 'databases.yaml'
         if cls._config is None:

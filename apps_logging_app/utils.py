@@ -2,16 +2,32 @@ import os
 import platform
 
 def get_file_id(path: str):
-    """
-    Return a tuple of file identifiers for the given path.
+    """Return a platform-dependent identifier for a file.
 
-    On Linux/Darwin, the identifiers are the inode and device number.
-    On Windows, the identifiers are the file size and creation time.
-    On other systems, the identifiers are the file size and last modification time.
+    This function generates a tuple that can be used to identify a file
+    across executions, using different filesystem attributes depending
+    on the operating system. The returned identifier is intended for
+    lightweight file identity checks (e.g. change detection), not for
+    cryptographic or absolute uniqueness guarantees.
 
-    :param path: the path to the file
-    :return: a tuple of file identifiers
-    :rtype: tuple
+    Platform-specific behavior:
+
+    - Linux / macOS (Darwin): Uses inode number and device ID.
+    - Windows: Uses file size and creation time.
+    - Other platforms: Uses file size and last modification time.
+
+    Args:
+        path (str): Path to the file.
+
+    Returns:
+        tuple: A tuple of filesystem attributes that together act as a
+        best-effort file identifier. The tuple structure depends on the
+        operating system.
+
+    Raises:
+        FileNotFoundError: If the file does not exist.
+        PermissionError: If the file cannot be accessed.
+        OSError: For other operating system-related errors.
     """
     stat = os.stat(path)
     system = platform.system()

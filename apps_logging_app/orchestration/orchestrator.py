@@ -5,37 +5,37 @@ import threading
 
 class BaseOrchestrator(ABC):
     """
-    Base class for orchestrators that manage connections to external services.
+    Abstract base class for orchestrating connection-managed resources with retry logic.
 
-    This abstract class provides a common interface and connection handling logic
-    for services such as databases, message queues, or producers. It ensures that
-    connections are established, retried on failure, and safely marked as disconnected
-    when necessary.
+    This class provides a framework for managing connections to resources such as databases,
+    message queues, or other services that require reliable connectivity. It handles:
+        - Thread-safe connection attempts
+        - Automatic retries with configurable delay
+        - Logging of connection status and errors
 
-    The class implements:
-      - Thread-safe connection management.
-      - Retry logic with configurable maximum retries and delay.
-      - Logging for connection attempts and failures.
+    Subclasses must implement the abstract methods `_is_connected`, `_connect`, and `close`
+    to provide resource-specific connection handling.
 
-    Subclasses must implement the following abstract methods:
-      - :meth:`_connect` : How to establish the actual connection.
-      - :meth:`close` : How to close the connection.
-
-    :param name: A descriptive name for the orchestrator (used in logging).
-    :type name: str
-    :param max_retries: Maximum number of connection retries before giving up.
-    :type max_retries: int
-    :param retry_delay: Delay in seconds between retries. Default is 5 seconds.
-    :type retry_delay: int
+    Attributes:
+        name (str): Human-readable name of the orchestrator, used in logs.
+        max_retries (int): Maximum number of attempts to establish a connection.
+        retry_delay (int): Delay in seconds between retry attempts (default is 5).
+        logger (logging.Logger): Logger instance for connection events and errors.
+        _connected (bool): Internal flag indicating whether the resource is currently connected.
+        _lock (threading.Lock): Thread lock to ensure safe concurrent access during connection attempts.
     """
-
     def __init__(self, name: str, max_retries: int, retry_delay: int = 5):
         """
-        Initializes a BaseOrchestrator object.
+        Initializes the BaseOrchestrator with connection settings and logging.
 
-        :param name: The name of the producer.
-        :param max_retries: The maximum number of retries before giving up.
-        :param retry_delay: The time to wait in seconds before retrying after a failure.
+        Sets up the orchestrator's name, maximum retry attempts, retry delay, logger,
+        and internal state for managing connections. Also initializes a thread lock
+        to ensure thread-safe connection operations.
+
+        Args:
+            name (str): Human-readable name of the orchestrator, used in log messages.
+            max_retries (int): Maximum number of times to retry a failed connection.
+            retry_delay (int, optional): Number of seconds to wait between retries. Defaults to 5.
         """
         self.name = name
         self.max_retries = max_retries
@@ -47,12 +47,21 @@ class BaseOrchestrator(ABC):
 
     def ensure_connected(self) -> None:
         """
-        Ensures that the connection to the underlying service is active.
+        Ensures that the resource is connected, establishing a connection if needed.
 
-        This method should be called before any other method to ensure that the connection is active.
-        If the connection is not active, it will try to connect with a retry mechanism.
+        This method checks the internal `_connected` flag and, if the resource is not
+        connected, acquires a thread lock to safely attempt a connection. It calls
+        `_connect_with_retry` to handle retries and logging.
 
-        :return: None
+        Thread Safety:
+            Uses a lock to prevent concurrent connection attempts by multiple threads.
+
+        Logs:
+            - Warning if the connection is not active and a retry will be attempted.
+
+        Raises:
+            Exception: Propagates any exceptions raised by `_connect_with_retry` if
+                all retry attempts fail.
         """
         if self._connected:
             return
@@ -66,12 +75,21 @@ class BaseOrchestrator(ABC):
 
     def _connect_with_retry(self):
         """
-        Tries to connect to the underlying service with a retry mechanism.
+        Attempts to establish a connection with retry logic.
 
-        This method will try to connect up to the specified maximum number of retries.
-        If the connection fails after the maximum number of retries, it will wait for 120 seconds and then retry.
+        Tries to connect up to `max_retries` times by calling the abstract `_connect` method.
+        Logs each attempt, including successes and failures. Waits `retry_delay` seconds
+        between failed attempts. If all retries fail, waits 120 seconds and recursively
+        retries until a connection is established.
 
-        :return: None
+        Behavior:
+            - Sets `_connected` to True upon a successful connection.
+            - Logs info on successful connection and errors on failure.
+            - Uses a recursive retry strategy after exhausting all attempts.
+
+        Raises:
+            Exception: Any exceptions raised by `_connect` are logged but retried. This
+                method may block indefinitely if the connection cannot be established.
         """
         for attempt in range(1, self.max_retries + 1):
             try:
@@ -92,34 +110,64 @@ class BaseOrchestrator(ABC):
 
     def mark_disconnected(self):
         """
-        Marks the connection as disconnected.
+        Marks the resource as disconnected if it is no longer active.
 
-        This method can be used to manually mark the connection as disconnected, which
-        will prevent any further attempts to connect or use the connection.
+        Checks the current connection status using `_is_connected()`. If the resource
+        is still connected, logs an informational message and does nothing. Otherwise,
+        sets the internal `_connected` flag to False and logs a warning.
 
-        :return: None
+        Logs:
+            - Info: When the connection is still active and no disconnection occurs.
+            - Warning: When the resource is marked as disconnected.
+
+        Side Effects:
+            - Updates the `_connected` attribute to False if the resource is not connected.
         """
+        if self._is_connected():
+            self.logger.info(f"{self.name}: Connection is still active, not marking as disconnected")
+            return 
+        
         self.logger.warning(f"{self.name}: Marked as disconnected")
         self._connected = False
 
     @abstractmethod
+    def _is_connected(self) -> bool:
+        """
+        Checks whether the resource is currently connected.
+
+        This abstract method must be implemented by subclasses to return the
+        connection status of the underlying resource.
+
+        Returns:
+            bool: `True` if the resource is connected, `False` otherwise.
+        """
+        return False
+
+    @abstractmethod
     def _connect(self) -> None:
         """
-        Establishes a connection to the underlying service.
+        Establishes a connection to the resource.
 
-        This method should be implemented by subclasses to define how to connect to the underlying service.
+        This abstract method must be implemented by subclasses to handle the
+        specific logic required to connect to the underlying resource. It is called
+        by `_connect_with_retry` during connection attempts.
 
-        :return: None
+        Raises:
+            Exception: Any exception raised during the connection attempt should be
+                propagated to allow retry logic to handle it.
         """
         pass
 
     @abstractmethod
     def close(self) -> None:
         """
-        Closes the connection to the underlying service.
+        Closes the connection to the resource and releases any associated resources.
 
-        This method should be implemented by subclasses to define how to close the connection to the underlying service.
+        This abstract method must be implemented by subclasses to perform the
+        necessary cleanup when the orchestrator is finished using the resource.
+        It ensures that connections are properly terminated and resources are freed.
 
-        :return: None
+        Raises:
+            Exception: Any exception raised during closure should be propagated.
         """
         pass

@@ -6,32 +6,33 @@ C = TypeVar('C', bound=BaseDatabaseConfig)
 
 class DatabaseEntry(Generic[C]):
     """
-    Represents a registry entry for a database type.
+    Represents a registry entry linking a database class with its configuration model.
 
-    Each DatabaseEntry binds a database class to its corresponding configuration model.
-    It is used internally by the :data:`DATABASE_REGISTRY` to map database types to
-    their implementation and configuration schema.
+    This generic class pairs a `BaseDatabase` subclass with a corresponding
+    `BaseDatabaseConfig` subclass, enabling type-safe registration and lookup
+    of database implementations.
 
-    Attributes
-    ----------
-    config_model : Type[C]
-        The Pydantic configuration model class associated with this database.
-        This model defines the structure and validation rules for the database configuration.
-    database_class : Type[BaseDatabase]
-        The actual database class associated with this entry.
-        This class must inherit from :class:`BaseDatabase`.
-
-    Notes
-    -----
-    Instances of this class are typically created automatically by the
-    :func:`register_database` decorator and stored in :data:`DATABASE_REGISTRY`.
-    You generally do not instantiate this class manually.
+    Attributes:
+        config_model (Type[C]): The configuration model class associated with the database.
+            Must be a subclass of `BaseDatabaseConfig`.
+        database_class (Type[BaseDatabase]): The database class associated with this entry.
+            Must be a subclass of `BaseDatabase`.
     """
     config_model: Type[C]
     database_class: Type[BaseDatabase]
 
 DATABASE_REGISTRY: Dict[str, DatabaseEntry[BaseDatabaseConfig]] = {}
+"""
+Global registry mapping database types to their corresponding DatabaseEntry.
 
+This dictionary serves as the central registry for all database implementations.
+Each key is a string identifier (`database_type`) and each value is a `DatabaseEntry`
+containing the database class and its associated configuration model.
+
+Example:
+    >>> DATABASE_REGISTRY["postgres"]
+    DatabaseEntry(config_model=PostgresConfig, database_class=PostgresDatabase)
+"""
 
 def register_database(
     *,
@@ -39,29 +40,56 @@ def register_database(
     config_model: Type[BaseDatabaseConfig],
 ):
     """
-    A decorator that registers a database class with the given config model and type.
+    Decorator to register a database class in the global DATABASE_REGISTRY.
 
-    The decorator sets the type attribute of the database class to the given type.
-    It also creates a DatabaseEntry and adds it to the DATABASE_REGISTRY with the given type as the key.
+    This function associates a unique database type string with a database class
+    and its configuration model. It ensures the decorated class is a subclass
+    of `BaseDatabase` and creates a `DatabaseEntry` for registry lookup.
 
     Args:
-        database_class (Type[BaseDatabase]): The database class to register.
+        database_type (str): Unique string identifier for the database type.
+        config_model (Type[BaseDatabaseConfig]): Configuration model class corresponding
+            to the database class. Must be a subclass of `BaseDatabaseConfig`.
 
     Returns:
-        Type[BaseDatabase]: The registered database class.
+        Callable[[Type[BaseDatabase]], Type[BaseDatabase]]: A decorator that registers
+        the database class in `DATABASE_REGISTRY` and sets its `.type` attribute.
+
+    Example:
+        >>> @register_database(database_type="postgres", config_model=PostgresConfig)
+        ... class PostgresDatabase(BaseDatabase):
+        ...     ...
+        >>> DATABASE_REGISTRY["postgres"].database_class
+        <class 'PostgresDatabase'>
     """
     def decorator(database_class: Type[BaseDatabase]) -> Type[BaseDatabase]:
         """
-        A decorator that registers a database class with the given config model and type.
+        Registers the decorated database class in the global DATABASE_REGISTRY.
+
+        This function is returned by `register_database` and is used as a decorator.
+        It performs the following steps:
+            1. Ensures the decorated class is a subclass of `BaseDatabase`.
+            2. Creates a `DatabaseEntry` linking the database class with its config model.
+            3. Stores the entry in `DATABASE_REGISTRY` under the specified database type.
+            4. Adds a `.type` attribute to the database class for easy identification.
 
         Args:
-            database_class (Type[BaseDatabase]): The database class to register.
+            database_class (Type[BaseDatabase]): The database class to register. Must be
+                a subclass of `BaseDatabase`.
 
         Returns:
-            Type[BaseDatabase]: The registered database class.
+            Type[BaseDatabase]: The original database class, now registered in the registry
+            and annotated with a `.type` attribute.
 
-        The decorator sets the type attribute of the database class to the given type.
-        It also creates a DatabaseEntry and adds it to the DATABASE_REGISTRY with the given type as the key.
+        Raises:
+            AssertionError: If `database_class` is not a subclass of `BaseDatabase`.
+
+        Example:
+            >>> @register_database(database_type="mysql", config_model=MySQLConfig)
+            ... class MySQLDatabase(BaseDatabase):
+            ...     ...
+            >>> MySQLDatabase.type
+            "mysql"
         """
         assert issubclass(database_class, BaseDatabase)
         entry = DatabaseEntry()

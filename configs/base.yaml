@@ -1,0 +1,9 @@
+app:
+  name: apps-logging-app
+  cmdb_id: 123456
+  component: APPS_LOGGING_APP_[T]
+  environment: TST
+  purpose_code: P09997
+  log_level: INFO
+  log_dir: logs/
+  version: 1.0.0

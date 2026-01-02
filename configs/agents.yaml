@@ -1,0 +1,264 @@
+agents:
+  - type: sasdm
+    name: sasdm-agent
+    buffer_rows: 500
+    fetch_logs_interval: 10
+    execute_query_interval: 600
+    path_files:
+      - name: onprem_direct
+        path: '/opt/sas/log/ci360/it/onprem_direct.log'
+    producer_connections:
+      - type: kafka_handler
+        name: kafka-handler-hulk
+        data_connections:
+          - name: task_info_pattern
+            is_error: false
+            is_warning: false
+            source_ref: 
+              path_file_name: onprem_direct
+              regex_pattern: '(?P<timestamp>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2},\d{3}) INFO\s+\[pool-\d+-thread-\d+\] SID\[\] USER\[\] CC\[\] \[\] ent\.service\.DirectMarketingExportService - process - results: (?P<json>\{.*"errorCodes"\s*:\s*\[\s*\].*\})'
+          - name: task_error_pattern
+            is_error: true
+            is_warning: false
+            source_ref: 
+              path_file_name: onprem_direct
+              regex_pattern: '(?P<timestamp>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2},\d{3}) INFO\s+\[pool-\d+-thread-\d+\] SID\[\] USER\[\] CC\[\] \[\] ent\.service\.DirectMarketingExportService - process - results: (?P<json>\{.*"errorCodes"\s*:\s*\[\s*.+?\s*\].*\})'
+          - name: segment_info_pattern
+            is_error: false
+            is_warning: false
+            source_ref: 
+              path_file_name: onprem_direct
+              regex_pattern: '(?P<timestamp>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2},\d{3}) INFO\s+\[pool-\d+-thread-\d+\] SID\[\] USER\[\] CC\[\] \[\] nt\.service\.DirectMarketingSegmentService - processSegmentEvent - responseJSON: (?P<json>\{.*"errorCodes"\s*:\s*\[\s*\].*\})'
+          - name: segment_error_pattern
+            is_error: true
+            is_warning: false
+            source_ref: 
+              path_file_name: onprem_direct
+              regex_pattern: '(?P<timestamp>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2},\d{3}) INFO\s+\[pool-\d+-thread-\d+\] SID\[\] USER\[\] CC\[\] \[\] nt\.service\.DirectMarketingSegmentService - processSegmentEvent - responseJSON: (?P<json>\{.*"errorCodes"\s*:\s*\[\s*.+?\s*\].*\})'
+          - name: generic_error_pattern
+            is_error: true
+            is_warning: false
+            source_ref: 
+              path_file_name: onprem_direct
+              regex_pattern: '^ERROR:.*$'
+          - name: macro_error_pattern
+            is_error: true
+            is_warning: false
+            source_ref: 
+              path_file_name: onprem_direct
+              regex_pattern: 'Error in the stored process or a called macro - vendor code: \d+, message:\s*(.+?)(?:\r?\n|$)'
+          - name: engagement_single_message
+            is_error: false
+            is_warning: false
+            expired_time_int: 1440
+            source_ref: 
+              path_file_name: onprem_direct
+              regex_pattern: '(?P<timestamp>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2},\d{3}) INFO\s+\[pool-\d+-thread-\d+\] SID\[\] USER\[\] CC\[\] \[\] ent\.service\.DirectMarketingExportService - process - results: (?P<json>\{.*"errorCodes"\s*:\s*\[\s*\].*\})'
+            destination_ref:
+              type: oracle
+              name: sasdb_ciexpit_owner
+              query: |
+                SELECT
+                  TASK_CD,
+                  MESSAGE_CD,
+                  TASK_OCCUR_NUM,
+                  SUM(delivered) AS delivered,
+                  SUM(denied) AS denied,
+                  SUM(intarget) AS intarget
+                FROM (
+                  SELECT
+                    ted.TASK_CD,
+                    cto.MESSAGE_CD,
+                    ted.TASK_OCCUR_NUM,
+                    COALESCE(SUM(CASE WHEN cto.CONTACT_STATUS_CD IN ('A', 'M') THEN 1 ELSE 0 END), 0) AS delivered,
+                    COALESCE(SUM(CASE WHEN cto.CONTACT_STATUS_CD = 'D' THEN 1 ELSE 0 END), 0) AS denied,
+                    COALESCE(SUM(CASE WHEN cto.CONTACT_STATUS_CD IN ('P', 'A', 'M', 'D') THEN 1 ELSE 0 END), 0) AS intarget
+                  FROM CIEXPIT_OWNER.CONTACT_OUTBOUND cto
+                  INNER JOIN CIEXPIT_OWNER.TASK_EXECUTION_DETAIL ted
+                    ON cto.RTC_ID = ted.RTC_ID
+                    AND cto.MESSAGE_CD = ted.MESSAGE_CD
+                  WHERE ted.TASK_CD = :task_cd and cto.MESSAGE_CD = (:message_cd_list) and ted.TASK_OCCUR_NUM = :task_occur_num
+                  GROUP BY ted.TASK_CD, cto.MESSAGE_CD, ted.TASK_OCCUR_NUM
+                
+                  UNION ALL
+
+                  SELECT
+                    ted.TASK_CD,
+                    cto.MESSAGE_CD,
+                    ted.TASK_OCCUR_NUM,
+                    COALESCE(SUM(CASE WHEN cto.CONTACT_STATUS_CD IN ('A', 'M') THEN 1 ELSE 0 END), 0) AS delivered,
+                    COALESCE(SUM(CASE WHEN cto.CONTACT_STATUS_CD = 'D' THEN 1 ELSE 0 END), 0) AS denied,
+                    COALESCE(SUM(CASE WHEN cto.CONTACT_STATUS_CD IN ('P', 'A', 'M', 'D') THEN 1 ELSE 0 END), 0) AS intarget
+                  FROM CIEXPIT_OWNER.CONTACT_INBOUND cto
+                  INNER JOIN CIEXPIT_OWNER.TASK_EXECUTION_DETAIL ted
+                    ON cto.RTC_ID = ted.RTC_ID
+                    AND cto.MESSAGE_CD = ted.MESSAGE_CD
+                  WHERE ted.TASK_CD = :task_cd and cto.MESSAGE_CD = (:message_cd_list) and ted.TASK_OCCUR_NUM = :task_occur_num
+                  GROUP BY ted.TASK_CD, cto.MESSAGE_CD, ted.TASK_OCCUR_NUM
+
+                  UNION ALL
+
+                  SELECT
+                    ted.TASK_CD,
+                    cto.MESSAGE_CD,
+                    ted.TASK_OCCUR_NUM,
+                    COALESCE(SUM(CASE WHEN cto.CONTACT_STATUS_CD IN ('A', 'M') THEN 1 ELSE 0 END), 0) AS delivered,
+                    COALESCE(SUM(CASE WHEN cto.CONTACT_STATUS_CD = 'D' THEN 1 ELSE 0 END), 0) AS denied,
+                    COALESCE(SUM(CASE WHEN cto.CONTACT_STATUS_CD IN ('P', 'A', 'M', 'D') THEN 1 ELSE 0 END), 0) AS intarget
+                  FROM CIEXPIT_OWNER.CONTACT_NONINTEGRATED cto
+                  INNER JOIN CIEXPIT_OWNER.TASK_EXECUTION_DETAIL ted
+                    ON cto.RTC_ID = ted.RTC_ID
+                    AND cto.MESSAGE_CD = ted.MESSAGE_CD
+                  WHERE ted.TASK_CD = :task_cd and cto.MESSAGE_CD = (:message_cd_list) and ted.TASK_OCCUR_NUM = :task_occur_num
+                  GROUP BY ted.TASK_CD, cto.MESSAGE_CD, ted.TASK_OCCUR_NUM
+                )
+                GROUP BY TASK_CD, MESSAGE_CD, TASK_OCCUR_NUM
+          - name: engagement_all_messages
+            is_error: false
+            is_warning: false
+            expired_time_int: 1440
+            source_ref: 
+              path_file_name: onprem_direct
+              regex_pattern: '(?P<timestamp>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2},\d{3}) INFO\s+\[pool-\d+-thread-\d+\] SID\[\] USER\[\] CC\[\] \[\] ent\.service\.DirectMarketingExportService - process - results: (\{.*"errorCodes"\s*:\s*\[\s*\].*\})'
+            destination_ref:
+              type: oracle
+              name: sasdb_ciexpit_owner
+              query: |
+                SELECT
+                  :task_cd AS TASK_CD,
+                  LISTAGG(MESSAGE_CD, ',') WITHIN GROUP (ORDER BY MESSAGE_CD) AS MESSAGE_CD,
+                  :task_occur_num AS TASK_OCCUR_NUM,
+                  SUM(delivered) AS delivered,
+                  SUM(denied) AS denied,
+                  SUM(intarget) AS intarget
+                FROM (
+                  SELECT
+                    cto.MESSAGE_CD,
+                    COALESCE(SUM(CASE WHEN cto.CONTACT_STATUS_CD IN ('A', 'M') THEN 1 ELSE 0 END), 0) AS delivered,
+                    COALESCE(SUM(CASE WHEN cto.CONTACT_STATUS_CD = 'D' THEN 1 ELSE 0 END), 0) AS denied,
+                    COALESCE(SUM(CASE WHEN cto.CONTACT_STATUS_CD IN ('P', 'A', 'M', 'D') THEN 1 ELSE 0 END), 0) AS intarget
+                  FROM CIEXPIT_OWNER.CONTACT_OUTBOUND cto
+                  INNER JOIN CIEXPIT_OWNER.TASK_EXECUTION_DETAIL ted
+                    ON cto.RTC_ID = ted.RTC_ID
+                    AND cto.MESSAGE_CD = ted.MESSAGE_CD
+                  WHERE ted.TASK_CD = :task_cd and cto.MESSAGE_CD IN (:message_cd_list) and ted.TASK_OCCUR_NUM = :task_occur_num
+                  GROUP BY cto.MESSAGE_CD
+
+                  UNION ALL
+
+                  SELECT
+                    cto.MESSAGE_CD,
+                    COALESCE(SUM(CASE WHEN cto.CONTACT_STATUS_CD IN ('A', 'M') THEN 1 ELSE 0 END), 0) AS delivered,
+                    COALESCE(SUM(CASE WHEN cto.CONTACT_STATUS_CD = 'D' THEN 1 ELSE 0 END), 0) AS denied,
+                    COALESCE(SUM(CASE WHEN cto.CONTACT_STATUS_CD IN ('P', 'A', 'M', 'D') THEN 1 ELSE 0 END), 0) AS intarget
+                  FROM CIEXPIT_OWNER.CONTACT_INBOUND cto
+                  INNER JOIN CIEXPIT_OWNER.TASK_EXECUTION_DETAIL ted
+                    ON cto.RTC_ID = ted.RTC_ID
+                    AND cto.MESSAGE_CD = ted.MESSAGE_CD
+                  WHERE ted.TASK_CD = :task_cd and cto.MESSAGE_CD IN (:message_cd_list) and ted.TASK_OCCUR_NUM = :task_occur_num
+                  GROUP BY cto.MESSAGE_CD
+
+                  UNION ALL
+
+                  SELECT
+                    cto.MESSAGE_CD,
+                    COALESCE(SUM(CASE WHEN cto.CONTACT_STATUS_CD IN ('A', 'M') THEN 1 ELSE 0 END), 0) AS delivered,
+                    COALESCE(SUM(CASE WHEN cto.CONTACT_STATUS_CD = 'D' THEN 1 ELSE 0 END), 0) AS denied,
+                    COALESCE(SUM(CASE WHEN cto.CONTACT_STATUS_CD IN ('P', 'A', 'M', 'D') THEN 1 ELSE 0 END), 0) AS intarget
+                  FROM CIEXPIT_OWNER.CONTACT_NONINTEGRATED cto
+                  INNER JOIN CIEXPIT_OWNER.TASK_EXECUTION_DETAIL ted
+                    ON cto.RTC_ID = ted.RTC_ID
+                    AND cto.MESSAGE_CD = ted.MESSAGE_CD
+                  WHERE ted.TASK_CD = :task_cd and cto.MESSAGE_CD IN (:message_cd_list) and ted.TASK_OCCUR_NUM = :task_occur_num
+                  GROUP BY cto.MESSAGE_CD
+                )
+  - type: spring
+    name: spring-agent
+    buffer_rows: 500
+    fetch_logs_interval: 10
+    path_files:
+      - name: pici_dl_facade
+        path: '/var/opt/pici-sas/pici-dl-facade/it/logs/pici-dl-facade-1.0-SNAPSHOT.log'
+      - name: pici_feedback_importer
+        path: '/var/opt/pici-sas/pici-pici-feedback-importer/it/logs/pici-feedback-importer-1.0.0-SNAPSHOT.log'
+      - name: piciapi_engagement_suite_connector
+        path: '/var/opt/pici-sas/piciapi-engagement-suite-connector/it/logs/piciapi-engagement-suite-connector-1.0.0-SNAPSHOT.log'
+      - name: piciapi_sas_db_exporter
+        path: '/var/opt/pici-sas/piciapi-sas-db-exporter/it/logs/piciapi-sas-db-exporter-1.0.0-SNAPSHOT.log'
+    producer_connections:
+      - type: kafka_handler
+        name: kafka-handler-hulk
+        topic: P09997.apps-logging-topic
+        data_connections:
+          - name: info_pattern
+            is_error: false
+            is_warning: false
+            source_ref: 
+              path_file_name: pici_dl_facade
+              regex_pattern: '^(\d{2}/\d{2}/\d{4}\s*\d{2}:\d{2}:\d{2},\d{3})\s*\|\|\s*[\w\.\-]+\s*\|\|\s*(?:ERROR)\s*\|\|.*'
+          - name: warn_pattern
+            is_error: false
+            is_warning: true
+            source_ref: 
+              path_file_name: pici_dl_facade
+              regex_pattern: '^(\d{2}/\d{2}/\d{4}\s*\d{2}:\d{2}:\d{2},\d{3})\s*\|\|\s*[\w\.\-]+\s*\|\|\s*(?:WARN)\s*\|\|.*'
+          - name: error_pattern
+            is_error: true
+            is_warning: false
+            source_ref: 
+              path_file_name: pici_dl_facade
+              regex_pattern: '^(\d{2}/\d{2}/\d{4}\s*\d{2}:\d{2}:\d{2},\d{3})\s*\|\|\s*[\w\.\-]+\s*\|\|\s*(?:INFO)\s*\|\|.*'
+          - name: info_pattern
+            is_error: false
+            is_warning: false
+            source_ref: 
+              path_file_name: pici_feedback_importer
+              regex_pattern: '^(\d{2}/\d{2}/\d{4}\s*\d{2}:\d{2}:\d{2},\d{3})\s*\|\|\s*[\w\.\-]+\s*\|\|\s*(?:ERROR)\s*\|\|.*'
+          - name: warn_pattern
+            is_error: false
+            is_warning: true
+            source_ref: 
+              path_file_name: pici_feedback_importer
+              regex_pattern: '^(\d{2}/\d{2}/\d{4}\s*\d{2}:\d{2}:\d{2},\d{3})\s*\|\|\s*[\w\.\-]+\s*\|\|\s*(?:WARN)\s*\|\|.*'
+          - name: error_pattern
+            is_error: true
+            is_warning: false
+            source_ref: 
+              path_file_name: pici_feedback_importer
+              regex_pattern: '^(\d{2}/\d{2}/\d{4}\s*\d{2}:\d{2}:\d{2},\d{3})\s*\|\|\s*[\w\.\-]+\s*\|\|\s*(?:INFO)\s*\|\|.*'
+          - name: info_pattern
+            is_error: false
+            is_warning: false
+            source_ref: 
+              path_file_name: piciapi_engagement_suite_connector
+              regex_pattern: '^(\d{2}/\d{2}/\d{4}\s*\d{2}:\d{2}:\d{2},\d{3})\s*\|\|\s*[\w\.\-]+\s*\|\|\s*(?:ERROR)\s*\|\|.*'
+          - name: warn_pattern
+            is_error: false
+            is_warning: true
+            source_ref: 
+              path_file_name: piciapi_engagement_suite_connector
+              regex_pattern: '^(\d{2}/\d{2}/\d{4}\s*\d{2}:\d{2}:\d{2},\d{3})\s*\|\|\s*[\w\.\-]+\s*\|\|\s*(?:WARN)\s*\|\|.*'
+          - name: error_pattern
+            is_error: true
+            is_warning: false
+            source_ref: 
+              path_file_name: piciapi_engagement_suite_connector
+              regex_pattern: '^(\d{2}/\d{2}/\d{4}\s*\d{2}:\d{2}:\d{2},\d{3})\s*\|\|\s*[\w\.\-]+\s*\|\|\s*(?:INFO)\s*\|\|.*'
+          - name: info_pattern
+            is_error: false
+            is_warning: false
+            source_ref: 
+              path_file_name: piciapi_sas_db_exporter
+              regex_pattern: '^(\d{2}/\d{2}/\d{4}\s*\d{2}:\d{2}:\d{2},\d{3})\s*\|\|\s*[\w\.\-]+\s*\|\|\s*(?:ERROR)\s*\|\|.*'
+          - name: warn_pattern
+            is_error: false
+            is_warning: true
+            source_ref: 
+              path_file_name: piciapi_sas_db_exporter
+              regex_pattern: '^(\d{2}/\d{2}/\d{4}\s*\d{2}:\d{2}:\d{2},\d{3})\s*\|\|\s*[\w\.\-]+\s*\|\|\s*(?:WARN)\s*\|\|.*'
+          - name: error_pattern
+            is_error: true
+            is_warning: false
+            source_ref: 
+              path_file_name: piciapi_sas_db_exporter
+              regex_pattern: '^(\d{2}/\d{2}/\d{4}\s*\d{2}:\d{2}:\d{2},\d{3})\s*\|\|\s*[\w\.\-]+\s*\|\|\s*(?:INFO)\s*\|\|.*'

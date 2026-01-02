@@ -6,34 +6,48 @@ import re
 
 class PathFileConfig(BaseModel):
     """
-    Configuration model representing a log file to be monitored.
+    Configuration model for a file path used by an agent.
 
-    This model defines a file path along with runtime metadata used by
-    agents to track read position and file rotation.
+    This model represents a file that the agent will use, including its
+    name, filesystem path, optional cursor, and optional identifier. It
+    performs validation to ensure that the name is not None and the path
+    exists.
 
-    :param name: Logical name of the path file, used as a reference
-        in regex configurations.
-    :type name: str
-    :param path: Filesystem path to the log file.
-    :type path: pathlib.Path
-    :param cursor: Byte position used to track the last read offset.
-    :type cursor: int
-    :param id: Identifier of the file used to detect file rotation.
-    :type id: Optional[int]
+    Attributes:
+        name (str): Unique name of the path file. Must not be None.
+        path (Path): Filesystem path to the file. Must exist and be a Path object.
+        cursor (int, optional): Optional cursor to track progress within the file. Defaults to 0.
+        id (int, optional): Optional identifier for the path file.
     """
     name: str
     path: Path
     cursor: int = 0
     id: Optional[int] = None
     
-    @field_validator('name')
-    def validate_name(cls, value) -> str:
-        if value is None:
-            raise ValueError("Name cannot be None")
-        return value
     
     @field_validator('path')
     def validate_path(cls, value) -> Path:
+        """
+        Validates the `path` field of the PathFileConfig model.
+
+        Ensures that the `path` attribute:
+            1. Is not None.
+            2. Is a `Path` object.
+            3. Points to an existing file or directory in the filesystem.
+
+        This validator is automatically called by Pydantic when creating or
+        updating a PathFileConfig instance.
+
+        Args:
+            cls: The PathFileConfig class.
+            value (Path): The value of the `path` field to validate.
+
+        Returns:
+            Path: The validated Path object.
+
+        Raises:
+            ValueError: If `path` is None, not a Path object, or does not exist.
+        """
         if value is None:
             raise ValueError("Path cannot be None")
         if not isinstance(value, Path):
@@ -44,22 +58,39 @@ class PathFileConfig(BaseModel):
 
 class RegexPatternConfig(BaseModel):
     """
-    Configuration model defining a regex pattern applied to a log file.
+    Configuration model for associating a regex pattern with a specific path file.
 
-    This model links a regular expression to a specific
-    :class:`PathFileConfig` via its name. The regex is compiled automatically
-    if provided as a string.
+    This model represents a regex pattern that will be applied to the contents
+    of a file identified by `path_file_name`. The regex pattern is automatically
+    compiled if provided as a string.
 
-    :param path_file_name: Name of the path file this regex applies to.
-    :type path_file_name: str
-    :param regex_pattern: Compiled regular expression used to extract data.
-    :type regex_pattern: Pattern[str]
+    Attributes:
+        path_file_name (str): Name of the path file that this regex pattern applies to.
+        regex_pattern (Pattern[str]): Compiled regular expression pattern used for matching.
     """
     path_file_name: str
     regex_pattern: Pattern[str]
     
     @field_validator('regex_pattern', mode='before')
     def compile_regex(cls, v) -> Pattern[str]:
+        """
+        Compiles the `regex_pattern` field if it is provided as a string.
+
+        This validator is executed before standard Pydantic validation (`mode='before'`),
+        allowing users to provide regex patterns either as strings or pre-compiled
+        Pattern objects. If a string is provided, it is compiled into a `Pattern[str]`.
+
+        Args:
+            cls: The RegexPatternConfig class.
+            v (Union[str, Pattern[str]]): The value of the `regex_pattern` field to validate.
+
+        Returns:
+            Pattern[str]: The compiled regex pattern.
+
+        Raises:
+            None: This validator does not raise exceptions; invalid regex strings will
+                raise an exception when used later in matching operations.
+        """
         if isinstance(v, str):
             return re.compile(v)
         return v
@@ -67,17 +98,16 @@ class RegexPatternConfig(BaseModel):
 
 class QueryConfig(BaseModel):
     """
-    Configuration model defining a database query destination.
+    Configuration model for a database query.
 
-    This model specifies the database type, instance name, and query
-    template to be executed when a data connection is processed.
+    This model represents a query that can be executed by an agent
+    or data pipeline. It includes the database type, a name for the query,
+    and the query string itself.
 
-    :param type: Type of the destination database.
-    :type type: str
-    :param name: Name of the destination database instance.
-    :type name: str
-    :param query: Query string to be executed.
-    :type query: str
+    Attributes:
+        type (str): Type of the database (e.g., 'postgres', 'mysql').
+        name (str): Unique name for the query.
+        query (str): The query string to be executed.
     """
     type: str
     name: str
@@ -85,73 +115,73 @@ class QueryConfig(BaseModel):
 
 class DataConnectionConfig(BaseModel):
     """
-    Configuration model defining a logical data connection.
+    Configuration model for a data connection within a producer.
 
-    A data connection links a source (regex match on a log file) to an
-    optional destination (database query) and defines how extracted
-    data should be processed and routed.
+    This model represents a single data flow from a producer to a destination,
+    including error and warning flags, optional source and destination references,
+    and an optional expiration time.
 
-    :param name: Unique name of the data connection.
-    :type name: str
-    :param is_error: Whether this data connection represents an error condition.
-    :type is_error: bool
-    :param source_ref: Regex-based source configuration.
-    :type source_ref: Optional[RegexPatternConfig]
-    :param destination_ref: Query-based destination configuration.
-    :type destination_ref: Optional[QueryConfig]
-    :param expired_time_int: Expiration time in minutes for generated data.
-    :type expired_time_int: Optional[int]
+    Attributes:
+        name (str): Unique name of the data connection.
+        is_error (bool): Indicates whether this connection is used for error handling.
+        is_warning (bool): Indicates whether this connection is used for warnings.
+        source_ref (RegexPatternConfig, optional): Optional reference to a regex
+            pattern applied to a path file, used to extract or filter data.
+        destination_ref (QueryConfig, optional): Optional reference to a query
+            representing the destination database or table.
+        expired_time_int (int, optional): Optional expiration time in seconds
+            for the data connection.
     """
     name: str
     is_error: bool
+    is_warning: bool
     source_ref: RegexPatternConfig = None
     destination_ref: Optional[QueryConfig] = None
     expired_time_int: Optional[int] = None
-    
+
 class ProducerConnectionConfig(BaseModel):
     """
-    Configuration model defining a producer and its associated data connections.
+    Configuration model for a producer and its associated data connections.
 
-    This model groups multiple :class:`DataConnectionConfig` instances
-    under a single producer definition.
+    This model represents a producer instance that generates or streams data,
+    along with all the data connections that it manages. Each data connection
+    defines how the produced data is routed, filtered, or sent to a destination.
 
-    :param type: Type of the producer.
-    :type type: str
-    :param name: Name of the producer instance.
-    :type name: str
-    :param data_connections: List of data connections handled by the producer.
-    :type data_connections: List[DataConnectionConfig]
+    Attributes:
+        type (str): Type of the producer (e.g., Kafka, RabbitMQ, custom).
+        name (str): Unique name of the producer instance.
+        topic (str): Messaging topic or stream that the producer writes to.
+        data_connections (List[DataConnectionConfig]): List of data connections
+            handled by this producer.
     """
     type: str
     name: str
+    topic: str
     data_connections: List[DataConnectionConfig]
 
 
 class BaseAgentConfig(BaseModel):
     """
-    Base configuration model for agent instances.
+    Base configuration model for an agent.
 
-    This model defines all common configuration options required by agents,
-    including file monitoring, buffering behavior, producer connections,
-    and execution intervals.
+    This model defines the core settings required to configure an agent,
+    including its type, name, buffering, file paths, producer connections,
+    and scheduling intervals for logs and queries. It also includes validation
+    for buffer sizes, intervals, and references between regex patterns and path files.
 
-    It also enforces validation rules to ensure consistency between
-    path files and regex references.
-
-    :param type: Type identifier of the agent.
-    :type type: str
-    :param name: Name of the agent instance.
-    :type name: str
-    :param buffer_rows: Number of log lines to read per batch.
-    :type buffer_rows: int
-    :param path_files: List of configured log files to monitor.
-    :type path_files: Optional[List[PathFileConfig]]
-    :param producer_connections: Producer connections handled by the agent.
-    :type producer_connections: List[ProducerConnectionConfig]
-    :param fetch_logs_interval: Interval in seconds between log fetch cycles.
-    :type fetch_logs_interval: float
-    :param execute_query_interval: Interval in seconds between query executions.
-    :type execute_query_interval: float
+    Attributes:
+        type (str): The type of the agent.
+        name (str): Unique name of the agent.
+        buffer_rows (int, optional): Number of rows to buffer for processing.
+            Must be greater than 0. Defaults to 500.
+        path_files (List[PathFileConfig], optional): List of path file configurations
+            used by the agent.
+        producer_connections (List[ProducerConnectionConfig]): List of producer
+            configurations that the agent uses to produce or process data.
+        fetch_logs_interval (float): Interval in seconds for fetching logs.
+            Must be greater than 0. Defaults to 120.
+        execute_query_interval (float): Interval in seconds for executing queries.
+            Must be greater than 0. Defaults to 600.
     """
     type: str
     name: str
@@ -165,11 +195,21 @@ class BaseAgentConfig(BaseModel):
     @field_validator('buffer_rows')
     def validate_buffer_rows(cls, value) -> int:
         """
-        Validate the buffer_rows field of the BaseAgentConfig model.
+        Validates the `buffer_rows` field of the BaseAgentConfig model.
 
-        :param value: The value of the buffer_rows field.
-        :raises ValueError: If the buffer_rows is less than or equal to 0.
-        :return: The validated buffer_rows value.
+        Ensures that the number of buffer rows is greater than 0. This value
+        is used by the agent to determine how many rows to process or store
+        in memory before committing or sending them downstream.
+
+        Args:
+            cls: The BaseAgentConfig class.
+            value (int): The value of the `buffer_rows` field to validate.
+
+        Returns:
+            int: The validated buffer_rows value.
+
+        Raises:
+            ValueError: If `buffer_rows` is less than or equal to 0.
         """
         if value <= 0:
             raise ValueError("Buffer rows must be greater than 0")
@@ -178,11 +218,21 @@ class BaseAgentConfig(BaseModel):
     @field_validator('fetch_logs_interval')
     def validate_fetch_logs_interval(cls, value) -> float:
         """
-        Validate the fetch_logs_interval field of the BaseAgentConfig model.
+        Validates the `fetch_logs_interval` field of the BaseAgentConfig model.
 
-        :param value: The value of the fetch_logs_interval field.
-        :raises ValueError: If the fetch_logs_interval is less than or equal to 0.
-        :return: The validated fetch_logs_interval value.
+        Ensures that the interval for fetching logs is greater than 0 seconds.
+        This interval determines how frequently the agent retrieves logs from
+        producers or other sources.
+
+        Args:
+            cls: The BaseAgentConfig class.
+            value (float): The value of the `fetch_logs_interval` field to validate.
+
+        Returns:
+            float: The validated fetch_logs_interval value.
+
+        Raises:
+            ValueError: If `fetch_logs_interval` is less than or equal to 0.
         """
         if value <= 0:
             raise ValueError("Pool interval must be greater than 0")
@@ -191,11 +241,25 @@ class BaseAgentConfig(BaseModel):
     @field_validator('execute_query_interval')
     def validate_execute_query_interval(cls, value) -> float:
         """
-        Validate the execute_query_interval field of the BaseAgentConfig model.
+        Validates the `execute_query_interval` field of the BaseAgentConfig model.
 
-        :param value: The value of the execute_query_interval field.
-        :raises ValueError: If the execute_query_interval is less than or equal to 180.
-        :return: The validated execute_query_interval value.
+        Ensures that the interval for executing queries is greater than 0 seconds.
+        This interval determines how frequently the agent executes queries against
+        databases or other destinations.
+
+        Note:
+            The error message suggests a minimum of 180 seconds, but the current
+            validation logic only enforces the value to be greater than 0.
+
+        Args:
+            cls: The BaseAgentConfig class.
+            value (float): The value of the `execute_query_interval` field to validate.
+
+        Returns:
+            float: The validated execute_query_interval value.
+
+        Raises:
+            ValueError: If `execute_query_interval` is less than or equal to 0.
         """
         if value <= 0:
             raise ValueError("Pool interval must be greater than 180")
@@ -205,14 +269,21 @@ class BaseAgentConfig(BaseModel):
     @model_validator(mode='after')
     def validate_regex_path_references(self) -> "BaseAgentConfig":
         """
-        Validate the regex path references in the BaseAgentConfig model.
+        Validates that all source references in producer data connections
+        refer to valid path files defined in `path_files`.
 
-        This validator checks if the path_file_name referenced in the data_connections
-        of the producer_connections exist in the path_files of the agent.
+        This model-level validator runs after standard Pydantic validation
+        (`mode='after'`). It ensures that each `source_ref.path_file_name` 
+        in the agent's producers exists in the `path_files` list. This helps 
+        prevent misconfigurations where a regex pattern references a non-existent
+        path file.
 
-        :raises ValueError: If the path_file_name referenced in the data_connections
-            does not exist in the path_files of the agent.
-        :return: The validated BaseAgentConfig model.
+        Returns:
+            BaseAgentConfig: The validated BaseAgentConfig instance.
+
+        Raises:
+            ValueError: If any `source_ref.path_file_name` does not match
+                        a name in `path_files`.
         """
         if not self.path_files:
             return self

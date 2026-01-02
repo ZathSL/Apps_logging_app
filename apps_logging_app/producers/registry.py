@@ -6,67 +6,100 @@ C = TypeVar('C', bound=BaseProducerConfig)
 
 class ProducerEntry(Generic[C]):
     """
-    Represents a registry entry for a producer class.
+    Registry entry describing a producer and its configuration model.
 
-    `ProducerEntry` associates a producer class with its corresponding configuration model.
-    It is used internally by the `PRODUCER_REGISTRY` to map producer types to their classes 
-    and configuration schemas.
+    This class acts as a lightweight container used by the producer registry
+    to associate a producer implementation with its corresponding
+    configuration model. It enables dynamic lookup and instantiation of
+    producers based on a declared producer type.
 
-    Attributes
-    ----------
-    config_model : Type[C]
-        The Pydantic configuration model class associated with the producer. 
-        This model defines the required configuration fields for instantiating the producer.
-    producer_class : Type[BaseProducer]
-        The actual producer class that implements the `BaseProducer` interface.
+    The class is generic over the configuration model type to preserve
+    type safety when accessing the producer's configuration.
 
-    Usage
-    -----
-    Producer classes are registered in the global `PRODUCER_REGISTRY` using the
-    `@register_producer` decorator, which creates a `ProducerEntry` and stores it
-    under a unique producer type key.
-
-    Example
-    -------
-    >>> @register_producer(producer_type="kafka", config_model=KafkaProducerConfig)
-    >>> class KafkaProducer(BaseProducer):
-    >>>     ...
-    >>> entry = PRODUCER_REGISTRY["kafka"]
-    >>> entry.producer_class  # <class 'KafkaProducer'>
-    >>> entry.config_model    # <class 'KafkaProducerConfig'>
+    Attributes:
+        config_model (Type[C]): The configuration model class associated
+            with the producer. Must be a subclass of
+            :class:`BaseProducerConfig`.
+        producer_class (Type[BaseProducer]): The concrete producer class
+            implementing the producer logic.
     """
     config_model: Type[C]
     producer_class: Type[BaseProducer]
 
 PRODUCER_REGISTRY: Dict[str, ProducerEntry] = {}
+"""
+Global registry mapping producer types to producer entries.
 
+This dictionary acts as a central registry for all available producer
+implementations. Each entry maps a unique producer type identifier to
+a :class:`ProducerEntry` containing the producer class and its associated
+configuration model.
+
+The registry is populated via the :func:`register_producer` decorator
+at import time.
+
+Keys:
+    str: Unique producer type identifier.
+
+Values:
+    ProducerEntry: Metadata describing the registered producer.
+"""
 
 def register_producer(
     *,
     producer_type: str,
     config_model: Type[BaseProducerConfig],
 ):
-
     """
-    Registers a producer class with the given config model and type.
+    Register a producer class and its configuration model.
+
+    This function returns a class decorator that registers a concrete
+    :class:`BaseProducer` implementation under a given producer type.
+    The registration associates the producer class with its configuration
+    model and stores the mapping in the global :data:`PRODUCER_REGISTRY`.
+
+    The decorator also assigns the producer type to the decorated class
+    as a class-level attribute.
 
     Args:
-        producer_type (str): The type of the producer to be registered.
-        config_model (Type[BaseProducerConfig]): The config model for the producer.
+        producer_type (str): Unique identifier used to register and
+            reference the producer implementation.
+        config_model (Type[BaseProducerConfig]): Configuration model class
+            associated with the producer. Must be a subclass of
+            :class:`BaseProducerConfig`.
 
     Returns:
-        Callable[[Type[BaseProducer]], Type[BaseProducer]]: A decorator that registers the producer class with the given config model and type.
+        Callable[[Type[BaseProducer]], Type[BaseProducer]]: A class
+        decorator that registers the producer.
+
+    Raises:
+        AssertionError: If the decorated class is not a subclass of
+            :class:`BaseProducer`.
     """
 
     def decorator(producer_class: Type[BaseProducer]) -> Type[BaseProducer]:
         """
-        A decorator that registers the producer class with the given config model and type.
+        Decorate and register a producer implementation.
+
+        This decorator validates the producer class, creates a
+        :class:`ProducerEntry` linking the producer to its configuration
+        model, and registers it in the global producer registry under the
+        specified producer type.
+
+        The producer type is also assigned to the producer class as a
+        class-level attribute for later introspection.
 
         Args:
-            producer_class (Type[BaseProducer]): The producer class to register.
+            producer_class (Type[BaseProducer]): Concrete producer class
+                to be registered.
 
         Returns:
-            Type[BaseProducer]: The registered producer class.
+            Type[BaseProducer]: The original producer class, unmodified
+            aside from the assigned ``type`` attribute.
+
+        Raises:
+            AssertionError: If the provided class does not inherit from
+                :class:`BaseProducer`.
         """
         assert issubclass(producer_class, BaseProducer)
         entry = ProducerEntry()

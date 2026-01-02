@@ -1,0 +1,14 @@
+databases:
+  - type: oracle
+    name: sasdb_ciexpit_owner
+    max_retries: 5
+    username: system
+    password: oracle
+    primary:
+      host: oracle
+      port: 1521
+      service_name: XEPDB1
+    replica:
+      host: oracle
+      port: 1521
+      service_name: XEPDB1

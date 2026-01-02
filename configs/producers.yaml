@@ -1,0 +1,21 @@
+producers:
+  - type: kafka_handler
+    name: kafka-handler-hulk
+    max_retries: 5
+    topics: 
+      - oracle_topic
+      - P09997.apps-logging-topic
+    brokers:
+      - br101-hulk-tst.ic.ing.net:9093
+      - br201-hulk-tst.ic.ing.net:9093
+      - br301-hulk-tst.ic.ing.net:9093
+      - br401-hulk-tst.ic.ing.net:9093
+    seceurity_protocol: SSL
+    ssl_cafile: '/opt/apps-logging-app/ssl/g4_c1r_b64.crt'
+    ssl_certfile: '/etc/letsencrypt/live/clrv0000292783.ic.ing.net-default/cert.pem'
+    ssl_keyfile: '/etc/letsencrypt/live/clrv0000292783.ic.ing.net-default/privkey.pem'
+    ssl_password: Default
+    acks: all
+    batch_size: 16384
+    linger_ms: 5
+    buffer_memory: 33554432
