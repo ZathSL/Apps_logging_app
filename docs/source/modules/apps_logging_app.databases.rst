@@ -20,6 +20,14 @@ apps\_logging\_app.databases.base module
    :show-inheritance:
    :undoc-members:
 
+apps\_logging\_app.databases.data module
+----------------------------------------
+
+.. automodule:: apps_logging_app.databases.data
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
 apps\_logging\_app.databases.factory module
 -------------------------------------------
 
@@ -28,6 +36,7 @@ apps\_logging\_app.databases.factory module
    :show-inheritance:
    :undoc-members:
 
+
 apps\_logging\_app.databases.model module
 -----------------------------------------
 
@@ -35,6 +44,7 @@ apps\_logging\_app.databases.model module
    :members:
    :show-inheritance:
    :undoc-members:
+   :no-index:
 
 apps\_logging\_app.databases.orchestrator module
 ------------------------------------------------
@@ -51,6 +61,7 @@ apps\_logging\_app.databases.registry module
    :members:
    :show-inheritance:
    :undoc-members:
+   :no-index:
 
 Module contents
 ---------------

@@ -47,6 +47,7 @@ class BaseAgent(ABC):
         >>> agent.start()
         >>> # ... agent runs asynchronously ...
         >>> agent.stop()
+
     """
     def __init__(self, config: BaseAgentConfig) -> None:
         """

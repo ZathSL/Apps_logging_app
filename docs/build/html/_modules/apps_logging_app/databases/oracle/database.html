@@ -344,7 +344,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">..registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">register_database</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">OracleDatabaseConfig</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">..base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseDatabase</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">..model</span><span class="w"> </span><span class="kn">import</span> <span class="n">QueryTask</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..data</span><span class="w"> </span><span class="kn">import</span> <span class="n">Query</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">oracledb</span>
 
 <div class="viewcode-block" id="OracleDatabase">
@@ -354,31 +354,83 @@
     <span class="n">config_model</span><span class="o">=</span><span class="n">OracleDatabaseConfig</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">OracleDatabase</span><span class="p">(</span><span class="n">BaseDatabase</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    OracleDatabase provides a connection interface to an Oracle database using connection pooling.</span>
+
+<span class="sd">    This class supports connections to a primary database and an optional replica, with</span>
+<span class="sd">    failover and load balancing configuration. It allows executing queries and retrieving</span>
+<span class="sd">    results as dictionaries. It integrates with the database registry using the</span>
+<span class="sd">    `@register_database` decorator and uses the `OracleDatabaseConfig` model for configuration.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        config (OracleDatabaseConfig): Configuration object containing database connection details.</span>
+<span class="sd">        pool (oracledb.SessionPool, optional): Connection pool for managing database connections.</span>
+<span class="sd">        dsn (str, optional): Data Source Name string used to connect to the Oracle database.</span>
+
+<span class="sd">    Methods:</span>
+<span class="sd">        __init__(config: OracleDatabaseConfig) -&gt; None:</span>
+<span class="sd">            Initializes the OracleDatabase instance with the given configuration.</span>
+
+<span class="sd">        _build_dsn() -&gt; str:</span>
+<span class="sd">            Constructs the Oracle DSN string for primary and optional replica hosts.</span>
+
+<span class="sd">        is_connected() -&gt; bool:</span>
+<span class="sd">            Checks if the database connection pool is active and can communicate with the database.</span>
+
+<span class="sd">        connect() -&gt; None:</span>
+<span class="sd">            Creates the connection pool to the Oracle database using credentials and DSN.</span>
+
+<span class="sd">        close() -&gt; None:</span>
+<span class="sd">            Closes the database connection pool.</span>
+
+<span class="sd">        _query(task: Query) -&gt; List[Dict[str, Any]]:</span>
+<span class="sd">            Executes a SQL query and returns the results as a list of dictionaries.</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">OracleDatabaseConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initializes an OracleDatabase instance with the given configuration.</span>
+<span class="sd">        Initializes an OracleDatabase instance with the provided configuration.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            config (OracleDatabaseConfig): The configuration for the database.</span>
+<span class="sd">            config (OracleDatabaseConfig): Configuration object containing connection</span>
+<span class="sd">                details such as host, port, username, password, service name, replica</span>
+<span class="sd">                information, and maximum number of workers.</span>
 
+<span class="sd">        Raises:</span>
+<span class="sd">            None: This initializer does not explicitly raise exceptions, but invalid</span>
+<span class="sd">            configuration may cause errors when `connect()` is called.</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            This constructor delegates initialization to the BaseDatabase superclass,</span>
+<span class="sd">            which sets up common database attributes such as `config`, `pool`, and `logger`.</span>
+<span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
 
+<div class="viewcode-block" id="OracleDatabase._build_dsn">
+<a class="viewcode-back" href="../../../../modules/apps_logging_app.databases.oracle.html#apps_logging_app.databases.oracle.database.OracleDatabase._build_dsn">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">_build_dsn</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Builds a DSN string for connecting to the database.</span>
+<span class="sd">        Constructs the Oracle Data Source Name (DSN) for connecting to the database.</span>
 
-<span class="sd">        The DSN string will contain the primary host and port, as well as the</span>
-<span class="sd">        replica host and port if specified.</span>
+<span class="sd">        This DSN includes the primary host and an optional replica host, and it</span>
+<span class="sd">        configures failover and load balancing settings for the connection.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            str: The DSN string for connecting to the database.</span>
+<span class="sd">            str: A formatted DSN string suitable for creating an Oracle connection or connection pool.</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - If a replica is provided in the configuration and has valid host and port, it will be included in the DSN to enable failover.</span>
+<span class="sd">            - The DSN sets `LOAD_BALANCE=OFF` and `FAILOVER=ON`.</span>
+<span class="sd">            - The `SERVICE_NAME` is always taken from the primary database configuration.</span>
+<span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">addresses</span> <span class="o">=</span> <span class="p">[</span>
             <span class="sa">f</span><span class="s2">&quot;(ADDRESS=(PROTOCOL=TCP)(HOST=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">primary</span><span class="o">.</span><span class="n">host</span><span class="si">}</span><span class="s2">)(PORT=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">primary</span><span class="o">.</span><span class="n">port</span><span class="si">}</span><span class="s2">))&quot;</span>
         <span class="p">]</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">replica</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">replica</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">replica</span><span class="o">.</span><span class="n">host</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">replica</span><span class="o">.</span><span class="n">port</span><span class="p">:</span>
             <span class="n">addresses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;(ADDRESS=(PROTOCOL=TCP)(HOST=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">replica</span><span class="o">.</span><span class="n">host</span><span class="si">}</span><span class="s2">)(PORT=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">replica</span><span class="o">.</span><span class="n">port</span><span class="si">}</span><span class="s2">))&quot;</span>
             <span class="p">)</span>
@@ -396,24 +448,58 @@
 <span class="s2">                (SERVICE_NAME=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">primary</span><span class="o">.</span><span class="n">service_name</span><span class="si">}</span><span class="s2">)</span>
 <span class="s2">            )</span>
 <span class="s2">        )</span>
-<span class="s2">        &quot;&quot;&quot;</span>
+<span class="s2">        &quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="OracleDatabase.is_connected">
+<a class="viewcode-back" href="../../../../modules/apps_logging_app.databases.oracle.html#apps_logging_app.databases.oracle.database.OracleDatabase.is_connected">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_connected</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Checks whether the Oracle database connection pool is active and the database is reachable.</span>
+
+<span class="sd">        This method attempts to acquire a connection from the pool and ping the database.</span>
+<span class="sd">        If the pool is not initialized or the ping fails, it returns False.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: True if a connection can be successfully acquired and pinged, False otherwise.</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - A False result may indicate that the connection pool has not been created or the database is temporarily unavailable.</span>
+<span class="sd">            - Exceptions from `oracledb` during the ping are caught and interpreted as a disconnected state.</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">pool</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">pool</span><span class="o">.</span><span class="n">acquire</span><span class="p">()</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
+                <span class="n">conn</span><span class="o">.</span><span class="n">ping</span><span class="p">()</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">except</span> <span class="n">oracledb</span><span class="o">.</span><span class="n">Error</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span></div>
+
 
 <div class="viewcode-block" id="OracleDatabase.connect">
 <a class="viewcode-back" href="../../../../modules/apps_logging_app.databases.oracle.html#apps_logging_app.databases.oracle.database.OracleDatabase.connect">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">connect</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Connects to the Oracle Database using the built DSN string and configuration.</span>
+<span class="sd">        Establishes a connection pool to the Oracle database using the configured credentials and DSN.</span>
 
-<span class="sd">        Connects to the Oracle Database using the built DSN string and configuration.</span>
-<span class="sd">        The connection pool is created with the following parameters:</span>
+<span class="sd">        This method builds the DSN with `_build_dsn()` and then creates a connection pool</span>
+<span class="sd">        with parameters derived from the configuration, including minimum and maximum</span>
+<span class="sd">        connections, increment size, timeout, and ping interval.</span>
 
-<span class="sd">        - min: 1</span>
-<span class="sd">        - max: self.config.max_workers + 1</span>
-<span class="sd">        - increment: self.config.max_workers/2</span>
-<span class="sd">        - timeout: 60</span>
-<span class="sd">        - ping_interval: 60</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            Exception: Propagates any exception raised during the creation of the connection pool. Connection failures are also logged with the configured logger.</span>
 
-<span class="sd">        If the connection fails, an exception is raised with the error message.</span>
+<span class="sd">        Notes:</span>
+<span class="sd">            - The connection pool settings are:</span>
+<span class="sd">                - min connections: 1</span>
+<span class="sd">                - max connections: config.max_workers + 1</span>
+<span class="sd">                - increment: config.max_workers / 2</span>
+<span class="sd">                - timeout: 60 seconds</span>
+<span class="sd">                - ping_interval: 60 seconds</span>
+<span class="sd">            - Failures during pool creation will be logged with an error message including the database type and name.</span>
+<span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dsn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_dsn</span><span class="p">()</span>
         <span class="k">try</span><span class="p">:</span>
@@ -435,10 +521,48 @@
 <div class="viewcode-block" id="OracleDatabase.close">
 <a class="viewcode-back" href="../../../../modules/apps_logging_app.databases.oracle.html#apps_logging_app.databases.oracle.database.OracleDatabase.close">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Closes the Oracle database connection pool.</span>
+
+<span class="sd">        This method terminates all active connections in the pool and releases</span>
+<span class="sd">        associated resources.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            AttributeError: If the connection pool has not been initialized (`self.pool` is None).</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - After calling this method, the database instance will need to call `connect()` again to re-establish the connection pool.</span>
+<span class="sd">            - It is recommended to call `close()` when the database is no longer needed to free up resources.</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pool</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
 
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">task</span><span class="p">:</span> <span class="n">QueryTask</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_query</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">task</span><span class="p">:</span> <span class="n">Query</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Executes a SQL query on the Oracle database and returns the results as a list of dictionaries.</span>
+
+<span class="sd">        This method acquires a connection from the pool, executes the query with optional</span>
+<span class="sd">        parameters, and maps each row to a dictionary using lowercase column names as keys.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            task (Query): A `Query` object containing:</span>
+<span class="sd">                - `query` (str): The SQL statement to execute.</span>
+<span class="sd">                - `params` (Optional[Dict[str, Any]]): A dictionary of parameters to bind to the SQL query.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[Dict[str, Any]]: A list of dictionaries representing the query results,</span>
+<span class="sd">                where each dictionary maps column names (lowercased) to their values.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            Exception: Propagates any exception raised during query execution, including connection or SQL errors.</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Uses connection pooling; acquiring and releasing connections automatically.</span>
+<span class="sd">            - If `task.params` is None, an empty dictionary is used for parameter binding.</span>
+<span class="sd">            - Column names in the result dictionaries are converted to lowercase for consistency.</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">pool</span><span class="o">.</span><span class="n">acquire</span><span class="p">()</span> <span class="k">as</span> <span class="n">conn</span><span class="p">:</span>
                 <span class="k">with</span> <span class="n">conn</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span> <span class="k">as</span> <span class="n">cur</span><span class="p">:</span>

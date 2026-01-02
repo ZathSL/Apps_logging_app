@@ -346,38 +346,25 @@
 <a class="viewcode-back" href="../../../modules/apps_logging_app.databases.html#apps_logging_app.databases.orchestrator.DatabaseOrchestrator">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">DatabaseOrchestrator</span><span class="p">(</span><span class="n">BaseOrchestrator</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Orchestrator for managing the lifecycle and connectivity of a database instance.</span>
+<span class="sd">    Orchestrator class for managing a database connection using the orchestration framework.</span>
 
-<span class="sd">    The :class:`DatabaseOrchestrator` wraps a :class:`BaseDatabase` instance</span>
-<span class="sd">    and provides thread-safe connection management, retry handling, and</span>
-<span class="sd">    orchestration of database operations. It ensures that queries are only</span>
-<span class="sd">    executed when the database is connected and handles reconnect attempts</span>
-<span class="sd">    transparently.</span>
+<span class="sd">    This class integrates a `BaseDatabase` instance into the `BaseOrchestrator` workflow,</span>
+<span class="sd">    handling connection management and retry logic based on the database configuration.</span>
 
-<span class="sd">    Attributes</span>
-<span class="sd">    ----------</span>
-<span class="sd">    database : BaseDatabase</span>
-<span class="sd">        The database instance managed by this orchestrator.</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    database : BaseDatabase</span>
-<span class="sd">        The database instance to manage.</span>
-
-<span class="sd">    Notes</span>
-<span class="sd">    -----</span>
-<span class="sd">    This orchestrator is intended to be used internally by the</span>
-<span class="sd">    :class:`DatabaseFactory` and the :class:`BaseDatabase` dispatcher.</span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        database (BaseDatabase): The database instance being orchestrated. Provides methods</span>
+<span class="sd">            to connect, check connection status, and close the database.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">database</span><span class="p">:</span> <span class="n">BaseDatabase</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initializes a DatabaseOrchestrator instance.</span>
+<span class="sd">        Initializes the DatabaseOrchestrator with a specific database instance.</span>
 
-<span class="sd">        Parameters</span>
-<span class="sd">        ----------</span>
-<span class="sd">        database : BaseDatabase</span>
-<span class="sd">            The database instance to manage.</span>
+<span class="sd">        Sets up the orchestrator&#39;s name and retry configuration based on the provided</span>
+<span class="sd">        database&#39;s configuration, and stores the database instance for later operations.</span>
 
+<span class="sd">        Args:</span>
+<span class="sd">            database (BaseDatabase): The database instance to be orchestrated. Its configuration</span>
+<span class="sd">                is used to set the orchestrator&#39;s name and maximum retry attempts.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;DB-</span><span class="si">{</span><span class="n">database</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">database</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
@@ -385,15 +372,29 @@
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">database</span> <span class="o">=</span> <span class="n">database</span>
 
+    <span class="k">def</span><span class="w"> </span><span class="nf">_is_connected</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Checks whether the orchestrated database is currently connected.</span>
+
+<span class="sd">        This internal method wraps the `is_connected` method of the `BaseDatabase` instance</span>
+<span class="sd">        to integrate with the orchestrator&#39;s connection management logic.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: `True` if the database is connected, `False` otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">database</span><span class="o">.</span><span class="n">is_connected</span><span class="p">()</span>
+
     <span class="k">def</span><span class="w"> </span><span class="nf">_connect</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Establishes a connection to the database. This method is thread-safe and idempotent.</span>
+<span class="sd">        Establishes a connection to the orchestrated database.</span>
 
-<span class="sd">        It will only attempt to connect to the database if the orchestrator is not already</span>
-<span class="sd">        connected. If the connection attempt fails, it will retry according to the</span>
-<span class="sd">        configured maximum number of retries.</span>
+<span class="sd">        This internal method wraps the `connect` method of the `BaseDatabase` instance,</span>
+<span class="sd">        allowing the orchestrator to manage database connections consistently</span>
+<span class="sd">        with its retry and lifecycle logic.</span>
 
-<span class="sd">        :return: None</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            Exception: Propagates any exception raised by the underlying database&#39;s</span>
+<span class="sd">                `connect` method if the connection attempt fails.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">database</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
 
@@ -401,9 +402,15 @@
 <a class="viewcode-back" href="../../../modules/apps_logging_app.databases.html#apps_logging_app.databases.orchestrator.DatabaseOrchestrator.close">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Closes the database connection and marks the orchestrator as disconnected.</span>
+<span class="sd">        Closes the connection to the orchestrated database.</span>
 
-<span class="sd">        This method is thread-safe and idempotent.</span>
+<span class="sd">        This method wraps the `close` method of the `BaseDatabase` instance,</span>
+<span class="sd">        ensuring that the database connection is properly terminated and resources</span>
+<span class="sd">        are released when the orchestrator is done using the database.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            Exception: Propagates any exception raised by the underlying database&#39;s</span>
+<span class="sd">                `close` method if the closure fails.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">database</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
 </div>

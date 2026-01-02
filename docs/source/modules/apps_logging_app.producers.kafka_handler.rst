@@ -11,6 +11,7 @@ apps\_logging\_app.producers.kafka\_handler.config module
    :members:
    :show-inheritance:
    :undoc-members:
+   :no-index:
 
 apps\_logging\_app.producers.kafka\_handler.producer module
 -----------------------------------------------------------
@@ -19,6 +20,7 @@ apps\_logging\_app.producers.kafka\_handler.producer module
    :members:
    :show-inheritance:
    :undoc-members:
+   :no-index:
 
 Module contents
 ---------------

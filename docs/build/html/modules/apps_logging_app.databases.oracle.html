@@ -355,7 +355,11 @@
 <dl class="py class">
 <dt class="sig sig-object py" id="apps_logging_app.databases.oracle.config.OracleDatabaseConfig">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">apps_logging_app.databases.oracle.config.</span></span><span class="sig-name descname"><span class="pre">OracleDatabaseConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">username</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">password</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">primary</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">replica</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_retries</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_workers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/databases/oracle/config.html#OracleDatabaseConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.databases.oracle.config.OracleDatabaseConfig" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="apps_logging_app.databases.html#apps_logging_app.databases.model.BaseDatabaseConfig" title="apps_logging_app.databases.model.BaseDatabaseConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseDatabaseConfig</span></code></a></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseDatabaseConfig</span></code></p>
+<p>Configuration model for an Oracle database.</p>
+<p>This class inherits all fields, validators, and methods from <cite>BaseDatabaseConfig</cite>.
+It currently does not add any new fields, but exists to provide a distinct type
+for Oracle databases and can be extended in the future with Oracle-specific options.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -363,13 +367,18 @@
 <li><p><strong>name</strong> (<em>str</em>)</p></li>
 <li><p><strong>username</strong> (<em>str</em>)</p></li>
 <li><p><strong>password</strong> (<em>str</em>)</p></li>
-<li><p><strong>primary</strong> (<a class="reference internal" href="apps_logging_app.databases.html#apps_logging_app.databases.model.ConnectionConfig" title="apps_logging_app.databases.model.ConnectionConfig"><em>ConnectionConfig</em></a>)</p></li>
-<li><p><strong>replica</strong> (<a class="reference internal" href="apps_logging_app.databases.html#apps_logging_app.databases.model.ConnectionConfig" title="apps_logging_app.databases.model.ConnectionConfig"><em>ConnectionConfig</em></a><em> | </em><em>None</em>)</p></li>
+<li><p><strong>primary</strong> (<em>ConnectionConfig</em>)</p></li>
+<li><p><strong>replica</strong> (<em>ConnectionConfig</em><em> | </em><em>None</em>)</p></li>
 <li><p><strong>max_retries</strong> (<em>int</em>)</p></li>
 <li><p><strong>max_workers</strong> (<em>int</em>)</p></li>
 </ul>
 </dd>
 </dl>
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">Inherits</span> <span class="pre">all</span> <span class="pre">attributes</span> <span class="pre">from</span> <span class="pre">BaseDatabaseConfig.</span></span></dt>
+<dd></dd></dl>
+
 <dl class="py attribute">
 <dt class="sig sig-object py" id="apps_logging_app.databases.oracle.config.OracleDatabaseConfig.model_config">
 <span class="sig-name descname"><span class="pre">model_config</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></span><a class="headerlink" href="#apps_logging_app.databases.oracle.config.OracleDatabaseConfig.model_config" title="Link to this definition">¶</a></dt>
@@ -379,31 +388,83 @@
 </dd></dl>
 
 </section>
-<section id="module-apps_logging_app.databases.oracle.database">
-<span id="apps-logging-app-databases-oracle-database-module"></span><h2>apps_logging_app.databases.oracle.database module<a class="headerlink" href="#module-apps_logging_app.databases.oracle.database" title="Link to this heading">¶</a></h2>
+<section id="apps-logging-app-databases-oracle-database-module">
+<h2>apps_logging_app.databases.oracle.database module<a class="headerlink" href="#apps-logging-app-databases-oracle-database-module" title="Link to this heading">¶</a></h2>
 <dl class="py class">
-<dt class="sig sig-object py" id="apps_logging_app.databases.oracle.database.OracleDatabase">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">apps_logging_app.databases.oracle.database.</span></span><span class="sig-name descname"><span class="pre">OracleDatabase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/databases/oracle/database.html#OracleDatabase"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.databases.oracle.database.OracleDatabase" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">apps_logging_app.databases.oracle.database.</span></span><span class="sig-name descname"><span class="pre">OracleDatabase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/databases/oracle/database.html#OracleDatabase"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
 <dd><p>Bases: <a class="reference internal" href="apps_logging_app.databases.html#apps_logging_app.databases.base.BaseDatabase" title="apps_logging_app.databases.base.BaseDatabase"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseDatabase</span></code></a></p>
+<p>OracleDatabase provides a connection interface to an Oracle database using connection pooling.</p>
+<p>This class supports connections to a primary database and an optional replica, with
+failover and load balancing configuration. It allows executing queries and retrieving
+results as dictionaries. It integrates with the database registry using the
+<cite>&#64;register_database</cite> decorator and uses the <cite>OracleDatabaseConfig</cite> model for configuration.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>config</strong> (<a class="reference internal" href="#apps_logging_app.databases.oracle.config.OracleDatabaseConfig" title="apps_logging_app.databases.oracle.config.OracleDatabaseConfig"><em>OracleDatabaseConfig</em></a>)</p>
 </dd>
 </dl>
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">config</span></span></dt>
+<dd><p>Configuration object containing database connection details.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#apps_logging_app.databases.oracle.config.OracleDatabaseConfig" title="apps_logging_app.databases.oracle.config.OracleDatabaseConfig">OracleDatabaseConfig</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">pool</span></span></dt>
+<dd><p>Connection pool for managing database connections.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>oracledb.SessionPool, optional</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">dsn</span></span></dt>
+<dd><p>Data Source Name string used to connect to the Oracle database.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str, optional</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py method">
-<dt class="sig sig-object py" id="apps_logging_app.databases.oracle.database.OracleDatabase.connect">
-<span class="sig-name descname"><span class="pre">connect</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/databases/oracle/database.html#OracleDatabase.connect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.databases.oracle.database.OracleDatabase.connect" title="Link to this definition">¶</a></dt>
-<dd><p>Connects to the Oracle Database using the built DSN string and configuration.</p>
-<p>Connects to the Oracle Database using the built DSN string and configuration.
-The connection pool is created with the following parameters:</p>
-<ul class="simple">
-<li><p>min: 1</p></li>
-<li><p>max: self.config.max_workers + 1</p></li>
-<li><p>increment: self.config.max_workers/2</p></li>
-<li><p>timeout: 60</p></li>
-<li><p>ping_interval: 60</p></li>
-</ul>
-<p>If the connection fails, an exception is raised with the error message.</p>
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">__init__(config</span></span></dt>
+<dd><p>OracleDatabaseConfig) -&gt; None:
+Initializes the OracleDatabase instance with the given configuration.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">_build_dsn</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../_modules/apps_logging_app/databases/oracle/database.html#OracleDatabase._build_dsn"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Constructs the Oracle DSN string for primary and optional replica hosts.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">is_connected</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="../_modules/apps_logging_app/databases/oracle/database.html#OracleDatabase.is_connected"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Checks if the database connection pool is active and can communicate with the database.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">connect</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/apps_logging_app/databases/oracle/database.html#OracleDatabase.connect"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Creates the connection pool to the Oracle database using credentials and DSN.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>None</p>
@@ -412,22 +473,100 @@ The connection pool is created with the following parameters:</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="apps_logging_app.databases.oracle.database.OracleDatabase.close">
-<span class="sig-name descname"><span class="pre">close</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/databases/oracle/database.html#OracleDatabase.close"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.databases.oracle.database.OracleDatabase.close" title="Link to this definition">¶</a></dt>
-<dd><p>Closes the database connection.</p>
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">close</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/apps_logging_app/databases/oracle/database.html#OracleDatabase.close"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Closes the database connection pool.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">_query(task</span></span></dt>
+<dd><p>Query) -&gt; List[Dict[str, Any]]:
+Executes a SQL query and returns the results as a list of dictionaries.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">is_connected</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/databases/oracle/database.html#OracleDatabase.is_connected"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Checks whether the Oracle database connection pool is active and the database is reachable.</p>
+<p>This method attempts to acquire a connection from the pool and ping the database.
+If the pool is not initialized or the ping fails, it returns False.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True if a connection can be successfully acquired and pinged, False otherwise.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>bool</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>A False result may indicate that the connection pool has not been created or the database is temporarily unavailable.</p></li>
+<li><p>Exceptions from <cite>oracledb</cite> during the ping are caught and interpreted as a disconnected state.</p></li>
+</ul>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">connect</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/databases/oracle/database.html#OracleDatabase.connect"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Establishes a connection pool to the Oracle database using the configured credentials and DSN.</p>
+<p>This method builds the DSN with <cite>_build_dsn()</cite> and then creates a connection pool
+with parameters derived from the configuration, including minimum and maximum
+connections, increment size, timeout, and ping interval.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Raises<span class="colon">:</span></dt>
-<dd class="field-odd"><p>None</p>
+<dd class="field-odd"><p><strong>Exception</strong> – Propagates any exception raised during the creation of the connection pool. Connection failures are also logged with the configured logger.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>None</p>
 </dd>
 </dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt>The connection pool settings are:</dt><dd><ul>
+<li><p>min connections: 1</p></li>
+<li><p>max connections: config.max_workers + 1</p></li>
+<li><p>increment: config.max_workers / 2</p></li>
+<li><p>timeout: 60 seconds</p></li>
+<li><p>ping_interval: 60 seconds</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><p>Failures during pool creation will be logged with an error message including the database type and name.</p></li>
+</ul>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">close</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/databases/oracle/database.html#OracleDatabase.close"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Closes the Oracle database connection pool.</p>
+<p>This method terminates all active connections in the pool and releases
+associated resources.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>AttributeError</strong> – If the connection pool has not been initialized (<cite>self.pool</cite> is None).</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>After calling this method, the database instance will need to call <cite>connect()</cite> again to re-establish the connection pool.</p></li>
+<li><p>It is recommended to call <cite>close()</cite> when the database is no longer needed to free up resources.</p></li>
+</ul>
 </dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="apps_logging_app.databases.oracle.database.OracleDatabase.type">
-<span class="sig-name descname"><span class="pre">type</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'oracle'</span></span><a class="headerlink" href="#apps_logging_app.databases.oracle.database.OracleDatabase.type" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">type</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'oracle'</span></span></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -502,15 +641,7 @@ The connection pool is created with the following parameters:</p>
 </li>
 </ul>
 </li>
-<li><a class="reference internal" href="#module-apps_logging_app.databases.oracle.database">apps_logging_app.databases.oracle.database module</a><ul>
-<li><a class="reference internal" href="#apps_logging_app.databases.oracle.database.OracleDatabase"><code class="docutils literal notranslate"><span class="pre">OracleDatabase</span></code></a><ul>
-<li><a class="reference internal" href="#apps_logging_app.databases.oracle.database.OracleDatabase.connect"><code class="docutils literal notranslate"><span class="pre">OracleDatabase.connect()</span></code></a></li>
-<li><a class="reference internal" href="#apps_logging_app.databases.oracle.database.OracleDatabase.close"><code class="docutils literal notranslate"><span class="pre">OracleDatabase.close()</span></code></a></li>
-<li><a class="reference internal" href="#apps_logging_app.databases.oracle.database.OracleDatabase.type"><code class="docutils literal notranslate"><span class="pre">OracleDatabase.type</span></code></a></li>
-</ul>
-</li>
-</ul>
-</li>
+<li><a class="reference internal" href="#apps-logging-app-databases-oracle-database-module">apps_logging_app.databases.oracle.database module</a></li>
 <li><a class="reference internal" href="#module-apps_logging_app.databases.oracle">Module contents</a></li>
 </ul>
 </li>

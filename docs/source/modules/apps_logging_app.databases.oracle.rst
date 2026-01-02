@@ -19,6 +19,7 @@ apps\_logging\_app.databases.oracle.database module
    :members:
    :show-inheritance:
    :undoc-members:
+   :no-index:
 
 Module contents
 ---------------

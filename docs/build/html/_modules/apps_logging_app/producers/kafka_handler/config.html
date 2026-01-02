@@ -346,13 +346,39 @@
 <div class="viewcode-block" id="KafkaHandlerConfig">
 <a class="viewcode-back" href="../../../../modules/apps_logging_app.producers.kafka_handler.html#apps_logging_app.producers.kafka_handler.config.KafkaHandlerConfig">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">KafkaHandlerConfig</span><span class="p">(</span><span class="n">BaseProducerConfig</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Configuration model for a Kafka producer with SSL/SASL and performance settings.</span>
+
+<span class="sd">    This class defines all necessary parameters to configure a Kafka producer, including</span>
+<span class="sd">    broker addresses, security protocols, SSL credentials, acknowledgment settings, </span>
+<span class="sd">    retries, batching, and memory buffers. Validation is enforced using Pydantic </span>
+<span class="sd">    field validators to ensure data integrity.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        brokers (List[str]): List of Kafka broker addresses. Must be a non-empty list </span>
+<span class="sd">            of non-empty strings.</span>
+<span class="sd">        security_protocol (str): Security protocol for the Kafka connection. Must be </span>
+<span class="sd">            one of &quot;SSL&quot;, &quot;PLAINTEXT&quot;, &quot;SASL_SSL&quot;, or &quot;SASL_PLAINTEXT&quot;. Defaults to &quot;SSL&quot;.</span>
+<span class="sd">        ssl_cafile (str): Path to the CA certificate file for SSL connections.</span>
+<span class="sd">        ssl_certfile (str): Path to the client certificate file for SSL connections.</span>
+<span class="sd">        ssl_keyfile (str): Path to the client key file for SSL connections.</span>
+<span class="sd">        ssl_password (str): Password for the SSL key file.</span>
+<span class="sd">        acks (str): Kafka acknowledgment mode. Must be &quot;all&quot;, &quot;0&quot;, or &quot;1&quot;. Defaults to &quot;all&quot;.</span>
+<span class="sd">        retries (int): Number of times the producer will retry sending messages on failure.</span>
+<span class="sd">            Must be non-negative. Defaults to 3.</span>
+<span class="sd">        batch_size (int): Maximum size (in bytes) of a batch of messages. Must be non-negative.</span>
+<span class="sd">            Defaults to 16384.</span>
+<span class="sd">        linger_ms (int): Time in milliseconds to wait before sending a batch. Must be non-negative.</span>
+<span class="sd">            Defaults to 5.</span>
+<span class="sd">        buffer_memory (int): Total memory (in bytes) available to the producer for buffering.</span>
+<span class="sd">            Must be non-negative. Defaults to 33554432.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">brokers</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
     <span class="n">security_protocol</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;SSL&quot;</span>
     <span class="n">ssl_cafile</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">ssl_certfile</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">ssl_keyfile</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">ssl_password</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">topic</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">acks</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;all&quot;</span>
     <span class="n">retries</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span>
     <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">16384</span>
@@ -364,6 +390,24 @@
 <a class="viewcode-back" href="../../../../modules/apps_logging_app.producers.kafka_handler.html#apps_logging_app.producers.kafka_handler.config.KafkaHandlerConfig.validate_brokers">[docs]</a>
     <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;brokers&#39;</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">validate_brokers</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Validates the `brokers` field to ensure it is a non-empty list of strings.</span>
+
+<span class="sd">        This validator checks that:</span>
+<span class="sd">            1. `brokers` is a list.</span>
+<span class="sd">            2. The list is not empty.</span>
+<span class="sd">            3. Each broker in the list is a non-empty string.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            cls: The class being validated.</span>
+<span class="sd">            v (Any): The value of the `brokers` field.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[str]: The validated list of broker addresses.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If the list is empty, not a list, or contains any invalid broker address.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">v</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Brokers must be a non-empty list of broker addresses&#39;</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">broker</span> <span class="ow">in</span> <span class="n">v</span><span class="p">:</span>
@@ -377,6 +421,21 @@
 <a class="viewcode-back" href="../../../../modules/apps_logging_app.producers.kafka_handler.html#apps_logging_app.producers.kafka_handler.config.KafkaHandlerConfig.validate_security_protocol">[docs]</a>
     <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;security_protocol&#39;</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">validate_security_protocol</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Validates the `security_protocol` field to ensure it uses a supported protocol.</span>
+
+<span class="sd">        Allowed values are: &quot;SSL&quot;, &quot;PLAINTEXT&quot;, &quot;SASL_SSL&quot;, &quot;SASL_PLAINTEXT&quot;.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            cls: The class being validated.</span>
+<span class="sd">            v (str): The value of the `security_protocol` field.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The validated security protocol.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If `v` is not one of the allowed security protocols.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">valid_protocols</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;SSL&quot;</span><span class="p">,</span> <span class="s2">&quot;PLAINTEXT&quot;</span><span class="p">,</span> <span class="s2">&quot;SASL_SSL&quot;</span><span class="p">,</span> <span class="s2">&quot;SASL_PLAINTEXT&quot;</span><span class="p">}</span>
         <span class="k">if</span> <span class="n">v</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">valid_protocols</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Security protocol must be one of </span><span class="si">{</span><span class="n">valid_protocols</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -388,6 +447,21 @@
 <a class="viewcode-back" href="../../../../modules/apps_logging_app.producers.kafka_handler.html#apps_logging_app.producers.kafka_handler.config.KafkaHandlerConfig.validate_acks">[docs]</a>
     <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;acks&#39;</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">validate_acks</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Validates the `acks` field to ensure it is one of the allowed acknowledgment modes.</span>
+
+<span class="sd">        Allowed values are: &quot;all&quot;, &quot;0&quot;, &quot;1&quot;.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            cls: The class being validated.</span>
+<span class="sd">            v (str): The value of the `acks` field.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The validated acknowledgment mode.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If `v` is not one of the allowed acknowledgment modes.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">valid_acks</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;all&quot;</span><span class="p">,</span> <span class="s2">&quot;0&quot;</span><span class="p">,</span> <span class="s2">&quot;1&quot;</span><span class="p">}</span>
         <span class="k">if</span> <span class="n">v</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">valid_acks</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Acks must be one of </span><span class="si">{</span><span class="n">valid_acks</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -399,6 +473,23 @@
 <a class="viewcode-back" href="../../../../modules/apps_logging_app.producers.kafka_handler.html#apps_logging_app.producers.kafka_handler.config.KafkaHandlerConfig.validate_positive_int">[docs]</a>
     <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;retries&#39;</span><span class="p">,</span> <span class="s1">&#39;batch_size&#39;</span><span class="p">,</span> <span class="s1">&#39;linger_ms&#39;</span><span class="p">,</span> <span class="s1">&#39;buffer_memory&#39;</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">validate_positive_int</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">field</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Validates that integer fields are non-negative.</span>
+
+<span class="sd">        This validator ensures that `retries`, `batch_size`, `linger_ms`, and `buffer_memory`</span>
+<span class="sd">        are all non-negative integers.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            cls: The class being validated.</span>
+<span class="sd">            v (int): The value of the field being validated.</span>
+<span class="sd">            field: The Pydantic `ModelField` object representing the field.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The validated non-negative integer value.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If `v` is negative.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">v</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">field</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> must be a non-negative integer&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">v</span></div>

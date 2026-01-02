@@ -8,14 +8,16 @@ class BaseOrchestrator(ABC):
     Abstract base class for orchestrating connection-managed resources with retry logic.
 
     This class provides a framework for managing connections to resources such as databases,
-    message queues, or other services that require reliable connectivity. It handles:
-        - Thread-safe connection attempts
-        - Automatic retries with configurable delay
-        - Logging of connection status and errors
+    message queues, or other services that require reliable connectivity. 
+    It handles:
+    - Thread-safe connection attempts
+    - Automatic retries with configurable delay
+    - Logging of connection status and errors
+
 
     Subclasses must implement the abstract methods `_is_connected`, `_connect`, and `close`
     to provide resource-specific connection handling.
-
+    
     Attributes:
         name (str): Human-readable name of the orchestrator, used in logs.
         max_retries (int): Maximum number of attempts to establish a connection.
@@ -23,6 +25,8 @@ class BaseOrchestrator(ABC):
         logger (logging.Logger): Logger instance for connection events and errors.
         _connected (bool): Internal flag indicating whether the resource is currently connected.
         _lock (threading.Lock): Thread lock to ensure safe concurrent access during connection attempts.
+    
+        
     """
     def __init__(self, name: str, max_retries: int, retry_delay: int = 5):
         """
@@ -36,6 +40,7 @@ class BaseOrchestrator(ABC):
             name (str): Human-readable name of the orchestrator, used in log messages.
             max_retries (int): Maximum number of times to retry a failed connection.
             retry_delay (int, optional): Number of seconds to wait between retries. Defaults to 5.
+        
         """
         self.name = name
         self.max_retries = max_retries
@@ -60,8 +65,8 @@ class BaseOrchestrator(ABC):
             - Warning if the connection is not active and a retry will be attempted.
 
         Raises:
-            Exception: Propagates any exceptions raised by `_connect_with_retry` if
-                all retry attempts fail.
+            Exception: Propagates any exceptions raised by `_connect_with_retry` if all retry attempts fail.
+        
         """
         if self._connected:
             return
@@ -88,8 +93,8 @@ class BaseOrchestrator(ABC):
             - Uses a recursive retry strategy after exhausting all attempts.
 
         Raises:
-            Exception: Any exceptions raised by `_connect` are logged but retried. This
-                method may block indefinitely if the connection cannot be established.
+            Exception: Any exceptions raised by `_connect` are logged but retried. This method may block indefinitely if the connection cannot be established.
+        
         """
         for attempt in range(1, self.max_retries + 1):
             try:
@@ -122,6 +127,7 @@ class BaseOrchestrator(ABC):
 
         Side Effects:
             - Updates the `_connected` attribute to False if the resource is not connected.
+        
         """
         if self._is_connected():
             self.logger.info(f"{self.name}: Connection is still active, not marking as disconnected")
@@ -140,6 +146,7 @@ class BaseOrchestrator(ABC):
 
         Returns:
             bool: `True` if the resource is connected, `False` otherwise.
+        
         """
         return False
 
@@ -153,8 +160,8 @@ class BaseOrchestrator(ABC):
         by `_connect_with_retry` during connection attempts.
 
         Raises:
-            Exception: Any exception raised during the connection attempt should be
-                propagated to allow retry logic to handle it.
+            Exception: Any exception raised during the connection attempt should be propagated to allow retry logic to handle it.
+        
         """
         pass
 
@@ -169,5 +176,6 @@ class BaseOrchestrator(ABC):
 
         Raises:
             Exception: Any exception raised during closure should be propagated.
+        
         """
         pass

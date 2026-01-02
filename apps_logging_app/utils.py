@@ -28,6 +28,7 @@ def get_file_id(path: str):
         FileNotFoundError: If the file does not exist.
         PermissionError: If the file cannot be accessed.
         OSError: For other operating system-related errors.
+    
     """
     stat = os.stat(path)
     system = platform.system()

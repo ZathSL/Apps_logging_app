@@ -354,42 +354,18 @@
 <a class="viewcode-back" href="../../../modules/apps_logging_app.producers.html#apps_logging_app.producers.factory.ProducerFactory">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ProducerFactory</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Factory class for creating and managing shared producer instances.</span>
+<span class="sd">    Factory class to create and manage producer instances in a thread-safe manner.</span>
 
-<span class="sd">    The `ProducerFactory` provides a centralized mechanism to create,</span>
-<span class="sd">    cache, and retrieve instances of producers defined in the system. It</span>
-<span class="sd">    ensures that there is only one shared instance per producer type and name.</span>
+<span class="sd">    This class ensures that each combination of `producer_type` and `producer_name`</span>
+<span class="sd">    has a single shared instance (singleton per key). It reads producer configurations</span>
+<span class="sd">    from a YAML file and integrates them with registered producer classes and orchestrators.</span>
 
-<span class="sd">    Attributes</span>
-<span class="sd">    ----------</span>
-<span class="sd">    _instances : Dict[Tuple[str, str], BaseProducer]</span>
-<span class="sd">        Internal cache mapping `(producer_type, producer_name)` tuples to</span>
-<span class="sd">        producer instances.</span>
-<span class="sd">    _lock : threading.Lock</span>
-<span class="sd">        Thread lock to ensure thread-safe access when creating new producer instances.</span>
-<span class="sd">    _config : Optional[list]</span>
-<span class="sd">        Cached configuration loaded from the YAML file for all producers.</span>
-
-<span class="sd">    Methods</span>
-<span class="sd">    -------</span>
-<span class="sd">    get_instance(producer_type: str, producer_name: str) -&gt; BaseProducer</span>
-<span class="sd">        Returns a shared producer instance for the given type and name.</span>
-<span class="sd">        If the instance does not exist, it will be created and started.</span>
-<span class="sd">    _create(producer_type: str, producer_name: str) -&gt; BaseProducer</span>
-<span class="sd">        Internal method to create a new producer instance based on the</span>
-<span class="sd">        configuration from the YAML file, register an orchestrator, and</span>
-<span class="sd">        start the producer.</span>
-
-<span class="sd">    Notes</span>
-<span class="sd">    -----</span>
-<span class="sd">    - The factory reads configuration from `configs/producers.yaml`.</span>
-<span class="sd">    - Producer instances are automatically wrapped with a `ProducerOrchestrator`</span>
-<span class="sd">      to manage connection lifecycle and retries.</span>
-<span class="sd">    - The class is thread-safe: multiple threads can request producer instances</span>
-<span class="sd">      without creating duplicates.</span>
-<span class="sd">    - Raises `ValueError` if the producer type is unknown or the configuration</span>
-<span class="sd">      is missing from the YAML file.</span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        _instances (Dict[Tuple[str, str], &quot;BaseProducer&quot;]): Cached producer instances, keyed by (producer_type, producer_name).</span>
+<span class="sd">        _lock (threading.Lock): Lock to ensure thread-safe creation of producer instances.</span>
+<span class="sd">        _config (Optional[dict]): Cached configuration loaded from the producers YAML file.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="n">_instances</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="s2">&quot;BaseProducer&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="n">_lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>
     <span class="n">_config</span> <span class="o">=</span> <span class="kc">None</span>
@@ -397,19 +373,25 @@
 <div class="viewcode-block" id="ProducerFactory.get_instance">
 <a class="viewcode-back" href="../../../modules/apps_logging_app.producers.html#apps_logging_app.producers.factory.ProducerFactory.get_instance">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_instance</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">producer_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">producer_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_instance</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">producer_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">producer_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">topic</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;BaseProducer&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns a shared producer instance for the given type and name.</span>
+<span class="sd">        Returns a singleton producer instance for the given type and name, creating it if necessary.</span>
 
-<span class="sd">        The instance is cached globally, and subsequent calls with the same</span>
-<span class="sd">        key will return the same instance.</span>
+<span class="sd">        This method ensures that only one instance exists per `(producer_type, producer_name)` key.</span>
+<span class="sd">        It is thread-safe, using a lock to synchronize creation when multiple threads request the</span>
+<span class="sd">        same producer simultaneously.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            producer_type (str): The type of the producer to be created.</span>
-<span class="sd">            producer_name (str): The name of the producer to be created.</span>
+<span class="sd">            producer_type (str): The type of the producer to retrieve.</span>
+<span class="sd">            producer_name (str): The name of the producer to retrieve.</span>
+<span class="sd">            topic (str, optional): Optional topic that the producer should be associated with.</span>
+<span class="sd">                Defaults to None.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            BaseProducer: The shared producer instance.</span>
+<span class="sd">            BaseProducer: The producer instance corresponding to the given type and name.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If the producer configuration or topic is invalid, as raised by `_create`.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">key</span> <span class="o">=</span> <span class="p">(</span><span class="n">producer_type</span><span class="p">,</span> <span class="n">producer_name</span><span class="p">)</span>
 
@@ -418,27 +400,34 @@
         
         <span class="k">with</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_lock</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_instances</span><span class="p">:</span>
-                <span class="bp">cls</span><span class="o">.</span><span class="n">_instances</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_create</span><span class="p">(</span><span class="n">producer_type</span><span class="p">,</span> <span class="n">producer_name</span><span class="p">)</span>
+                <span class="bp">cls</span><span class="o">.</span><span class="n">_instances</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_create</span><span class="p">(</span><span class="n">producer_type</span><span class="p">,</span> <span class="n">producer_name</span><span class="p">,</span> <span class="n">topic</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_instances</span><span class="p">[</span><span class="n">key</span><span class="p">]</span></div>
 
     
-<div class="viewcode-block" id="ProducerFactory._create">
-<a class="viewcode-back" href="../../../modules/apps_logging_app.producers.html#apps_logging_app.producers.factory.ProducerFactory._create">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_create</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">producer_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">producer_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_create</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">producer_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">producer_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">topic</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Creates a new producer instance based on the configuration from the YAML file.</span>
+<span class="sd">        Creates a new producer instance based on the provided type, name, and optional topic.</span>
+
+<span class="sd">        This method loads the producer configuration from a YAML file, validates the</span>
+<span class="sd">        producer type and topic, instantiates the producer class, attaches a</span>
+<span class="sd">        `ProducerOrchestrator`, starts the producer, and returns it. It is intended</span>
+<span class="sd">        to be used internally by `get_instance` and ensures proper initialization</span>
+<span class="sd">        of producer instances.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            producer_type (str): The type of the producer to be created.</span>
-<span class="sd">            producer_name (str): The name of the producer to be created.</span>
+<span class="sd">            producer_type (str): The type of the producer to create. Must exist in `PRODUCER_REGISTRY`.</span>
+<span class="sd">            producer_name (str): The name of the producer to create.</span>
+<span class="sd">            topic (str, optional): Optional topic to validate against the producer&#39;s allowed topics.</span>
+<span class="sd">                Defaults to None.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            BaseProducer: The newly created and started producer instance.</span>
 
 <span class="sd">        Raises:</span>
 <span class="sd">            ValueError: If the producer configuration is not found in the YAML file.</span>
-<span class="sd">            ValueError: If the producer type is not registered in PRODUCER_REGISTRY.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            BaseProducer: The created producer instance.</span>
+<span class="sd">            ValueError: If the producer type is not registered in `PRODUCER_REGISTRY`.</span>
+<span class="sd">            ValueError: If the provided topic is not included in the producer&#39;s configured topics.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">config_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s1">&#39;configs&#39;</span> <span class="o">/</span> <span class="s1">&#39;producers.yaml&#39;</span>
         <span class="k">if</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_config</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -459,12 +448,17 @@
                 <span class="sa">f</span><span class="s2">&quot;Producer config not found for type=</span><span class="si">{</span><span class="n">producer_type</span><span class="si">}</span><span class="s2">, name=</span><span class="si">{</span><span class="n">producer_name</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
         
+
         <span class="n">entry</span> <span class="o">=</span> <span class="n">PRODUCER_REGISTRY</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">producer_type</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">entry</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown producer type: </span><span class="si">{</span><span class="n">producer_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         
+
         <span class="n">producer_config</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">config_model</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">raw_config</span><span class="p">)</span>
         
+        <span class="k">if</span> <span class="n">producer_config</span><span class="o">.</span><span class="n">topics</span> <span class="ow">and</span> <span class="n">topic</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">producer_config</span><span class="o">.</span><span class="n">topics</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Topic </span><span class="si">{</span><span class="n">topic</span><span class="si">}</span><span class="s2"> not found in producer </span><span class="si">{</span><span class="n">producer_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
         <span class="n">producer_ref</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">producer_class</span><span class="p">(</span><span class="n">producer_config</span><span class="p">)</span>
 
         <span class="n">orchestrator</span> <span class="o">=</span> <span class="n">ProducerOrchestrator</span><span class="p">(</span><span class="n">producer_ref</span><span class="p">)</span>
@@ -474,7 +468,6 @@
         <span class="n">producer_ref</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
 
         <span class="k">return</span> <span class="n">producer_ref</span></div>
-</div>
 
     
 </pre></div>

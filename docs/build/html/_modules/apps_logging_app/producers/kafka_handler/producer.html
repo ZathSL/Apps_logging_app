@@ -347,6 +347,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">kafka.admin</span><span class="w"> </span><span class="kn">import</span> <span class="n">KafkaAdminClient</span><span class="p">,</span> <span class="n">NewTopic</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">kafka.errors</span><span class="w"> </span><span class="kn">import</span> <span class="n">NodeNotReadyError</span><span class="p">,</span> <span class="n">TopicAlreadyExistsError</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..data</span><span class="w"> </span><span class="kn">import</span> <span class="n">Message</span>
 
 <div class="viewcode-block" id="KafkaHandlerProducer">
 <a class="viewcode-back" href="../../../../modules/apps_logging_app.producers.kafka_handler.html#apps_logging_app.producers.kafka_handler.producer.KafkaHandlerProducer">[docs]</a>
@@ -355,12 +356,88 @@
     <span class="n">config_model</span><span class="o">=</span><span class="n">KafkaHandlerConfig</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">KafkaHandlerProducer</span><span class="p">(</span><span class="n">BaseProducer</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Kafka producer implementation using `kafka-python`.</span>
+
+<span class="sd">    This class provides a concrete implementation of `BaseProducer` for sending</span>
+<span class="sd">    messages to Kafka topics. It handles connection management, message serialization,</span>
+<span class="sd">    sending messages, and proper cleanup of Kafka resources. It is registered</span>
+<span class="sd">    in the producer registry under the type &quot;kafka_handler&quot; with `KafkaHandlerConfig`.</span>
+
+<span class="sd">    Methods:</span>
+<span class="sd">        __init__(config): Initializes the producer with a Kafka configuration.</span>
+<span class="sd">        is_connected(): Checks if the producer is connected and at least one broker is reachable.</span>
+<span class="sd">        connect(): Establishes the KafkaProducer instance with the configured brokers.</span>
+<span class="sd">        _send(message): Sends a `Message` to the specified Kafka topic.</span>
+<span class="sd">        close(): Flushes messages and closes the Kafka producer.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        producer (KafkaProducer): The underlying Kafka producer instance.</span>
+<span class="sd">        config (KafkaHandlerConfig): Configuration instance for this producer.</span>
+<span class="sd">        logger (logging.Logger): Logger inherited from `BaseProducer` for logging events.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="KafkaHandlerProducer.__init__">
+<a class="viewcode-back" href="../../../../modules/apps_logging_app.producers.kafka_handler.html#apps_logging_app.producers.kafka_handler.producer.KafkaHandlerProducer.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">KafkaHandlerConfig</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes the KafkaHandlerProducer with the provided configuration.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            config (KafkaHandlerConfig): The configuration object containing</span>
+<span class="sd">                Kafka broker addresses, security settings, retries, batching,</span>
+<span class="sd">                and other producer parameters.</span>
+
+<span class="sd">        Behavior:</span>
+<span class="sd">            - Calls the parent `BaseProducer` initializer to set up the producer</span>
+<span class="sd">            configuration and logger.</span>
+<span class="sd">            - Does not immediately establish a connection; `connect()` must be</span>
+<span class="sd">            called separately to initialize the KafkaProducer instance.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">config</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="KafkaHandlerProducer.is_connected">
+<a class="viewcode-back" href="../../../../modules/apps_logging_app.producers.kafka_handler.html#apps_logging_app.producers.kafka_handler.producer.KafkaHandlerProducer.is_connected">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">is_connected</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Checks whether the Kafka producer is connected and at least one broker is reachable.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: `True` if the producer is initialized and a broker is reachable,</span>
+<span class="sd">            `False` otherwise.</span>
+
+<span class="sd">        Behavior:</span>
+<span class="sd">            - Returns `False` if the `producer` attribute does not exist or is `None`.</span>
+<span class="sd">            - Calls `bootstrap_connected()` on the KafkaProducer instance to check connectivity.</span>
+<span class="sd">            - Logs a warning if an exception occurs during the connection check.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;producer&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">producer</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c1"># Verifica che almeno un broker sia raggiungibile</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">producer</span><span class="o">.</span><span class="n">bootstrap_connected</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;KafkaProducer connection check failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">False</span></div>
+
 
 <div class="viewcode-block" id="KafkaHandlerProducer.connect">
 <a class="viewcode-back" href="../../../../modules/apps_logging_app.producers.kafka_handler.html#apps_logging_app.producers.kafka_handler.producer.KafkaHandlerProducer.connect">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">connect</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Establishes the Kafka producer connection using the provided configuration.</span>
+
+<span class="sd">        Creates a `KafkaProducer` instance with the brokers specified in the</span>
+<span class="sd">        `KafkaHandlerConfig` and sets up JSON serialization for message values.</span>
+
+<span class="sd">        Behavior:</span>
+<span class="sd">            - Assigns the KafkaProducer instance to `self.producer`.</span>
+<span class="sd">            - Does not start sending messages until the producer is initialized.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            Exception: Propagates any exception raised during the creation of the KafkaProducer.</span>
+<span class="sd">                A critical log entry is recorded before re-raising the exception.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">producer</span> <span class="o">=</span> <span class="n">KafkaProducer</span><span class="p">(</span>
                 <span class="n">bootstrap_servers</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">brokers</span><span class="p">,</span>
@@ -374,17 +451,52 @@
 <div class="viewcode-block" id="KafkaHandlerProducer.close">
 <a class="viewcode-back" href="../../../../modules/apps_logging_app.producers.kafka_handler.html#apps_logging_app.producers.kafka_handler.producer.KafkaHandlerProducer.close">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Flushes pending messages and closes the Kafka producer.</span>
+
+<span class="sd">        Ensures that all messages in the producer&#39;s buffer are sent to Kafka</span>
+<span class="sd">        before closing the connection to release resources.</span>
+
+<span class="sd">        Behavior:</span>
+<span class="sd">            - Calls `flush()` on the KafkaProducer to send any buffered messages.</span>
+<span class="sd">            - Calls `close()` on the KafkaProducer to terminate the connection.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            Exception: Any exceptions raised by `flush()` or `close()` are propagated.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">producer</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">producer</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
 
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_send</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">is_error</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<div class="viewcode-block" id="KafkaHandlerProducer._send">
+<a class="viewcode-back" href="../../../../modules/apps_logging_app.producers.kafka_handler.html#apps_logging_app.producers.kafka_handler.producer.KafkaHandlerProducer._send">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_send</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="n">Message</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sends a message to the specified Kafka topic.</span>
+
+<span class="sd">        Serializes the `Message` object as a JSON dictionary containing `is_error`,</span>
+<span class="sd">        `is_warning`, and `message` fields, and sends it to the topic specified</span>
+<span class="sd">        in `message.topic`. Flushes the producer to ensure immediate delivery.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            message (Message): The message object containing the topic, flags, and content.</span>
+
+<span class="sd">        Behavior:</span>
+<span class="sd">            - Calls `producer.send()` to send the message to Kafka.</span>
+<span class="sd">            - Logs an info message upon successful send.</span>
+<span class="sd">            - Calls `flush()` on the KafkaProducer to force delivery.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            Exception: Any exception raised by the Kafka producer during sending</span>
+<span class="sd">                or flushing is propagated.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">producer</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">topic</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;is_error&quot;</span><span class="p">:</span> <span class="n">is_error</span><span class="p">,</span> <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="n">message</span><span class="p">})</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">producer</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="n">topic</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;is_error&quot;</span><span class="p">:</span> <span class="n">message</span><span class="o">.</span><span class="n">is_error</span><span class="p">,</span> <span class="s2">&quot;is_warning&quot;</span><span class="p">:</span> <span class="n">message</span><span class="o">.</span><span class="n">is_warning</span><span class="p">,</span> <span class="s2">&quot;message&quot;</span><span class="p">:</span> <span class="n">message</span><span class="o">.</span><span class="n">message</span><span class="p">})</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Producer </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: Message </span><span class="si">{</span><span class="n">message</span><span class="si">}</span><span class="s2"> sent to Kafka&quot;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">producer</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="k">raise</span></div>
+</div>
 
         
 </pre></div>

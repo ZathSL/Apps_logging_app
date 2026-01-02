@@ -349,33 +349,34 @@
 <a class="viewcode-back" href="../../../modules/apps_logging_app.databases.html#apps_logging_app.databases.registry.DatabaseEntry">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">DatabaseEntry</span><span class="p">(</span><span class="n">Generic</span><span class="p">[</span><span class="n">C</span><span class="p">]):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Represents a registry entry for a database type.</span>
+<span class="sd">    Represents a registry entry linking a database class with its configuration model.</span>
 
-<span class="sd">    Each DatabaseEntry binds a database class to its corresponding configuration model.</span>
-<span class="sd">    It is used internally by the :data:`DATABASE_REGISTRY` to map database types to</span>
-<span class="sd">    their implementation and configuration schema.</span>
+<span class="sd">    This generic class pairs a `BaseDatabase` subclass with a corresponding</span>
+<span class="sd">    `BaseDatabaseConfig` subclass, enabling type-safe registration and lookup</span>
+<span class="sd">    of database implementations.</span>
 
-<span class="sd">    Attributes</span>
-<span class="sd">    ----------</span>
-<span class="sd">    config_model : Type[C]</span>
-<span class="sd">        The Pydantic configuration model class associated with this database.</span>
-<span class="sd">        This model defines the structure and validation rules for the database configuration.</span>
-<span class="sd">    database_class : Type[BaseDatabase]</span>
-<span class="sd">        The actual database class associated with this entry.</span>
-<span class="sd">        This class must inherit from :class:`BaseDatabase`.</span>
-
-<span class="sd">    Notes</span>
-<span class="sd">    -----</span>
-<span class="sd">    Instances of this class are typically created automatically by the</span>
-<span class="sd">    :func:`register_database` decorator and stored in :data:`DATABASE_REGISTRY`.</span>
-<span class="sd">    You generally do not instantiate this class manually.</span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        config_model (Type[C]): The configuration model class associated with the database.</span>
+<span class="sd">            Must be a subclass of `BaseDatabaseConfig`.</span>
+<span class="sd">        database_class (Type[BaseDatabase]): The database class associated with this entry.</span>
+<span class="sd">            Must be a subclass of `BaseDatabase`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">config_model</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">C</span><span class="p">]</span>
     <span class="n">database_class</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">BaseDatabase</span><span class="p">]</span></div>
 
 
 <span class="n">DATABASE_REGISTRY</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">DatabaseEntry</span><span class="p">[</span><span class="n">BaseDatabaseConfig</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Global registry mapping database types to their corresponding DatabaseEntry.</span>
 
+<span class="sd">This dictionary serves as the central registry for all database implementations.</span>
+<span class="sd">Each key is a string identifier (`database_type`) and each value is a `DatabaseEntry`</span>
+<span class="sd">containing the database class and its associated configuration model.</span>
+
+<span class="sd">Example:</span>
+<span class="sd">    &gt;&gt;&gt; DATABASE_REGISTRY[&quot;postgres&quot;]</span>
+<span class="sd">    DatabaseEntry(config_model=PostgresConfig, database_class=PostgresDatabase)</span>
+<span class="sd">&quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="register_database">
 <a class="viewcode-back" href="../../../modules/apps_logging_app.databases.html#apps_logging_app.databases.registry.register_database">[docs]</a>
@@ -385,29 +386,56 @@
     <span class="n">config_model</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">BaseDatabaseConfig</span><span class="p">],</span>
 <span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    A decorator that registers a database class with the given config model and type.</span>
+<span class="sd">    Decorator to register a database class in the global DATABASE_REGISTRY.</span>
 
-<span class="sd">    The decorator sets the type attribute of the database class to the given type.</span>
-<span class="sd">    It also creates a DatabaseEntry and adds it to the DATABASE_REGISTRY with the given type as the key.</span>
+<span class="sd">    This function associates a unique database type string with a database class</span>
+<span class="sd">    and its configuration model. It ensures the decorated class is a subclass</span>
+<span class="sd">    of `BaseDatabase` and creates a `DatabaseEntry` for registry lookup.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        database_class (Type[BaseDatabase]): The database class to register.</span>
+<span class="sd">        database_type (str): Unique string identifier for the database type.</span>
+<span class="sd">        config_model (Type[BaseDatabaseConfig]): Configuration model class corresponding</span>
+<span class="sd">            to the database class. Must be a subclass of `BaseDatabaseConfig`.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        Type[BaseDatabase]: The registered database class.</span>
+<span class="sd">        Callable[[Type[BaseDatabase]], Type[BaseDatabase]]: A decorator that registers</span>
+<span class="sd">        the database class in `DATABASE_REGISTRY` and sets its `.type` attribute.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; @register_database(database_type=&quot;postgres&quot;, config_model=PostgresConfig)</span>
+<span class="sd">        ... class PostgresDatabase(BaseDatabase):</span>
+<span class="sd">        ...     ...</span>
+<span class="sd">        &gt;&gt;&gt; DATABASE_REGISTRY[&quot;postgres&quot;].database_class</span>
+<span class="sd">        &lt;class &#39;PostgresDatabase&#39;&gt;</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">decorator</span><span class="p">(</span><span class="n">database_class</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">BaseDatabase</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Type</span><span class="p">[</span><span class="n">BaseDatabase</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        A decorator that registers a database class with the given config model and type.</span>
+<span class="sd">        Registers the decorated database class in the global DATABASE_REGISTRY.</span>
+
+<span class="sd">        This function is returned by `register_database` and is used as a decorator.</span>
+<span class="sd">        It performs the following steps:</span>
+<span class="sd">            1. Ensures the decorated class is a subclass of `BaseDatabase`.</span>
+<span class="sd">            2. Creates a `DatabaseEntry` linking the database class with its config model.</span>
+<span class="sd">            3. Stores the entry in `DATABASE_REGISTRY` under the specified database type.</span>
+<span class="sd">            4. Adds a `.type` attribute to the database class for easy identification.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            database_class (Type[BaseDatabase]): The database class to register.</span>
+<span class="sd">            database_class (Type[BaseDatabase]): The database class to register. Must be</span>
+<span class="sd">                a subclass of `BaseDatabase`.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            Type[BaseDatabase]: The registered database class.</span>
+<span class="sd">            Type[BaseDatabase]: The original database class, now registered in the registry</span>
+<span class="sd">            and annotated with a `.type` attribute.</span>
 
-<span class="sd">        The decorator sets the type attribute of the database class to the given type.</span>
-<span class="sd">        It also creates a DatabaseEntry and adds it to the DATABASE_REGISTRY with the given type as the key.</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            AssertionError: If `database_class` is not a subclass of `BaseDatabase`.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; @register_database(database_type=&quot;mysql&quot;, config_model=MySQLConfig)</span>
+<span class="sd">            ... class MySQLDatabase(BaseDatabase):</span>
+<span class="sd">            ...     ...</span>
+<span class="sd">            &gt;&gt;&gt; MySQLDatabase.type</span>
+<span class="sd">            &quot;mysql&quot;</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">assert</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">database_class</span><span class="p">,</span> <span class="n">BaseDatabase</span><span class="p">)</span>
         <span class="n">entry</span> <span class="o">=</span> <span class="n">DatabaseEntry</span><span class="p">()</span>

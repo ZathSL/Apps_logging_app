@@ -356,42 +356,108 @@
 <dt class="sig sig-object py" id="apps_logging_app.orchestration.orchestrator.BaseOrchestrator">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">apps_logging_app.orchestration.orchestrator.</span></span><span class="sig-name descname"><span class="pre">BaseOrchestrator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_retries</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">retry_delay</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/orchestration/orchestrator.html#BaseOrchestrator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.orchestration.orchestrator.BaseOrchestrator" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ABC</span></code></p>
-<p>Base class for orchestrators that manage connections to external services.</p>
-<p>This abstract class provides a common interface and connection handling logic
-for services such as databases, message queues, or producers. It ensures that
-connections are established, retried on failure, and safely marked as disconnected
-when necessary.</p>
-<dl class="simple">
-<dt>The class implements:</dt><dd><ul class="simple">
-<li><p>Thread-safe connection management.</p></li>
-<li><p>Retry logic with configurable maximum retries and delay.</p></li>
-<li><p>Logging for connection attempts and failures.</p></li>
-</ul>
-</dd>
-<dt>Subclasses must implement the following abstract methods:</dt><dd><ul class="simple">
-<li><p><code class="xref py py-meth docutils literal notranslate"><span class="pre">_connect()</span></code> : How to establish the actual connection.</p></li>
-<li><p><a class="reference internal" href="#apps_logging_app.orchestration.orchestrator.BaseOrchestrator.close" title="apps_logging_app.orchestration.orchestrator.BaseOrchestrator.close"><code class="xref py py-meth docutils literal notranslate"><span class="pre">close()</span></code></a> : How to close the connection.</p></li>
-</ul>
-</dd>
-</dl>
+<p>Abstract base class for orchestrating connection-managed resources with retry logic.</p>
+<p>This class provides a framework for managing connections to resources such as databases,
+message queues, or other services that require reliable connectivity.
+It handles:
+- Thread-safe connection attempts
+- Automatic retries with configurable delay
+- Logging of connection status and errors</p>
+<p>Subclasses must implement the abstract methods <cite>_is_connected</cite>, <cite>_connect</cite>, and <cite>close</cite>
+to provide resource-specific connection handling.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>name</strong> (<em>str</em>) – A descriptive name for the orchestrator (used in logging).</p></li>
-<li><p><strong>max_retries</strong> (<em>int</em>) – Maximum number of connection retries before giving up.</p></li>
-<li><p><strong>retry_delay</strong> (<em>int</em>) – Delay in seconds between retries. Default is 5 seconds.</p></li>
+<li><p><strong>name</strong> (<em>str</em>)</p></li>
+<li><p><strong>max_retries</strong> (<em>int</em>)</p></li>
+<li><p><strong>retry_delay</strong> (<em>int</em>)</p></li>
 </ul>
 </dd>
 </dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.orchestration.orchestrator.BaseOrchestrator.name">
+<span class="sig-name descname"><span class="pre">name</span></span><a class="headerlink" href="#apps_logging_app.orchestration.orchestrator.BaseOrchestrator.name" title="Link to this definition">¶</a></dt>
+<dd><p>Human-readable name of the orchestrator, used in logs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.orchestration.orchestrator.BaseOrchestrator.max_retries">
+<span class="sig-name descname"><span class="pre">max_retries</span></span><a class="headerlink" href="#apps_logging_app.orchestration.orchestrator.BaseOrchestrator.max_retries" title="Link to this definition">¶</a></dt>
+<dd><p>Maximum number of attempts to establish a connection.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.orchestration.orchestrator.BaseOrchestrator.retry_delay">
+<span class="sig-name descname"><span class="pre">retry_delay</span></span><a class="headerlink" href="#apps_logging_app.orchestration.orchestrator.BaseOrchestrator.retry_delay" title="Link to this definition">¶</a></dt>
+<dd><p>Delay in seconds between retry attempts (default is 5).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.orchestration.orchestrator.BaseOrchestrator.logger">
+<span class="sig-name descname"><span class="pre">logger</span></span><a class="headerlink" href="#apps_logging_app.orchestration.orchestrator.BaseOrchestrator.logger" title="Link to this definition">¶</a></dt>
+<dd><p>Logger instance for connection events and errors.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>logging.Logger</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.orchestration.orchestrator.BaseOrchestrator._connected">
+<span class="sig-name descname"><span class="pre">_connected</span></span><a class="headerlink" href="#apps_logging_app.orchestration.orchestrator.BaseOrchestrator._connected" title="Link to this definition">¶</a></dt>
+<dd><p>Internal flag indicating whether the resource is currently connected.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.orchestration.orchestrator.BaseOrchestrator._lock">
+<span class="sig-name descname"><span class="pre">_lock</span></span><a class="headerlink" href="#apps_logging_app.orchestration.orchestrator.BaseOrchestrator._lock" title="Link to this definition">¶</a></dt>
+<dd><p>Thread lock to ensure safe concurrent access during connection attempts.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>threading.Lock</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="apps_logging_app.orchestration.orchestrator.BaseOrchestrator.ensure_connected">
 <span class="sig-name descname"><span class="pre">ensure_connected</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/orchestration/orchestrator.html#BaseOrchestrator.ensure_connected"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.orchestration.orchestrator.BaseOrchestrator.ensure_connected" title="Link to this definition">¶</a></dt>
-<dd><p>Ensures that the connection to the underlying service is active.</p>
-<p>This method should be called before any other method to ensure that the connection is active.
-If the connection is not active, it will try to connect with a retry mechanism.</p>
+<dd><p>Ensures that the resource is connected, establishing a connection if needed.</p>
+<p>This method checks the internal <cite>_connected</cite> flag and, if the resource is not
+connected, acquires a thread lock to safely attempt a connection. It calls
+<cite>_connect_with_retry</cite> to handle retries and logging.</p>
+<dl class="simple">
+<dt>Thread Safety:</dt><dd><p>Uses a lock to prevent concurrent connection attempts by multiple threads.</p>
+</dd>
+<dt>Logs:</dt><dd><ul class="simple">
+<li><p>Warning if the connection is not active and a retry will be attempted.</p></li>
+</ul>
+</dd>
+</dl>
 <dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>None</p>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>Exception</strong> – Propagates any exceptions raised by <cite>_connect_with_retry</cite> if all retry attempts fail.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>None</p>
@@ -402,12 +468,19 @@ If the connection is not active, it will try to connect with a retry mechanism.<
 <dl class="py method">
 <dt class="sig sig-object py" id="apps_logging_app.orchestration.orchestrator.BaseOrchestrator.mark_disconnected">
 <span class="sig-name descname"><span class="pre">mark_disconnected</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/orchestration/orchestrator.html#BaseOrchestrator.mark_disconnected"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.orchestration.orchestrator.BaseOrchestrator.mark_disconnected" title="Link to this definition">¶</a></dt>
-<dd><p>Marks the connection as disconnected.</p>
-<p>This method can be used to manually mark the connection as disconnected, which
-will prevent any further attempts to connect or use the connection.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>None</p>
+<dd><p>Marks the resource as disconnected if it is no longer active.</p>
+<p>Checks the current connection status using <cite>_is_connected()</cite>. If the resource
+is still connected, logs an informational message and does nothing. Otherwise,
+sets the internal <cite>_connected</cite> flag to False and logs a warning.</p>
+<dl class="simple">
+<dt>Logs:</dt><dd><ul class="simple">
+<li><p>Info: When the connection is still active and no disconnection occurs.</p></li>
+<li><p>Warning: When the resource is marked as disconnected.</p></li>
+</ul>
+</dd>
+<dt>Side Effects:</dt><dd><ul class="simple">
+<li><p>Updates the <cite>_connected</cite> attribute to False if the resource is not connected.</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
@@ -415,11 +488,13 @@ will prevent any further attempts to connect or use the connection.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="apps_logging_app.orchestration.orchestrator.BaseOrchestrator.close">
 <span class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">close</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/orchestration/orchestrator.html#BaseOrchestrator.close"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.orchestration.orchestrator.BaseOrchestrator.close" title="Link to this definition">¶</a></dt>
-<dd><p>Closes the connection to the underlying service.</p>
-<p>This method should be implemented by subclasses to define how to close the connection to the underlying service.</p>
+<dd><p>Closes the connection to the resource and releases any associated resources.</p>
+<p>This abstract method must be implemented by subclasses to perform the
+necessary cleanup when the orchestrator is finished using the resource.
+It ensures that connections are properly terminated and resources are freed.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>None</p>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>Exception</strong> – Any exception raised during closure should be propagated.</p>
 </dd>
 <dt class="field-even">Return type<span class="colon">:</span></dt>
 <dd class="field-even"><p>None</p>
@@ -494,6 +569,12 @@ will prevent any further attempts to connect or use the connection.</p>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
 <li><a class="reference internal" href="#module-apps_logging_app.orchestration.orchestrator">apps_logging_app.orchestration.orchestrator module</a><ul>
 <li><a class="reference internal" href="#apps_logging_app.orchestration.orchestrator.BaseOrchestrator"><code class="docutils literal notranslate"><span class="pre">BaseOrchestrator</span></code></a><ul>
+<li><a class="reference internal" href="#apps_logging_app.orchestration.orchestrator.BaseOrchestrator.name"><code class="docutils literal notranslate"><span class="pre">BaseOrchestrator.name</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.orchestration.orchestrator.BaseOrchestrator.max_retries"><code class="docutils literal notranslate"><span class="pre">BaseOrchestrator.max_retries</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.orchestration.orchestrator.BaseOrchestrator.retry_delay"><code class="docutils literal notranslate"><span class="pre">BaseOrchestrator.retry_delay</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.orchestration.orchestrator.BaseOrchestrator.logger"><code class="docutils literal notranslate"><span class="pre">BaseOrchestrator.logger</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.orchestration.orchestrator.BaseOrchestrator._connected"><code class="docutils literal notranslate"><span class="pre">BaseOrchestrator._connected</span></code></a></li>
+<li><a class="reference internal" href="#apps_logging_app.orchestration.orchestrator.BaseOrchestrator._lock"><code class="docutils literal notranslate"><span class="pre">BaseOrchestrator._lock</span></code></a></li>
 <li><a class="reference internal" href="#apps_logging_app.orchestration.orchestrator.BaseOrchestrator.ensure_connected"><code class="docutils literal notranslate"><span class="pre">BaseOrchestrator.ensure_connected()</span></code></a></li>
 <li><a class="reference internal" href="#apps_logging_app.orchestration.orchestrator.BaseOrchestrator.mark_disconnected"><code class="docutils literal notranslate"><span class="pre">BaseOrchestrator.mark_disconnected()</span></code></a></li>
 <li><a class="reference internal" href="#apps_logging_app.orchestration.orchestrator.BaseOrchestrator.close"><code class="docutils literal notranslate"><span class="pre">BaseOrchestrator.close()</span></code></a></li>

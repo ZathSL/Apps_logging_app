@@ -341,7 +341,8 @@
           <h1>Source code for apps_logging_app.agents.base</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Tuple</span>
+
 <span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">concurrent.futures</span><span class="w"> </span><span class="kn">import</span> <span class="n">Future</span>
@@ -349,48 +350,83 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">WorkingDataConnection</span><span class="p">,</span> <span class="n">WorkingDataStatus</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">..utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_file_id</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseAgentConfig</span><span class="p">,</span> <span class="n">PathFileConfig</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseAgentConfig</span><span class="p">,</span> <span class="n">PathFileConfig</span><span class="p">,</span> <span class="n">ProducerConnectionConfig</span><span class="p">,</span> <span class="n">DataConnectionConfig</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timedelta</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..producers.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">Message</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..databases.data</span><span class="w"> </span><span class="kn">import</span> <span class="n">Query</span>
 
 <div class="viewcode-block" id="BaseAgent">
 <a class="viewcode-back" href="../../../modules/apps_logging_app.agents.html#apps_logging_app.agents.base.BaseAgent">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">BaseAgent</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Abstract base class for all agent implementations.</span>
+<span class="sd">    Abstract base class for agents that process log files and manage data connections.</span>
 
-<span class="sd">    The :class:`BaseAgent` defines the core lifecycle, threading model, and</span>
-<span class="sd">    data-processing pipeline for agents. Concrete agents must extend this</span>
-<span class="sd">    class and implement the abstract transformation and filtering logic.</span>
+<span class="sd">    The `BaseAgent` class provides a framework for reading log files, matching </span>
+<span class="sd">    lines to data connections using regex patterns, transforming and filtering </span>
+<span class="sd">    data, executing database queries, and sending messages to producers. </span>
+<span class="sd">    It is designed to run asynchronously using a background thread.</span>
 
-<span class="sd">    Responsibilities of this class include:</span>
+<span class="sd">    Subclasses must implement the `_data_connections_transformation_and_filtering` </span>
+<span class="sd">    method to define agent-specific logic for processing matched data.</span>
 
-<span class="sd">    - Initializing and managing :class:`WorkingDataConnection` instances</span>
-<span class="sd">    - Monitoring and reading log files with rotation handling</span>
-<span class="sd">    - Matching data via regular expressions</span>
-<span class="sd">    - Executing database queries asynchronously</span>
-<span class="sd">    - Sending processed data to producers</span>
-<span class="sd">    - Managing agent lifecycle (start/stop) in a background thread</span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        config (BaseAgentConfig): The configuration object for the agent.</span>
+<span class="sd">        logger (logging.Logger): Logger instance for the agent.</span>
+<span class="sd">        working_data_connections (List[WorkingDataConnection]): Active working </span>
+<span class="sd">            data connections being processed.</span>
+<span class="sd">        path_file_to_data_connections (Dict[str, List[Tuple[ProducerConnectionConfig, DataConnectionConfig]]]):</span>
+<span class="sd">            Maps log file names to associated data connections.</span>
+<span class="sd">        _stop_event (Event): Event used to stop the worker thread.</span>
+<span class="sd">        _thread (Thread): Background worker thread.</span>
+<span class="sd">        next_execute_query_time (datetime): Next scheduled time to execute database queries.</span>
 
-<span class="sd">    Each agent runs in its own worker thread and periodically processes</span>
-<span class="sd">    configured log files according to the provided configuration.</span>
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; from .config import BaseAgentConfig</span>
+<span class="sd">        &gt;&gt;&gt; config = BaseAgentConfig(...)</span>
+<span class="sd">        &gt;&gt;&gt; class MyAgent(BaseAgent):</span>
+<span class="sd">        ...     def _data_connections_transformation_and_filtering(self, wdc):</span>
+<span class="sd">        ...         return wdc.data_dict_match</span>
+<span class="sd">        &gt;&gt;&gt; agent = MyAgent(config)</span>
+<span class="sd">        &gt;&gt;&gt; agent.start()</span>
+<span class="sd">        &gt;&gt;&gt; # ... agent runs asynchronously ...</span>
+<span class="sd">        &gt;&gt;&gt; agent.stop()</span>
 
-<span class="sd">    Subclasses must implement the</span>
-<span class="sd">    :meth:`_data_connections_transformation_and_filtering` method.</span>
-
-<span class="sd">    :param config: Configuration object used to initialize the agent.</span>
-<span class="sd">    :type config: BaseAgentConfig</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">BaseAgentConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initializes the BaseAgent with the given config.</span>
+<span class="sd">        Initializes the BaseAgent with the provided configuration.</span>
 
-<span class="sd">        :param config: The config for the agent.</span>
-<span class="sd">        :type config: BaseAgentConfig</span>
+<span class="sd">        Sets up logging, initializes working data connections, maps log files </span>
+<span class="sd">        to data connections, and prepares the background worker thread.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            config (BaseAgentConfig): Configuration object containing agent </span>
+<span class="sd">                parameters, producer connections, path files, and intervals.</span>
+
+<span class="sd">        Attributes Initialized:</span>
+<span class="sd">            config (BaseAgentConfig): The agent configuration.</span>
+<span class="sd">            logger (logging.Logger): Logger for this agent instance.</span>
+<span class="sd">            working_data_connections (List[WorkingDataConnection]): List of active </span>
+<span class="sd">                working data connections initialized from configuration.</span>
+<span class="sd">            path_file_to_data_connections (Dict[str, List[Tuple[ProducerConnectionConfig, DataConnectionConfig]]]):</span>
+<span class="sd">                Mapping from log file names to associated producer and data connections.</span>
+<span class="sd">            _stop_event (Event): Event used to signal stopping the background thread.</span>
+<span class="sd">            _thread (Thread): Background worker thread initialized but not started.</span>
+<span class="sd">            next_execute_query_time (datetime): Timestamp for the next scheduled </span>
+<span class="sd">                database query execution.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; from .config import BaseAgentConfig</span>
+<span class="sd">            &gt;&gt;&gt; config = BaseAgentConfig(...)</span>
+<span class="sd">            &gt;&gt;&gt; agent = BaseAgentSubclass(config)  # must subclass since BaseAgent is abstract</span>
+<span class="sd">            &gt;&gt;&gt; agent.logger.info(&quot;Agent initialized&quot;)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">:</span> <span class="n">BaseAgentConfig</span> <span class="o">=</span> <span class="n">config</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s2">&quot;__main__.&quot;</span> <span class="o">+</span><span class="vm">__name__</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">working_data_connections</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">WorkingDataConnection</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_working_data_connections</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">path_file_to_data_connections</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">ProducerConnectionConfig</span><span class="p">,</span> <span class="n">DataConnectionConfig</span><span class="p">]]]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_path_file_to_data_connections_map</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_stop_event</span> <span class="o">=</span> <span class="n">Event</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_thread</span> <span class="o">=</span> <span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_worker</span><span class="p">,</span> <span class="n">daemon</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">next_execute_query_time</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
@@ -403,12 +439,18 @@
 <a class="viewcode-back" href="../../../modules/apps_logging_app.agents.html#apps_logging_app.agents.base.BaseAgent.start">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Starts the agent.</span>
+<span class="sd">        Starts the agent&#39;s background worker thread.</span>
 
-<span class="sd">        This method starts the worker thread which will execute the agent&#39;s</span>
-<span class="sd">        processing loop.</span>
+<span class="sd">        This method begins asynchronous processing of log files, data connections,</span>
+<span class="sd">        and message production by running the `_worker` method in a separate daemon thread.</span>
 
-<span class="sd">        :return: None</span>
+<span class="sd">        Once started, the agent will continuously read log files, match lines to </span>
+<span class="sd">        data connections, process transformations, execute queries, and send messages </span>
+<span class="sd">        until the `stop()` method is called.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; agent = BaseAgentSubclass(config)  # subclass must implement abstract methods</span>
+<span class="sd">            &gt;&gt;&gt; agent.start()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span></div>
 
@@ -417,11 +459,19 @@
 <a class="viewcode-back" href="../../../modules/apps_logging_app.agents.html#apps_logging_app.agents.base.BaseAgent.stop">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Stops the agent.</span>
+<span class="sd">        Stops the agent&#39;s background worker thread safely.</span>
 
-<span class="sd">        This method sets the stop event and waits for the worker thread to finish.</span>
+<span class="sd">        This method signals the `_worker` thread to stop by setting the `_stop_event`,</span>
+<span class="sd">        then waits for the thread to finish its current processing loop and exit.</span>
 
-<span class="sd">        :return: None</span>
+<span class="sd">        After calling `stop()`, the agent will no longer read log files, process data </span>
+<span class="sd">        connections, or send messages to producers.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; agent = BaseAgentSubclass(config)  # subclass must implement abstract methods</span>
+<span class="sd">            &gt;&gt;&gt; agent.start()</span>
+<span class="sd">            &gt;&gt;&gt; # ... agent is running ...</span>
+<span class="sd">            &gt;&gt;&gt; agent.stop()</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_stop_event</span><span class="o">.</span><span class="n">set</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_thread</span><span class="o">.</span><span class="n">join</span><span class="p">()</span></div>
@@ -431,33 +481,69 @@
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_initialize_working_data_connections</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initializes the working data connections for the agent.</span>
+<span class="sd">        Initializes working data connections from the agent&#39;s configuration.</span>
 
-<span class="sd">        This method iterates over the producer connections and data connections in the</span>
-<span class="sd">        agent&#39;s config and creates a WorkingDataConnection for each data connection.</span>
-<span class="sd">        The WorkingDataConnection is set to the READY status and added to the</span>
-<span class="sd">        agent&#39;s list of working data connections.</span>
+<span class="sd">        This method iterates over all producer connections and their associated </span>
+<span class="sd">        data connections defined in `self.config`. For each data connection, </span>
+<span class="sd">        it creates a `WorkingDataConnection` instance using `from_config()`, </span>
+<span class="sd">        sets its status to ready, and appends it to the `working_data_connections` list.</span>
 
-<span class="sd">        :return: None</span>
+<span class="sd">        This prepares the agent to start processing log lines and executing </span>
+<span class="sd">        transformations or queries for each connection.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; agent = BaseAgentSubclass(config)  # subclass must implement abstract methods</span>
+<span class="sd">            &gt;&gt;&gt; agent._initialize_working_data_connections()</span>
+<span class="sd">            &gt;&gt;&gt; print(agent.working_data_connections)</span>
+<span class="sd">            [&lt;WorkingDataConnection ...&gt;, ...]</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">producer_connection</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">producer_connections</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">data_connection</span> <span class="ow">in</span> <span class="n">producer_connection</span><span class="o">.</span><span class="n">data_connections</span><span class="p">:</span>
-                <span class="n">working_data_connection</span> <span class="o">=</span> <span class="n">WorkingDataConnection</span><span class="o">.</span><span class="n">from_config</span><span class="p">(</span><span class="n">producer_connection</span><span class="o">.</span><span class="n">type</span><span class="p">,</span> <span class="n">producer_connection</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">data_connection</span><span class="p">)</span>
+                <span class="n">working_data_connection</span> <span class="o">=</span> <span class="n">WorkingDataConnection</span><span class="o">.</span><span class="n">from_config</span><span class="p">(</span><span class="n">producer_connection</span><span class="o">.</span><span class="n">type</span><span class="p">,</span> <span class="n">producer_connection</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">producer_connection</span><span class="o">.</span><span class="n">topic</span><span class="p">,</span> <span class="n">data_connection</span><span class="p">)</span>
                 <span class="n">working_data_connection</span><span class="o">.</span><span class="n">set_ready_status</span><span class="p">()</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">working_data_connections</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">working_data_connection</span><span class="p">)</span>
 
+    <span class="k">def</span><span class="w"> </span><span class="nf">_initialize_path_file_to_data_connections_map</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Builds a mapping from log file names to their associated data connections.</span>
+
+<span class="sd">        This method iterates over all producer connections and their data connections </span>
+<span class="sd">        defined in the agent&#39;s configuration. If a data connection has a `source_ref` </span>
+<span class="sd">        (indicating it is tied to a log file), it adds a tuple of `(producer, data_connection)` </span>
+<span class="sd">        to the `path_file_to_data_connections` dictionary under the key corresponding </span>
+<span class="sd">        to the file name.</span>
+
+<span class="sd">        This mapping is used later to quickly identify which data connections should </span>
+<span class="sd">        process lines from each log file.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; agent = BaseAgentSubclass(config)</span>
+<span class="sd">            &gt;&gt;&gt; agent._initialize_path_file_to_data_connections_map()</span>
+<span class="sd">            &gt;&gt;&gt; print(agent.path_file_to_data_connections)</span>
+<span class="sd">            {&#39;app.log&#39;: [(&lt;ProducerConnectionConfig ...&gt;, &lt;DataConnectionConfig ...&gt;), ...]}</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">producer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">producer_connections</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">dc</span> <span class="ow">in</span> <span class="n">producer</span><span class="o">.</span><span class="n">data_connections</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">dc</span><span class="o">.</span><span class="n">source_ref</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">path_file_to_data_connections</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">dc</span><span class="o">.</span><span class="n">source_ref</span><span class="o">.</span><span class="n">path_file_name</span><span class="p">,</span> <span class="p">[])</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">producer</span><span class="p">,</span> <span class="n">dc</span><span class="p">))</span>
+
+
     <span class="k">def</span><span class="w"> </span><span class="nf">_worker</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Runs the agent&#39;s processing loop in a separate thread.</span>
+<span class="sd">        Background worker method that continuously processes log files.</span>
 
-<span class="sd">        This method starts a logging message indicating that the agent has</span>
-<span class="sd">        started and then enters a loop where it calls `_run_once` to process</span>
-<span class="sd">        data and then waits for the specified fetch logs interval before</span>
-<span class="sd">        repeating the loop.</span>
+<span class="sd">        This method runs in a separate daemon thread and repeatedly calls `_run_once()` </span>
+<span class="sd">        to read log files, match data connections, transform and filter data, execute queries, </span>
+<span class="sd">        and send messages to producers. It pauses for `fetch_logs_interval` seconds </span>
+<span class="sd">        between iterations.</span>
 
-<span class="sd">        The loop exits when the stop event is set.</span>
+<span class="sd">        The loop continues until `_stop_event` is set by the `stop()` method.</span>
 
-<span class="sd">        :return: None</span>
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; agent = BaseAgentSubclass(config)</span>
+<span class="sd">            &gt;&gt;&gt; agent.start()  # _worker runs asynchronously in background</span>
+<span class="sd">            &gt;&gt;&gt; # ... agent is processing logs ...</span>
+<span class="sd">            &gt;&gt;&gt; agent.stop()   # stops the worker thread</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Agent: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> started&quot;</span><span class="p">)</span>
 
@@ -467,23 +553,20 @@
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_run_once</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Runs the agent&#39;s processing loop once.</span>
+<span class="sd">        Performs a single iteration of log file processing.</span>
 
-<span class="sd">        This method iterates over the configured path files, detects file rotations, reads</span>
-<span class="sd">        log files in batches, and processes the extracted data using configured data</span>
-<span class="sd">        connections.</span>
+<span class="sd">        This method iterates over all configured path files and handles:</span>
+<span class="sd">        - Reading new lines from the file using `_read_batch_log`.</span>
+<span class="sd">        - Detecting file rotation by comparing file IDs and reading remaining </span>
+<span class="sd">        lines from the old file using `_read_remaining_old_file`.</span>
+<span class="sd">        - Resetting the cursor and updating the file ID when rotation occurs.</span>
+<span class="sd">        - Sending the read lines to `_data_connections_flow` for further processing.</span>
 
-<span class="sd">        For each path file, it checks if the file ID has changed. If the file ID is</span>
-<span class="sd">        None, it sets the file ID to the current file ID and reads a batch of lines</span>
-<span class="sd">        from the file using `_read_batch_log`. If the file ID has changed, it reads any</span>
-<span class="sd">        remaining lines from the previous file using `_read_remaining_old_file`, resets</span>
-<span class="sd">        the cursor to 0, and sets the file ID to the current file ID. If the file ID</span>
-<span class="sd">        has not changed, it reads a batch of lines from the file using `_read_batch_log`.</span>
+<span class="sd">        This method is called repeatedly by the `_worker` method in the background thread.</span>
 
-<span class="sd">        After reading the lines, it calls `_data_connections_flow` to process the lines</span>
-<span class="sd">        using the configured data connections.</span>
-
-<span class="sd">        :return: None</span>
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; agent = BaseAgentSubclass(config)</span>
+<span class="sd">            &gt;&gt;&gt; agent._run_once()  # processes all path files once</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">path_file</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">path_files</span> <span class="ow">or</span> <span class="p">[]:</span>
             
@@ -505,16 +588,29 @@
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_read_remaining_old_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path_file</span><span class="p">:</span> <span class="n">PathFileConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Reads the remaining lines from a previous file with the same file_id as the given path_file.</span>
+<span class="sd">        Reads the remaining lines from a rotated log file.</span>
 
-<span class="sd">        Given a PathFileConfig, this method searches for an old file with the same file_id</span>
-<span class="sd">        in the same directory. If an old file is found, it reads the remaining lines from the</span>
-<span class="sd">        old file and resets the cursor to 0.</span>
+<span class="sd">        When a log file is rotated, this method searches for the old version of the file</span>
+<span class="sd">        that matches the original `file_id`. It reads all remaining lines starting from </span>
+<span class="sd">        the last cursor position and returns them for further processing.</span>
 
-<span class="sd">        If no old file is found, a warning is logged and an empty list is returned.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            path_file (PathFileConfig): The configuration of the path file, </span>
+<span class="sd">                including its current cursor and file ID.</span>
 
-<span class="sd">        :param path_file: The PathFileConfig for which the remaining lines should be read.</span>
-<span class="sd">        :return: A list of lines read from the old file, or an empty list if no old file is found.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            List[str]: A list of lines remaining in the old file. Returns an empty </span>
+<span class="sd">            list if no matching old file is found.</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Uses a glob pattern based on the file name to locate candidate rotated files.</span>
+<span class="sd">            - Logs a warning if no old file is found.</span>
+<span class="sd">            - Updates are read starting from `path_file.cursor`.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; lines = agent._read_remaining_old_file(path_file)</span>
+<span class="sd">            &gt;&gt;&gt; for line in lines:</span>
+<span class="sd">            ...     process(line)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">file_path</span><span class="p">:</span> <span class="n">Path</span> <span class="o">=</span> <span class="n">path_file</span><span class="o">.</span><span class="n">path</span>
         <span class="n">directory</span><span class="p">:</span> <span class="n">Path</span> <span class="o">=</span> <span class="n">file_path</span><span class="o">.</span><span class="n">parent</span>
@@ -550,16 +646,25 @@
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_read_batch_log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path_file</span><span class="p">:</span> <span class="n">PathFileConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Reads a batch of lines from a log file.</span>
+<span class="sd">        Reads a batch of lines from the given log file starting at the current cursor.</span>
 
-<span class="sd">        Given a PathFileConfig, this method reads the specified number of lines from the file and</span>
-<span class="sd">        updates the cursor of the PathFileConfig to the position after the last read line.</span>
+<span class="sd">        This method opens the file specified in `path_file.path`, seeks to the last </span>
+<span class="sd">        read position (`path_file.cursor`), and reads up to `buffer_rows` lines </span>
+<span class="sd">        as defined in the agent configuration. After reading, it updates the cursor </span>
+<span class="sd">        to the new file position.</span>
 
-<span class="sd">        If the end of the file is reached before the specified number of lines is read, the</span>
-<span class="sd">        method will return the remaining lines.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            path_file (PathFileConfig): The configuration of the log file, </span>
+<span class="sd">                including the file path and current cursor position.</span>
 
-<span class="sd">        :param path_file: The PathFileConfig for which the lines should be read.</span>
-<span class="sd">        :return: A list of lines read from the file.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            List[str]: A list of lines read from the log file. May be empty if </span>
+<span class="sd">            the end of file is reached.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; lines = agent._read_batch_log(path_file)</span>
+<span class="sd">            &gt;&gt;&gt; for line in lines:</span>
+<span class="sd">            ...     print(line.strip())</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">lines</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path_file</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
@@ -574,17 +679,24 @@
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_data_connections_flow</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path_file</span><span class="p">:</span> <span class="n">PathFileConfig</span><span class="p">,</span> <span class="n">lines</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Process the data connections matched by the regex in the read lines.</span>
+<span class="sd">        Processes log lines through data connections, applies transformations,</span>
+<span class="sd">        executes queries, sends messages, and cleans up expired connections.</span>
 
-<span class="sd">        This method takes a PathFileConfig and a list of lines as input, and processes</span>
-<span class="sd">        the data connections matched by the regex in the read lines. It applies</span>
-<span class="sd">        transformations and filtering to the data connections, executes queries using the</span>
-<span class="sd">        data connections, sends the extracted messages to producers, and then cleans the</span>
-<span class="sd">        working data connections.</span>
+<span class="sd">        This method performs the full workflow for a batch of log lines:</span>
+<span class="sd">        1. Matches lines to data connections using `_data_connections_match_regex`.</span>
+<span class="sd">        2. Transforms and filters matched data via `_data_connections_transformation_and_filtering`.</span>
+<span class="sd">        3. Updates the working data connection status and stores results.</span>
+<span class="sd">        4. Executes database queries if the scheduled time is reached.</span>
+<span class="sd">        5. Sends messages to producers for updated data connections.</span>
+<span class="sd">        6. Cleans expired working data connections from the internal list.</span>
 
-<span class="sd">        :param path_file: The PathFileConfig for which the lines should be processed.</span>
-<span class="sd">        :param lines: The list of lines read from the file.</span>
-<span class="sd">        :return: None</span>
+<span class="sd">        Args:</span>
+<span class="sd">            path_file (PathFileConfig): Configuration of the log file being processed.</span>
+<span class="sd">            lines (List[str]): List of log lines read from the file.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; agent._data_connections_flow(path_file, lines)</span>
+<span class="sd">            # Processes lines, updates connections, executes queries, and sends messages.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">working_data_connections</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data_connections_match_regex</span><span class="p">(</span><span class="n">path_file</span><span class="p">,</span> <span class="n">lines</span><span class="p">)</span>
 
@@ -611,60 +723,94 @@
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_data_connections_match_regex</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path_file</span><span class="p">:</span> <span class="n">PathFileConfig</span><span class="p">,</span> <span class="n">lines</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">WorkingDataConnection</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Matches data using regex patterns defined in DataConnectionConfig.</span>
+<span class="sd">        Matches log lines against configured data connection regex patterns.</span>
 
-<span class="sd">        This method takes a PathFileConfig and a list of lines as input, and processes</span>
-<span class="sd">        the data connections matched by the regex in the read lines. It iterates over the</span>
-<span class="sd">        given lines and the data connections in the agent&#39;s config, and for each data</span>
-<span class="sd">        connection with a matching regex pattern, it creates a WorkingDataConnection and</span>
-<span class="sd">        adds it to the list of working data connections.</span>
+<span class="sd">        For each line in the provided log batch, this method checks whether it matches </span>
+<span class="sd">        the regex pattern defined in each relevant data connection for the given path file. </span>
+<span class="sd">        When a match is found, a new `WorkingDataConnection` is created with the matched </span>
+<span class="sd">        data populated in `data_dict_match`.</span>
 
-<span class="sd">        :param path_file: The PathFileConfig for which the lines should be processed.</span>
-<span class="sd">        :param lines: The list of lines read from the file.</span>
-<span class="sd">        :return: A list of WorkingDataConnection objects containing the data connections matched by</span>
-<span class="sd">            the regex in the read lines.</span>
+<span class="sd">        Args:</span>
+<span class="sd">            path_file (PathFileConfig): The log file configuration containing the file name.</span>
+<span class="sd">            lines (List[str]): The batch of log lines to process.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            List[WorkingDataConnection]: A list of working data connections corresponding </span>
+<span class="sd">            to lines that matched the regex patterns. Empty if no matches are found.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; matches = agent._data_connections_match_regex(path_file, lines)</span>
+<span class="sd">            &gt;&gt;&gt; for wdc in matches:</span>
+<span class="sd">            ...     print(wdc.data_dict_match)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">producer_connections</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">producer_connections</span>
-
         <span class="n">working_data_connections</span> <span class="o">=</span> <span class="p">[]</span>
 
+        <span class="n">relevant_connections</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_file_to_data_connections</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">path_file</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="p">[])</span>
+
         <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">producer_connection</span> <span class="ow">in</span> <span class="n">producer_connections</span><span class="p">:</span>
-                <span class="k">for</span> <span class="n">data_connection</span> <span class="ow">in</span> <span class="n">producer_connection</span><span class="o">.</span><span class="n">data_connections</span><span class="p">:</span>
-                    <span class="k">if</span> <span class="n">data_connection</span><span class="o">.</span><span class="n">source_ref</span> <span class="ow">and</span> \
-                        <span class="n">data_connection</span><span class="o">.</span><span class="n">source_ref</span><span class="o">.</span><span class="n">path_file_name</span> <span class="o">==</span> <span class="n">path_file</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
-                        <span class="n">regex_pattern</span> <span class="o">=</span> <span class="n">data_connection</span><span class="o">.</span><span class="n">source_ref</span><span class="o">.</span><span class="n">regex_pattern</span>
-                        <span class="n">match</span> <span class="o">=</span> <span class="n">regex_pattern</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
-                        <span class="k">if</span> <span class="n">match</span><span class="p">:</span>
-                            <span class="n">working_data_connection</span> <span class="o">=</span> <span class="n">WorkingDataConnection</span><span class="o">.</span><span class="n">from_config</span><span class="p">(</span><span class="n">producer_connection</span><span class="o">.</span><span class="n">type</span><span class="p">,</span> 
-                                                                                        <span class="n">producer_connection</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> 
-                                                                                        <span class="n">data_connection</span><span class="p">)</span>
-                            <span class="n">working_data_connection</span><span class="o">.</span><span class="n">data_dict_match</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">groupdict</span><span class="p">()</span>
-                            <span class="n">working_data_connections</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">working_data_connection</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">producer_connection</span><span class="p">,</span> <span class="n">data_connection</span> <span class="ow">in</span> <span class="n">relevant_connections</span><span class="p">:</span>
+                <span class="n">match</span> <span class="o">=</span> <span class="n">data_connection</span><span class="o">.</span><span class="n">source_ref</span><span class="o">.</span><span class="n">regex_pattern</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">match</span><span class="p">:</span>
+                    <span class="n">wdc</span> <span class="o">=</span> <span class="n">WorkingDataConnection</span><span class="o">.</span><span class="n">from_config</span><span class="p">(</span>
+                        <span class="n">producer_connection</span><span class="o">.</span><span class="n">type</span><span class="p">,</span> 
+                        <span class="n">producer_connection</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                        <span class="n">producer_connection</span><span class="o">.</span><span class="n">topic</span><span class="p">,</span> 
+                        <span class="n">data_connection</span>
+                    <span class="p">)</span>
+                    <span class="n">wdc</span><span class="o">.</span><span class="n">data_dict_match</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">groupdict</span><span class="p">()</span>
+                    <span class="n">working_data_connections</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">wdc</span><span class="p">)</span>
+        
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Found </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">working_data_connections</span><span class="p">)</span><span class="si">}</span><span class="s2"> working data connections through regex in </span><span class="si">{</span><span class="n">path_file</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">working_data_connections</span>
 
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_data_connections_transformation_and_filtering</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">working_data_connection</span><span class="p">:</span> <span class="n">WorkingDataConnection</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Abstract method to transform and filter the given working data connections.</span>
+<span class="sd">        Transforms and filters the data from a working data connection.</span>
 
-<span class="sd">        :param working_data_connection: The working data connection to transform and filter.</span>
-<span class="sd">        :return: A dictionary containing the transformed and filtered data.</span>
+<span class="sd">        This abstract method must be implemented by subclasses to define</span>
+<span class="sd">        agent-specific logic for processing matched data. It typically involves</span>
+<span class="sd">        extracting, transforming, or filtering the `data_dict_match` from the </span>
+<span class="sd">        provided `WorkingDataConnection` and returning the processed data.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            working_data_connection (WorkingDataConnection): The working data </span>
+<span class="sd">                connection containing matched log line data to be transformed.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dict[str, Any]: A dictionary with the transformed and filtered data </span>
+<span class="sd">            that will be used for queries, messages, or further processing.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; class MyAgent(BaseAgent):</span>
+<span class="sd">            ...     def _data_connections_transformation_and_filtering(self, wdc):</span>
+<span class="sd">            ...         # Example transformation</span>
+<span class="sd">            ...         return {&quot;status&quot;: wdc.data_dict_match.get(&quot;status&quot;)}</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">pass</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_data_connections_execute_queries</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Executes queries using the data connections.</span>
+<span class="sd">        Executes database queries for ready working data connections.</span>
 
-<span class="sd">        This method iterates over the working data connections that have a database name</span>
-<span class="sd">        and are in the READY status. It executes the query for each data connection using</span>
-<span class="sd">        the corresponding database instance, and sets the query running status for each</span>
-<span class="sd">        data connection. If an exception occurs during the query execution, it sets</span>
-<span class="sd">        the ready status for the data connection and logs the error.</span>
+<span class="sd">        Iterates over all `working_data_connections` and, for each connection that </span>
+<span class="sd">        has a `database_name` and a status of `READY`, it:</span>
+<span class="sd">        1. Retrieves a database instance using `DatabaseFactory`.</span>
+<span class="sd">        2. Creates a `Query` object using the connection&#39;s query and source data.</span>
+<span class="sd">        3. Enqueues the query asynchronously and sets a callback `_on_done` </span>
+<span class="sd">            to handle the result.</span>
+<span class="sd">        4. Updates the connection status to indicate that the query is running.</span>
 
-<span class="sd">        :return: None</span>
+<span class="sd">        If an exception occurs during query execution, the connection is reset </span>
+<span class="sd">        to `READY` and an error is logged.</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Queries are executed asynchronously using futures.</span>
+<span class="sd">            - `_on_done` updates the working data connection with query results.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; agent._data_connections_execute_queries()</span>
+<span class="sd">            # Executes queries for all ready connections asynchronously.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">..databases.factory</span><span class="w"> </span><span class="kn">import</span> <span class="n">DatabaseFactory</span>
 
@@ -679,9 +825,10 @@
                     <span class="n">wdc</span><span class="o">.</span><span class="n">on_query_done</span><span class="p">(</span><span class="n">future</span><span class="p">)</span>
 
                 <span class="k">try</span><span class="p">:</span>
-                    <span class="n">future</span> <span class="o">=</span> <span class="n">database_instance</span><span class="o">.</span><span class="n">enqueue_query</span><span class="p">(</span><span class="n">working_data_connection</span><span class="o">.</span><span class="n">query</span><span class="p">,</span> <span class="n">working_data_connection</span><span class="o">.</span><span class="n">data_dict_query_source</span><span class="p">)</span>
+                    <span class="n">query</span><span class="p">:</span> <span class="n">Query</span> <span class="o">=</span> <span class="n">Query</span><span class="p">(</span><span class="n">working_data_connection</span><span class="o">.</span><span class="n">query</span><span class="p">,</span> <span class="n">working_data_connection</span><span class="o">.</span><span class="n">data_dict_query_source</span><span class="p">)</span>
+                    <span class="n">future</span> <span class="o">=</span> <span class="n">database_instance</span><span class="o">.</span><span class="n">enqueue_query</span><span class="p">(</span><span class="n">query</span><span class="p">)</span>
                     <span class="n">future</span><span class="o">.</span><span class="n">add_done_callback</span><span class="p">(</span><span class="n">_on_done</span><span class="p">)</span>
-                    <span class="n">working_data_connection</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">WorkingDataStatus</span><span class="o">.</span><span class="n">QUERY_RUNNING</span>
+                    <span class="n">working_data_connection</span><span class="o">.</span><span class="n">set_query_running_status</span><span class="p">()</span>
                 <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
                     <span class="n">working_data_connection</span><span class="o">.</span><span class="n">set_ready_status</span><span class="p">()</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Agent: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: Error executing query: </span><span class="si">{</span><span class="n">working_data_connection</span><span class="o">.</span><span class="n">query</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
@@ -689,14 +836,27 @@
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_send_messages_to_producers</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Sends the extracted messages to the configured producers.</span>
+<span class="sd">        Sends messages to producers based on updated working data connections.</span>
 
-<span class="sd">        This method iterates over the working data connections, and for each data connection with a</span>
-<span class="sd">        producer type and name, it sends the extracted messages to the corresponding producer. If an</span>
-<span class="sd">        exception occurs during the message sending, it sets the expired status for the data</span>
-<span class="sd">        connection and logs the error.</span>
+<span class="sd">        This method iterates over all `working_data_connections` and, for each </span>
+<span class="sd">        connection with status `UPDATED`, it creates a `Message` object from either </span>
+<span class="sd">        `data_dict_result` or `list_data_dict_query_result` and enqueues it to the </span>
+<span class="sd">        corresponding producer using `ProducerFactory`.</span>
 
-<span class="sd">        :return: None</span>
+<span class="sd">        After sending the message, the working data connection:</span>
+<span class="sd">            - Checks if it has expired using `check_expired_time()`.</span>
+<span class="sd">            - Resets its status to `READY`.</span>
+
+<span class="sd">        Exceptions during message sending are caught, the connection&#39;s expired time </span>
+<span class="sd">        is reset to 0, and the error is logged.</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Messages are only sent if the connection status is `UPDATED`.</span>
+<span class="sd">            - Both single result dictionaries and lists of query results are supported.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; agent._send_messages_to_producers()</span>
+<span class="sd">            # Sends messages for all updated connections to their configured producers.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">..producers.factory</span><span class="w"> </span><span class="kn">import</span> <span class="n">ProducerFactory</span>
 
@@ -708,24 +868,35 @@
             <span class="k">try</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">working_data_connection</span><span class="o">.</span><span class="n">data_dict_result</span> <span class="ow">and</span> <span class="n">working_data_connection</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="n">WorkingDataStatus</span><span class="o">.</span><span class="n">UPDATED</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Agent: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: Sending message to producer: data with name: </span><span class="si">{</span><span class="n">working_data_connection</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> with status </span><span class="si">{</span><span class="n">working_data_connection</span><span class="o">.</span><span class="n">status</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-                    <span class="n">producer_instance</span><span class="o">.</span><span class="n">enqueue_message</span><span class="p">(</span><span class="n">working_data_connection</span><span class="o">.</span><span class="n">is_error</span><span class="p">,</span> <span class="n">working_data_connection</span><span class="o">.</span><span class="n">data_dict_result</span><span class="p">)</span>
+                    <span class="n">message</span> <span class="o">=</span> <span class="n">Message</span><span class="p">(</span><span class="n">working_data_connection</span><span class="o">.</span><span class="n">topic</span><span class="p">,</span> <span class="n">working_data_connection</span><span class="o">.</span><span class="n">is_error</span><span class="p">,</span> <span class="n">working_data_connection</span><span class="o">.</span><span class="n">is_warning</span><span class="p">,</span> <span class="n">working_data_connection</span><span class="o">.</span><span class="n">data_dict_result</span><span class="p">)</span>
+                    <span class="n">producer_instance</span><span class="o">.</span><span class="n">enqueue_message</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
                 <span class="k">elif</span> <span class="n">working_data_connection</span><span class="o">.</span><span class="n">list_data_dict_query_result</span> <span class="ow">and</span> <span class="n">working_data_connection</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="n">WorkingDataStatus</span><span class="o">.</span><span class="n">UPDATED</span><span class="p">:</span>
-                    <span class="n">producer_instance</span><span class="o">.</span><span class="n">enqueue_message</span><span class="p">(</span><span class="n">working_data_connection</span><span class="o">.</span><span class="n">is_error</span><span class="p">,</span> <span class="n">working_data_connection</span><span class="o">.</span><span class="n">list_data_dict_query_result</span><span class="p">)</span>
-                <span class="n">working_data_connection</span><span class="o">.</span><span class="n">set_ready_status</span><span class="p">()</span>
+                    <span class="n">message</span> <span class="o">=</span> <span class="n">Message</span><span class="p">(</span><span class="n">working_data_connection</span><span class="o">.</span><span class="n">topic</span><span class="p">,</span> <span class="n">working_data_connection</span><span class="o">.</span><span class="n">is_error</span><span class="p">,</span> <span class="n">working_data_connection</span><span class="o">.</span><span class="n">is_warning</span><span class="p">,</span> <span class="n">working_data_connection</span><span class="o">.</span><span class="n">list_data_dict_query_result</span><span class="p">)</span>
+                    <span class="n">producer_instance</span><span class="o">.</span><span class="n">enqueue_message</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
                 <span class="n">working_data_connection</span><span class="o">.</span><span class="n">check_expired_time</span><span class="p">()</span>
-            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-                <span class="n">working_data_connection</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">WorkingDataStatus</span><span class="o">.</span><span class="n">EXPIRED</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Agent: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: Error sending message to producer: </span><span class="si">{</span><span class="n">working_data_connection</span><span class="o">.</span><span class="n">producer_type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">working_data_connection</span><span class="o">.</span><span class="n">producer_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">working_data_connection</span><span class="o">.</span><span class="n">set_ready_status</span><span class="p">()</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">working_data_connection</span><span class="o">.</span><span class="n">update_expired_time</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Agent: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: Error sending message to producer: </span><span class="si">{</span><span class="n">working_data_connection</span><span class="o">.</span><span class="n">producer_type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">working_data_connection</span><span class="o">.</span><span class="n">producer_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_clean_working_data_connections</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Cleans expired working data connections from the list of working data connections.</span>
+<span class="sd">        Removes expired working data connections from the internal list.</span>
 
-<span class="sd">        This method iterates over the list of working data connections and for each one, it checks</span>
-<span class="sd">        if the status of the working data connection is expired. If it is, it removes the</span>
-<span class="sd">        working data connection from the list of working data connections.</span>
+<span class="sd">        Iterates over all `working_data_connections` and removes any connection </span>
+<span class="sd">        whose status is `EXPIRED`. Logs warnings for both the status of each </span>
+<span class="sd">        connection and when a connection is removed.</span>
 
-<span class="sd">        :return: None</span>
+<span class="sd">        This cleanup ensures that the agent&#39;s list of working data connections </span>
+<span class="sd">        remains current and does not retain stale or irrelevant entries.</span>
+
+<span class="sd">        Notes:</span>
+<span class="sd">            - Uses a copy of the list to safely remove items during iteration.</span>
+<span class="sd">            - Logging provides traceability for expired connections.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; agent._clean_working_data_connections()</span>
+<span class="sd">            # Removes all expired working data connections from the agent&#39;s internal list.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">working_data_connection</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">working_data_connections</span><span class="p">[:]:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">working_data_connection</span><span class="o">.</span><span class="n">status</span><span class="si">}</span><span class="s2"> + </span><span class="si">{</span><span class="n">working_data_connection</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>

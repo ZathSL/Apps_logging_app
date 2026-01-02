@@ -356,19 +356,35 @@
 <dt class="sig sig-object py" id="apps_logging_app.agents.spring.agent.SpringAgent">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">apps_logging_app.agents.spring.agent.</span></span><span class="sig-name descname"><span class="pre">SpringAgent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/agents/spring/agent.html#SpringAgent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.agents.spring.agent.SpringAgent" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="apps_logging_app.agents.html#apps_logging_app.agents.base.BaseAgent" title="apps_logging_app.agents.base.BaseAgent"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseAgent</span></code></a></p>
-<p>Agent implementation for the <em>spring</em> agent type.</p>
-<p>The <a class="reference internal" href="#apps_logging_app.agents.spring.agent.SpringAgent" title="apps_logging_app.agents.spring.agent.SpringAgent"><code class="xref py py-class docutils literal notranslate"><span class="pre">SpringAgent</span></code></a> extends <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseAgent</span></code> and provides
-specific logic for handling Spring-based workflows. It is registered
-in the agent registry with the <code class="docutils literal notranslate"><span class="pre">spring</span></code> agent type and uses
-<code class="xref py py-class docutils literal notranslate"><span class="pre">SpringAgentConfig</span></code> as its configuration model.</p>
-<p>This agent is responsible for applying transformations and filtering
-logic to instances of <code class="xref py py-class docutils literal notranslate"><span class="pre">WorkingDataConnection</span></code> before they are
-used in downstream processing.</p>
+<p>Agent for handling Spring-specific data processing.</p>
+<p>This agent is registered under the type <cite>“spring”</cite> and extends the
+<cite>BaseAgent</cite> class. It primarily acts as a placeholder for Spring-specific
+behavior, currently relying on the base class for data connection
+transformations and filtering.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>config</strong> (<a class="reference internal" href="#apps_logging_app.agents.spring.config.SpringAgentConfig" title="apps_logging_app.agents.spring.config.SpringAgentConfig"><em>SpringAgentConfig</em></a>) – Configuration object used to initialize the agent.</p>
+<dd class="field-odd"><p><strong>config</strong> (<a class="reference internal" href="#apps_logging_app.agents.spring.config.SpringAgentConfig" title="apps_logging_app.agents.spring.config.SpringAgentConfig"><em>SpringAgentConfig</em></a>) – Configuration object containing
+parameters specific to the Spring agent.</p>
 </dd>
 </dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.agents.spring.agent.SpringAgent.config">
+<span class="sig-name descname"><span class="pre">config</span></span><a class="headerlink" href="#apps_logging_app.agents.spring.agent.SpringAgent.config" title="Link to this definition">¶</a></dt>
+<dd><p>The configuration for this agent.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#apps_logging_app.agents.spring.config.SpringAgentConfig" title="apps_logging_app.agents.spring.config.SpringAgentConfig">SpringAgentConfig</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">SpringAgentConfig</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">config</span> <span class="o">=</span> <span class="n">SpringAgentConfig</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">agent</span> <span class="o">=</span> <span class="n">SpringAgent</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">filtered_data</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">_data_connections_transformation_and_filtering</span><span class="p">(</span><span class="n">working_data_connection</span><span class="p">)</span>
+</pre></div>
+</div>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="apps_logging_app.agents.spring.agent.SpringAgent.type">
 <span class="sig-name descname"><span class="pre">type</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'spring'</span></span><a class="headerlink" href="#apps_logging_app.agents.spring.agent.SpringAgent.type" title="Link to this definition">¶</a></dt>
@@ -382,22 +398,28 @@ used in downstream processing.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="apps_logging_app.agents.spring.config.SpringAgentConfig">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">apps_logging_app.agents.spring.config.</span></span><span class="sig-name descname"><span class="pre">SpringAgentConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">buffer_rows</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">500</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_files</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">producer_connections</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fetch_logs_interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">120</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">execute_query_interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">600</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/agents/spring/config.html#SpringAgentConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.agents.spring.config.SpringAgentConfig" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="apps_logging_app.agents.html#apps_logging_app.agents.model.BaseAgentConfig" title="apps_logging_app.agents.model.BaseAgentConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseAgentConfig</span></code></a></p>
-<p>Configuration model for the <code class="xref py py-class docutils literal notranslate"><span class="pre">SpringAgent</span></code>.</p>
-<p>This class extends <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseAgentConfig</span></code> without introducing
-additional configuration fields. It exists to provide a dedicated
-configuration type for the Spring agent, allowing future extensions
-and clearer type separation between different agent implementations.</p>
-<p>At present, all configuration options are inherited directly from
-<code class="xref py py-class docutils literal notranslate"><span class="pre">BaseAgentConfig</span></code>.</p>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseAgentConfig</span></code></p>
+<p>Configuration class for the SpringAgent.</p>
+<p>This class inherits from <cite>BaseAgentConfig</cite> and serves as a dedicated
+configuration model for the <cite>SpringAgent</cite>.</p>
+<p>Currently, it does not add any additional fields or behavior beyond
+<cite>BaseAgentConfig</cite>, but it exists to allow future Spring-specific
+configuration extensions and to provide type clarity when initializing
+a <cite>SpringAgent</cite>.</p>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">SpringAgentConfig</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">config</span> <span class="o">=</span> <span class="n">SpringAgentConfig</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">agent</span> <span class="o">=</span> <span class="n">SpringAgent</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+</pre></div>
+</div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>type</strong> (<em>str</em>)</p></li>
 <li><p><strong>name</strong> (<em>str</em>)</p></li>
 <li><p><strong>buffer_rows</strong> (<em>int</em><em> | </em><em>None</em>)</p></li>
-<li><p><strong>path_files</strong> (<em>List</em><em>[</em><a class="reference internal" href="apps_logging_app.agents.html#apps_logging_app.agents.model.PathFileConfig" title="apps_logging_app.agents.model.PathFileConfig"><em>PathFileConfig</em></a><em>] </em><em>| </em><em>None</em>)</p></li>
-<li><p><strong>producer_connections</strong> (<em>List</em><em>[</em><a class="reference internal" href="apps_logging_app.agents.html#apps_logging_app.agents.model.ProducerConnectionConfig" title="apps_logging_app.agents.model.ProducerConnectionConfig"><em>ProducerConnectionConfig</em></a><em>]</em>)</p></li>
+<li><p><strong>path_files</strong> (<em>List</em><em>[</em><em>PathFileConfig</em><em>] </em><em>| </em><em>None</em>)</p></li>
+<li><p><strong>producer_connections</strong> (<em>List</em><em>[</em><em>ProducerConnectionConfig</em><em>]</em>)</p></li>
 <li><p><strong>fetch_logs_interval</strong> (<em>float</em>)</p></li>
 <li><p><strong>execute_query_interval</strong> (<em>float</em>)</p></li>
 </ul>
@@ -476,6 +498,7 @@ and clearer type separation between different agent implementations.</p>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
 <li><a class="reference internal" href="#module-apps_logging_app.agents.spring.agent">apps_logging_app.agents.spring.agent module</a><ul>
 <li><a class="reference internal" href="#apps_logging_app.agents.spring.agent.SpringAgent"><code class="docutils literal notranslate"><span class="pre">SpringAgent</span></code></a><ul>
+<li><a class="reference internal" href="#apps_logging_app.agents.spring.agent.SpringAgent.config"><code class="docutils literal notranslate"><span class="pre">SpringAgent.config</span></code></a></li>
 <li><a class="reference internal" href="#apps_logging_app.agents.spring.agent.SpringAgent.type"><code class="docutils literal notranslate"><span class="pre">SpringAgent.type</span></code></a></li>
 </ul>
 </li>

@@ -345,43 +345,53 @@
 <div class="viewcode-block" id="ProducerOrchestrator">
 <a class="viewcode-back" href="../../../modules/apps_logging_app.producers.html#apps_logging_app.producers.orchestrator.ProducerOrchestrator">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ProducerOrchestrator</span><span class="p">(</span><span class="n">BaseOrchestrator</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Orchestrator class for managing a producer instance.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Orchestrates the lifecycle and connectivity of a producer instance.</span>
 
-<span class="sd">    The `ProducerOrchestrator` ensures that the underlying producer connection is active,</span>
-<span class="sd">    handles automatic retries, and provides a consistent interface for connecting and</span>
-<span class="sd">    closing the producer.</span>
+<span class="sd">    This orchestrator adapts a :class:`BaseProducer` to the orchestration</span>
+<span class="sd">    framework defined by :class:`BaseOrchestrator`. It delegates connection</span>
+<span class="sd">    management and lifecycle operations (connect, status check, close) to</span>
+<span class="sd">    the underlying producer while leveraging the retry and orchestration</span>
+<span class="sd">    mechanisms provided by the base orchestrator.</span>
 
-<span class="sd">    It extends `BaseOrchestrator` and leverages its connection retry logic, </span>
-<span class="sd">    while delegating the actual connection and closure operations to the `BaseProducer` instance.</span>
+<span class="sd">    The orchestrator name and retry behavior are automatically derived from</span>
+<span class="sd">    the producer&#39;s configuration, ensuring consistent identification and</span>
+<span class="sd">    fault-tolerance behavior across different producer implementations.</span>
 
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    producer : BaseProducer</span>
-<span class="sd">        The producer instance to be managed by the orchestrator.</span>
+<span class="sd">    This class is intended to be used as an internal coordination layer and</span>
+<span class="sd">    does not introduce producer-specific logic beyond delegation.</span>
 
-<span class="sd">    Methods</span>
-<span class="sd">    -------</span>
-<span class="sd">    _connect()</span>
-<span class="sd">        Establishes a connection to the underlying producer service. </span>
-<span class="sd">        Implements the abstract `_connect` method from `BaseOrchestrator`.</span>
-<span class="sd">    close()</span>
-<span class="sd">        Closes the producer and flushes any pending messages. Implements the abstract</span>
-<span class="sd">        `close` method from `BaseOrchestrator`.</span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        producer (BaseProducer): The producer instance being orchestrated,</span>
+<span class="sd">            responsible for implementing the actual connection and resource</span>
+<span class="sd">            management logic.</span>
 
-<span class="sd">    Notes</span>
-<span class="sd">    -----</span>
-<span class="sd">    - The orchestrator automatically uses the producer&#39;s `max_retries` for its retry logic.</span>
-<span class="sd">    - This class is typically used internally by the `ProducerFactory` to manage producer</span>
-<span class="sd">      lifecycle and ensure reliable message delivery.</span>
+<span class="sd">    See Also:</span>
+<span class="sd">        BaseOrchestrator: Defines the orchestration lifecycle and retry logic.</span>
+<span class="sd">        BaseProducer: Defines the producer interface and configuration contract.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">producer</span><span class="p">:</span> <span class="n">BaseProducer</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initializes a ProducerOrchestrator object.</span>
+<span class="sd">        Initialize the orchestrator with a producer instance.</span>
 
-<span class="sd">        :param producer: The BaseProducer instance to be used for sending messages.</span>
-<span class="sd">        :raises: Any exceptions raised by the producer when connecting or closing.</span>
+<span class="sd">        This constructor binds a :class:`BaseProducer` to the orchestrator and</span>
+<span class="sd">        configures the base orchestration behavior using the producer&#39;s</span>
+<span class="sd">        configuration. In particular, the orchestrator name is derived from the</span>
+<span class="sd">        producer type and name, and the maximum number of retries is inherited</span>
+<span class="sd">        from the producer&#39;s configuration.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            producer (BaseProducer): The producer instance to be orchestrated.</span>
+<span class="sd">                It must expose a ``config`` object containing ``type``, ``name``,</span>
+<span class="sd">                and ``max_retries`` attributes, and implement the producer</span>
+<span class="sd">                connection lifecycle methods.</span>
+
+<span class="sd">        Attributes:</span>
+<span class="sd">            producer (BaseProducer): Reference to the producer managed by this</span>
+<span class="sd">                orchestrator.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            AttributeError: If the provided producer does not expose the expected</span>
+<span class="sd">                configuration attributes.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
             <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Producer-</span><span class="si">{</span><span class="n">producer</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">producer</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
@@ -389,26 +399,58 @@
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">producer</span> <span class="o">=</span> <span class="n">producer</span>
 
-<div class="viewcode-block" id="ProducerOrchestrator._connect">
-<a class="viewcode-back" href="../../../modules/apps_logging_app.producers.html#apps_logging_app.producers.orchestrator.ProducerOrchestrator._connect">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_is_connected</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Check whether the producer is currently connected.</span>
+
+<span class="sd">        This method delegates the connectivity check to the underlying</span>
+<span class="sd">        :class:`BaseProducer` instance. It is invoked by the base orchestrator</span>
+<span class="sd">        as part of the orchestration lifecycle to determine whether a connection</span>
+<span class="sd">        attempt is required.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: ``True`` if the producer is currently connected, ``False``</span>
+<span class="sd">            otherwise.</span>
+
+<span class="sd">        See Also:</span>
+<span class="sd">            BaseProducer.is_connected: Producer-level connectivity check.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">producer</span><span class="o">.</span><span class="n">is_connected</span><span class="p">()</span>
+
     <span class="k">def</span><span class="w"> </span><span class="nf">_connect</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Connect the producer.</span>
+<span class="sd">        Establish a connection using the underlying producer.</span>
 
-<span class="sd">        This method will connect the producer to the underlying service, such as a message broker.</span>
+<span class="sd">        This method delegates the connection logic to the managed</span>
+<span class="sd">        :class:`BaseProducer` instance. It is called by the base orchestrator</span>
+<span class="sd">        when a connection is required and is typically executed within the</span>
+<span class="sd">        retry logic defined by :class:`BaseOrchestrator`.</span>
 
-<span class="sd">        :raises: Any exceptions raised by the producer when connecting.</span>
+<span class="sd">        Any exceptions raised by the producer during connection are propagated</span>
+<span class="sd">        to the orchestrator, which is responsible for handling retries and</span>
+<span class="sd">        failure behavior.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">producer</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span></div>
-
+        <span class="bp">self</span><span class="o">.</span><span class="n">producer</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
 
 <div class="viewcode-block" id="ProducerOrchestrator.close">
 <a class="viewcode-back" href="../../../modules/apps_logging_app.producers.html#apps_logging_app.producers.orchestrator.ProducerOrchestrator.close">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Close the producer.</span>
+<span class="sd">        Close the producer and release associated resources.</span>
 
-<span class="sd">        This method will flush any pending messages to be sent and then close the producer.</span>
+<span class="sd">        This method delegates the shutdown and cleanup logic to the underlying</span>
+<span class="sd">        :class:`BaseProducer` instance. It should be invoked when the orchestrator</span>
+<span class="sd">        is no longer needed, ensuring that any open connections or allocated</span>
+<span class="sd">        resources held by the producer are properly released.</span>
+
+<span class="sd">        This operation is not retried and is expected to be idempotent, depending</span>
+<span class="sd">        on the producer implementation.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">producer</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
 </div>

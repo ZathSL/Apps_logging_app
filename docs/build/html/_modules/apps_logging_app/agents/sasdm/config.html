@@ -345,7 +345,22 @@
 <div class="viewcode-block" id="SasdmAgentConfig">
 <a class="viewcode-back" href="../../../../modules/apps_logging_app.agents.sasdm.html#apps_logging_app.agents.sasdm.config.SasdmAgentConfig">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">SasdmAgentConfig</span><span class="p">(</span><span class="n">BaseAgentConfig</span><span class="p">):</span>
-    <span class="c1"># No field changes for now</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Configuration class for the SasdmAgent.</span>
+
+<span class="sd">    This class inherits from `BaseAgentConfig` and serves as a dedicated </span>
+<span class="sd">    configuration model for the `SasdmAgent`. </span>
+
+<span class="sd">    Currently, it does not add any additional fields or behavior beyond </span>
+<span class="sd">    `BaseAgentConfig`, but it exists to allow future SASDM-specific </span>
+<span class="sd">    configuration extensions and to provide type clarity when initializing </span>
+<span class="sd">    a `SasdmAgent`.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; from .config import SasdmAgentConfig</span>
+<span class="sd">        &gt;&gt;&gt; config = SasdmAgentConfig()</span>
+<span class="sd">        &gt;&gt;&gt; agent = SasdmAgent(config)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">pass</span></div>
 
 </pre></div>

@@ -28,6 +28,7 @@ apps\_logging\_app.agents.data module
    :members:
    :show-inheritance:
    :undoc-members:
+   :no-index:
 
 apps\_logging\_app.agents.factory module
 ----------------------------------------
@@ -44,6 +45,7 @@ apps\_logging\_app.agents.model module
    :members:
    :show-inheritance:
    :undoc-members:
+   :no-index:
 
 apps\_logging\_app.agents.registry module
 -----------------------------------------
@@ -52,6 +54,7 @@ apps\_logging\_app.agents.registry module
    :members:
    :show-inheritance:
    :undoc-members:
+   :no-index:
 
 Module contents
 ---------------

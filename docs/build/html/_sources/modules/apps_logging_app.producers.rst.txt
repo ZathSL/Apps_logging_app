@@ -19,6 +19,15 @@ apps\_logging\_app.producers.base module
    :members:
    :show-inheritance:
    :undoc-members:
+   :no-index:
+
+apps\_logging\_app.producers.data module
+----------------------------------------
+
+.. automodule:: apps_logging_app.producers.data
+   :members:
+   :show-inheritance:
+   :undoc-members:
 
 apps\_logging\_app.producers.factory module
 -------------------------------------------
@@ -35,6 +44,7 @@ apps\_logging\_app.producers.model module
    :members:
    :show-inheritance:
    :undoc-members:
+   :no-index:
 
 apps\_logging\_app.producers.orchestrator module
 ------------------------------------------------
@@ -51,6 +61,7 @@ apps\_logging\_app.producers.registry module
    :members:
    :show-inheritance:
    :undoc-members:
+   :no-index:
 
 Module contents
 ---------------

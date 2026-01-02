@@ -356,11 +356,43 @@
 <dt class="sig sig-object py" id="apps_logging_app.agents.sasdm.agent.SasdmAgent">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">apps_logging_app.agents.sasdm.agent.</span></span><span class="sig-name descname"><span class="pre">SasdmAgent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/agents/sasdm/agent.html#SasdmAgent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.agents.sasdm.agent.SasdmAgent" title="Link to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="apps_logging_app.agents.html#apps_logging_app.agents.base.BaseAgent" title="apps_logging_app.agents.base.BaseAgent"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseAgent</span></code></a></p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>config</strong> (<a class="reference internal" href="#apps_logging_app.agents.sasdm.config.SasdmAgentConfig" title="apps_logging_app.agents.sasdm.config.SasdmAgentConfig"><em>SasdmAgentConfig</em></a>)</p>
+<p>Agent for handling SASDM-specific data processing and transformation.</p>
+<p>This agent is registered under the type <cite>“sasdm”</cite> and extends the
+<cite>BaseAgent</cite> class. It is responsible for transforming and filtering
+data from <cite>WorkingDataConnection</cite> instances according to SASDM rules.</p>
+<dl class="simple">
+<dt>The agent primarily handles connections with the names:</dt><dd><ul class="simple">
+<li><p>“info_pattern”</p></li>
+<li><p>“info_pattern_engagement_all_messages”</p></li>
+</ul>
 </dd>
 </dl>
+<p>For these connections, it parses the JSON response in <cite>data_dict_match</cite>
+and extracts only the keys: <cite>“externalCode”</cite>, <cite>“status”</cite>, and <cite>“httpStatus”</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>config</strong> (<a class="reference internal" href="#apps_logging_app.agents.sasdm.config.SasdmAgentConfig" title="apps_logging_app.agents.sasdm.config.SasdmAgentConfig"><em>SasdmAgentConfig</em></a>) – Configuration object containing
+SASDM agent parameters.</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apps_logging_app.agents.sasdm.agent.SasdmAgent.config">
+<span class="sig-name descname"><span class="pre">config</span></span><a class="headerlink" href="#apps_logging_app.agents.sasdm.agent.SasdmAgent.config" title="Link to this definition">¶</a></dt>
+<dd><p>The configuration for this agent.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#apps_logging_app.agents.sasdm.config.SasdmAgentConfig" title="apps_logging_app.agents.sasdm.config.SasdmAgentConfig">SasdmAgentConfig</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">SasdmAgentConfig</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">config</span> <span class="o">=</span> <span class="n">SasdmAgentConfig</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">agent</span> <span class="o">=</span> <span class="n">SasdmAgent</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">filtered_data</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">_data_connections_transformation_and_filtering</span><span class="p">(</span><span class="n">working_data_connection</span><span class="p">)</span>
+</pre></div>
+</div>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="apps_logging_app.agents.sasdm.agent.SasdmAgent.type">
 <span class="sig-name descname"><span class="pre">type</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'sasdm'</span></span><a class="headerlink" href="#apps_logging_app.agents.sasdm.agent.SasdmAgent.type" title="Link to this definition">¶</a></dt>
@@ -374,15 +406,28 @@
 <dl class="py class">
 <dt class="sig sig-object py" id="apps_logging_app.agents.sasdm.config.SasdmAgentConfig">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">apps_logging_app.agents.sasdm.config.</span></span><span class="sig-name descname"><span class="pre">SasdmAgentConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">buffer_rows</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">500</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path_files</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">producer_connections</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fetch_logs_interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">120</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">execute_query_interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">600</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/apps_logging_app/agents/sasdm/config.html#SasdmAgentConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#apps_logging_app.agents.sasdm.config.SasdmAgentConfig" title="Link to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="apps_logging_app.agents.html#apps_logging_app.agents.model.BaseAgentConfig" title="apps_logging_app.agents.model.BaseAgentConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">BaseAgentConfig</span></code></a></p>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseAgentConfig</span></code></p>
+<p>Configuration class for the SasdmAgent.</p>
+<p>This class inherits from <cite>BaseAgentConfig</cite> and serves as a dedicated
+configuration model for the <cite>SasdmAgent</cite>.</p>
+<p>Currently, it does not add any additional fields or behavior beyond
+<cite>BaseAgentConfig</cite>, but it exists to allow future SASDM-specific
+configuration extensions and to provide type clarity when initializing
+a <cite>SasdmAgent</cite>.</p>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">SasdmAgentConfig</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">config</span> <span class="o">=</span> <span class="n">SasdmAgentConfig</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">agent</span> <span class="o">=</span> <span class="n">SasdmAgent</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+</pre></div>
+</div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>type</strong> (<em>str</em>)</p></li>
 <li><p><strong>name</strong> (<em>str</em>)</p></li>
 <li><p><strong>buffer_rows</strong> (<em>int</em><em> | </em><em>None</em>)</p></li>
-<li><p><strong>path_files</strong> (<em>List</em><em>[</em><a class="reference internal" href="apps_logging_app.agents.html#apps_logging_app.agents.model.PathFileConfig" title="apps_logging_app.agents.model.PathFileConfig"><em>PathFileConfig</em></a><em>] </em><em>| </em><em>None</em>)</p></li>
-<li><p><strong>producer_connections</strong> (<em>List</em><em>[</em><a class="reference internal" href="apps_logging_app.agents.html#apps_logging_app.agents.model.ProducerConnectionConfig" title="apps_logging_app.agents.model.ProducerConnectionConfig"><em>ProducerConnectionConfig</em></a><em>]</em>)</p></li>
+<li><p><strong>path_files</strong> (<em>List</em><em>[</em><em>PathFileConfig</em><em>] </em><em>| </em><em>None</em>)</p></li>
+<li><p><strong>producer_connections</strong> (<em>List</em><em>[</em><em>ProducerConnectionConfig</em><em>]</em>)</p></li>
 <li><p><strong>fetch_logs_interval</strong> (<em>float</em>)</p></li>
 <li><p><strong>execute_query_interval</strong> (<em>float</em>)</p></li>
 </ul>
@@ -461,6 +506,7 @@
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
 <li><a class="reference internal" href="#module-apps_logging_app.agents.sasdm.agent">apps_logging_app.agents.sasdm.agent module</a><ul>
 <li><a class="reference internal" href="#apps_logging_app.agents.sasdm.agent.SasdmAgent"><code class="docutils literal notranslate"><span class="pre">SasdmAgent</span></code></a><ul>
+<li><a class="reference internal" href="#apps_logging_app.agents.sasdm.agent.SasdmAgent.config"><code class="docutils literal notranslate"><span class="pre">SasdmAgent.config</span></code></a></li>
 <li><a class="reference internal" href="#apps_logging_app.agents.sasdm.agent.SasdmAgent.type"><code class="docutils literal notranslate"><span class="pre">SasdmAgent.type</span></code></a></li>
 </ul>
 </li>

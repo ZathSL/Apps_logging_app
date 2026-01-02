@@ -5,7 +5,8 @@ from enum import Enum
 from .model import DataConnectionConfig
 
 class WorkingDataStatus(Enum):
-    """Enumeration of possible statuses for a WorkingDataConnection.
+    """
+    Enumeration of possible statuses for a WorkingDataConnection.
 
     This enum is used to track the current state of a working data connection,
     which can change based on query execution, data updates, and expiration.
@@ -15,6 +16,7 @@ class WorkingDataStatus(Enum):
         QUERY_RUNNING: A query is currently running on the connection.
         UPDATED: The data has been updated successfully after a query.
         EXPIRED: The connection has expired and may need to be refreshed.
+    
     """
     READY = "ready"
     QUERY_RUNNING = "query_running"
@@ -22,7 +24,8 @@ class WorkingDataStatus(Enum):
     EXPIRED = "expired"
 
 class WorkingDataConnection:
-    """Represents a working data connection with state, query handling, and expiration management.
+    """
+    Represents a working data connection with state, query handling, and expiration management.
 
     This class encapsulates both static metadata and dynamic working data for a data connection.
     It tracks the connection's status, handles query results asynchronously, and manages expiration times.
@@ -57,6 +60,7 @@ class WorkingDataConnection:
             Handles completion of a query future and updates status and results.
         check_expired_time():
             Checks if the connection has expired and updates status accordingly.
+    
     """
 
     def __init__(self, name: str,
@@ -104,6 +108,7 @@ class WorkingDataConnection:
             data_dict_query_source (Optional[Dict[str, Any]]): Optional source data from a query.
             data_dict_result (Optional[List[Dict[str, Any]]]): Optional result of a query.
             list_data_dict_query_result (Optional[List[Dict[str, Any]]]): List of query results.
+        
         """
         # static
         self.name: str = name
@@ -137,17 +142,15 @@ class WorkingDataConnection:
             producer_type (str): Type of the data producer (e.g., service or system).
             producer_name (str): Name of the data producer.
             topic (str): Topic associated with the connection.
-            cfg (DataConnectionConfig): Configuration object containing connection details,
-                including name, database reference, query, expiration, and error/warning flags.
+            cfg (DataConnectionConfig): Configuration object containing connection details, including name, database reference, query, expiration, and error/warning flags.
 
         Returns:
             WorkingDataConnection: A new instance initialized with values from the configuration.
         
         Notes:
-            - If `cfg.destination_ref` is None, database_type, database_name, and query
-            will be set to None.
-            - If `cfg.expired_time_int` is provided, the expiration time is set to the
-            current time plus the configured number of minutes.
+            - If `cfg.destination_ref` is None, database_type, database_name, and query will be set to None.
+            - If `cfg.expired_time_int` is provided, the expiration time is set to the current time plus the configured number of minutes.
+        
         """
         expired_time = (
             datetime.now() + timedelta(minutes=cfg.expired_time_int)
@@ -220,11 +223,9 @@ class WorkingDataConnection:
         an asynchronous query. It retrieves the query result and updates the
         `list_data_dict_query_result` and `status` accordingly:
 
-            - If the result is new (different from the existing data), the result is
-            stored and the status is set to UPDATED.
+            - If the result is new (different from the existing data), the result is stored and the status is set to UPDATED.
             - If the result is the same as the existing data, the status is set to READY.
-            - If an exception occurs while retrieving the result, the expiration time
-            is immediately updated to the current time (effectively expiring the connection).
+            - If an exception occurs while retrieving the result, the expiration time is immediately updated to the current time (effectively expiring the connection).
 
         Args:
             fut (Future[List[Dict[str, Any]]]): A Future representing the asynchronous

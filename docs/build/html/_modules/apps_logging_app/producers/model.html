@@ -340,41 +340,27 @@
         <article role="main" id="furo-main-content">
           <h1>Source code for apps_logging_app.producers.model</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">field_validator</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span>
 
 <div class="viewcode-block" id="BaseProducerConfig">
 <a class="viewcode-back" href="../../../modules/apps_logging_app.producers.html#apps_logging_app.producers.model.BaseProducerConfig">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">BaseProducerConfig</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Base configuration model for a producer.</span>
+<span class="sd">    Configuration model for a producer.</span>
 
-<span class="sd">    This class defines the common configuration fields required by all producers</span>
-<span class="sd">    in the system. It is intended to be subclassed or used as a base for type-specific</span>
-<span class="sd">    producer configurations.</span>
+<span class="sd">    This class defines the basic configuration parameters required to</span>
+<span class="sd">    initialize a producer. It uses Pydantic for data validation and</span>
+<span class="sd">    ensures that the configuration values conform to expected types and constraints.</span>
 
-<span class="sd">    Attributes</span>
-<span class="sd">    ----------</span>
-<span class="sd">    type : str</span>
-<span class="sd">        The type of the producer. This is typically used to look up the corresponding</span>
-<span class="sd">        producer class in the registry.</span>
-<span class="sd">    name : str</span>
-<span class="sd">        The unique name of the producer instance.</span>
-<span class="sd">    max_retries : int, default=5</span>
-<span class="sd">        The maximum number of times a message should be retried in case of failure.</span>
-<span class="sd">        Must be greater than 0.</span>
-
-<span class="sd">    Validators</span>
-<span class="sd">    ----------</span>
-<span class="sd">    validate_max_retries</span>
-<span class="sd">        Ensures that `max_retries` is greater than 0. Raises a ValueError otherwise.</span>
-
-<span class="sd">    Notes</span>
-<span class="sd">    -----</span>
-<span class="sd">    - This class uses Pydantic for data validation and type enforcement.</span>
-<span class="sd">    - Subclasses can extend this configuration model with additional fields specific</span>
-<span class="sd">      to their producer type.</span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        type (str): The type of the producer.</span>
+<span class="sd">        name (str): The name of the producer.</span>
+<span class="sd">        topics (List[str], optional): A list of topics that this producer can handle. Defaults to None.</span>
+<span class="sd">        max_retries (int, optional): Maximum number of retries for producer operations. Defaults to 5.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">topics</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">max_retries</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span>
     
 <div class="viewcode-block" id="BaseProducerConfig.validate_max_retries">
@@ -382,11 +368,20 @@
     <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;max_retries&#39;</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">validate_max_retries</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Validates the max retries field of the BaseProducerConfig model.</span>
+<span class="sd">        Validates that the `max_retries` field is greater than 0.</span>
 
-<span class="sd">        :param value: The value of the max retries field.</span>
-<span class="sd">        :raises ValueError: If the max retries is less than or equal to 0.</span>
-<span class="sd">        :return: The validated max retries value.</span>
+<span class="sd">        This validator is automatically called by Pydantic when a `BaseProducerConfig`</span>
+<span class="sd">        instance is created. It ensures that the maximum number of retries is a positive integer.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            cls (Type[BaseProducerConfig]): The class being validated.</span>
+<span class="sd">            value (int): The value provided for `max_retries`.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The validated `max_retries` value if it passes the check.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If `value` is less than or equal to 0.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">value</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Max retries must be greater than 0&quot;</span><span class="p">)</span>

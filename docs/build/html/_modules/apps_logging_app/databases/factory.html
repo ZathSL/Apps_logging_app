@@ -355,33 +355,25 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Factory and singleton manager for database instances.</span>
 
-<span class="sd">    The :class:`DatabaseFactory` is responsible for creating and managing</span>
-<span class="sd">    shared instances of databases based on their type and name. Each</span>
-<span class="sd">    database instance is created once and cached globally to ensure that</span>
-<span class="sd">    the same connection and execution resources are reused across the</span>
-<span class="sd">    application.</span>
+<span class="sd">    The DatabaseFactory is responsible for creating and managing shared </span>
+<span class="sd">    instances of databases based on their type and name. Each database </span>
+<span class="sd">    instance is created only once and cached to ensure that the same </span>
+<span class="sd">    connection and execution resources are reused across the application.</span>
 
-<span class="sd">    Database configurations are loaded lazily from a YAML configuration</span>
-<span class="sd">    file and validated using the configuration model registered in</span>
-<span class="sd">    :data:`DATABASE_REGISTRY`.</span>
+<span class="sd">    Database configurations are loaded lazily from a YAML file and validated </span>
+<span class="sd">    using the configuration model registered in DATABASE_REGISTRY. Thread </span>
+<span class="sd">    safety is ensured during instance creation via a class-level lock.</span>
 
-<span class="sd">    Thread safety is guaranteed during instance creation via a class-level</span>
-<span class="sd">    lock.</span>
+<span class="sd">    This class should not be instantiated; all interactions are performed </span>
+<span class="sd">    via class methods.</span>
 
-<span class="sd">    Responsibilities include:</span>
-
-<span class="sd">    - Loading database configurations from YAML</span>
-<span class="sd">    - Validating configurations using registered config models</span>
-<span class="sd">    - Instantiating concrete database implementations</span>
-<span class="sd">    - Wiring databases with a :class:`DatabaseOrchestrator`</span>
-<span class="sd">    - Starting database dispatcher threads</span>
-<span class="sd">    - Caching and returning shared database instances</span>
-
-<span class="sd">    Database types must be registered in :data:`DATABASE_REGISTRY`</span>
-<span class="sd">    prior to usage.</span>
-
-<span class="sd">    This class should not be instantiated.</span>
-<span class="sd">    All interactions are performed via class methods.</span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        _instances (Dict[Tuple[str, str], BaseDatabase]): A cache of created </span>
+<span class="sd">            database instances, keyed by (database_type, database_name).</span>
+<span class="sd">        _lock (threading.Lock): A class-level lock to guarantee thread-safe </span>
+<span class="sd">            instance creation.</span>
+<span class="sd">        _config (Optional[dict]): Loaded database configurations from the </span>
+<span class="sd">            YAML file. Initialized on first access.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">_instances</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="s2">&quot;BaseDatabase&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="n">_lock</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>
@@ -392,17 +384,24 @@
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_instance</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">database_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">database_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;BaseDatabase&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Returns a shared database instance for the given type and name.</span>
+<span class="sd">        Returns a shared database instance for the specified type and name.</span>
 
-<span class="sd">        The instance is cached globally, and subsequent calls with the same</span>
-<span class="sd">        database type and name will return the same instance.</span>
+<span class="sd">        If an instance with the given type and name already exists in the cache,</span>
+<span class="sd">        it is returned. Otherwise, a new instance is created using the internal</span>
+<span class="sd">        `_create` method, cached, and then returned.</span>
+
+<span class="sd">        Thread safety is ensured via a class-level lock to prevent multiple</span>
+<span class="sd">        threads from creating the same database instance simultaneously.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            database_type (str): The type of the database (must be registered in DATABASE_REGISTRY).</span>
-<span class="sd">            database_name (str): The name of the database (must exist in the YAML config).</span>
+<span class="sd">            database_name (str): The name of the database configuration to use.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            BaseDatabase: The shared database instance.</span>
+<span class="sd">            BaseDatabase: A singleton instance of the requested database.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If the database configuration is missing or the database type is unknown.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">key</span> <span class="o">=</span> <span class="p">(</span><span class="n">database_type</span><span class="p">,</span> <span class="n">database_name</span><span class="p">)</span>
 
@@ -419,18 +418,32 @@
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_create</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">database_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">database_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;BaseDatabase&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Creates a new database instance using the configuration from the YAML file.</span>
+<span class="sd">        Creates a new database instance for the specified type and name.</span>
+
+<span class="sd">        This is an internal method used by `get_instance` to instantiate</span>
+<span class="sd">        databases that are not yet cached. It performs the following steps:</span>
+
+<span class="sd">        1. Loads database configurations from the YAML file (`configs/databases.yaml`) </span>
+<span class="sd">        if they are not already loaded.</span>
+<span class="sd">        2. Searches for a configuration matching the given `database_type` and </span>
+<span class="sd">        `database_name`.</span>
+<span class="sd">        3. Validates the configuration using the config model registered in </span>
+<span class="sd">        `DATABASE_REGISTRY`.</span>
+<span class="sd">        4. Instantiates the concrete database class.</span>
+<span class="sd">        5. Creates a `DatabaseOrchestrator` for the database and assigns it.</span>
+<span class="sd">        6. Starts the database (e.g., dispatcher threads or connection handling).</span>
+<span class="sd">        7. Returns the newly created database instance.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            database_type (str): The type of the database (must be registered in DATABASE_REGISTRY).</span>
-<span class="sd">            database_name (str): The name of the database (must exist in the YAML config).</span>
-
-<span class="sd">        Raises:</span>
-<span class="sd">            ValueError: If the database configuration is not found in the YAML file.</span>
-<span class="sd">            ValueError: If the database type is not registered in DATABASE_REGISTRY.</span>
+<span class="sd">            database_name (str): The name of the database configuration to use.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            BaseDatabase: The instantiated database class.</span>
+<span class="sd">            BaseDatabase: A newly created instance of the requested database.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If no configuration is found for the given type and name,</span>
+<span class="sd">                        or if the database type is not registered in DATABASE_REGISTRY.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">config_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s1">&#39;configs&#39;</span> <span class="o">/</span> <span class="s1">&#39;databases.yaml&#39;</span>
         <span class="k">if</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_config</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>

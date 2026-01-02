@@ -349,41 +349,45 @@
 <a class="viewcode-back" href="../../../modules/apps_logging_app.producers.html#apps_logging_app.producers.registry.ProducerEntry">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ProducerEntry</span><span class="p">(</span><span class="n">Generic</span><span class="p">[</span><span class="n">C</span><span class="p">]):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Represents a registry entry for a producer class.</span>
+<span class="sd">    Registry entry describing a producer and its configuration model.</span>
 
-<span class="sd">    `ProducerEntry` associates a producer class with its corresponding configuration model.</span>
-<span class="sd">    It is used internally by the `PRODUCER_REGISTRY` to map producer types to their classes </span>
-<span class="sd">    and configuration schemas.</span>
+<span class="sd">    This class acts as a lightweight container used by the producer registry</span>
+<span class="sd">    to associate a producer implementation with its corresponding</span>
+<span class="sd">    configuration model. It enables dynamic lookup and instantiation of</span>
+<span class="sd">    producers based on a declared producer type.</span>
 
-<span class="sd">    Attributes</span>
-<span class="sd">    ----------</span>
-<span class="sd">    config_model : Type[C]</span>
-<span class="sd">        The Pydantic configuration model class associated with the producer. </span>
-<span class="sd">        This model defines the required configuration fields for instantiating the producer.</span>
-<span class="sd">    producer_class : Type[BaseProducer]</span>
-<span class="sd">        The actual producer class that implements the `BaseProducer` interface.</span>
+<span class="sd">    The class is generic over the configuration model type to preserve</span>
+<span class="sd">    type safety when accessing the producer&#39;s configuration.</span>
 
-<span class="sd">    Usage</span>
-<span class="sd">    -----</span>
-<span class="sd">    Producer classes are registered in the global `PRODUCER_REGISTRY` using the</span>
-<span class="sd">    `@register_producer` decorator, which creates a `ProducerEntry` and stores it</span>
-<span class="sd">    under a unique producer type key.</span>
-
-<span class="sd">    Example</span>
-<span class="sd">    -------</span>
-<span class="sd">    &gt;&gt;&gt; @register_producer(producer_type=&quot;kafka&quot;, config_model=KafkaProducerConfig)</span>
-<span class="sd">    &gt;&gt;&gt; class KafkaProducer(BaseProducer):</span>
-<span class="sd">    &gt;&gt;&gt;     ...</span>
-<span class="sd">    &gt;&gt;&gt; entry = PRODUCER_REGISTRY[&quot;kafka&quot;]</span>
-<span class="sd">    &gt;&gt;&gt; entry.producer_class  # &lt;class &#39;KafkaProducer&#39;&gt;</span>
-<span class="sd">    &gt;&gt;&gt; entry.config_model    # &lt;class &#39;KafkaProducerConfig&#39;&gt;</span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        config_model (Type[C]): The configuration model class associated</span>
+<span class="sd">            with the producer. Must be a subclass of</span>
+<span class="sd">            :class:`BaseProducerConfig`.</span>
+<span class="sd">        producer_class (Type[BaseProducer]): The concrete producer class</span>
+<span class="sd">            implementing the producer logic.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">config_model</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">C</span><span class="p">]</span>
     <span class="n">producer_class</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">BaseProducer</span><span class="p">]</span></div>
 
 
 <span class="n">PRODUCER_REGISTRY</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ProducerEntry</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Global registry mapping producer types to producer entries.</span>
 
+<span class="sd">This dictionary acts as a central registry for all available producer</span>
+<span class="sd">implementations. Each entry maps a unique producer type identifier to</span>
+<span class="sd">a :class:`ProducerEntry` containing the producer class and its associated</span>
+<span class="sd">configuration model.</span>
+
+<span class="sd">The registry is populated via the :func:`register_producer` decorator</span>
+<span class="sd">at import time.</span>
+
+<span class="sd">Keys:</span>
+<span class="sd">    str: Unique producer type identifier.</span>
+
+<span class="sd">Values:</span>
+<span class="sd">    ProducerEntry: Metadata describing the registered producer.</span>
+<span class="sd">&quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="register_producer">
 <a class="viewcode-back" href="../../../modules/apps_logging_app.producers.html#apps_logging_app.producers.registry.register_producer">[docs]</a>
@@ -392,27 +396,56 @@
     <span class="n">producer_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">config_model</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">BaseProducerConfig</span><span class="p">],</span>
 <span class="p">):</span>
-
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Registers a producer class with the given config model and type.</span>
+<span class="sd">    Register a producer class and its configuration model.</span>
+
+<span class="sd">    This function returns a class decorator that registers a concrete</span>
+<span class="sd">    :class:`BaseProducer` implementation under a given producer type.</span>
+<span class="sd">    The registration associates the producer class with its configuration</span>
+<span class="sd">    model and stores the mapping in the global :data:`PRODUCER_REGISTRY`.</span>
+
+<span class="sd">    The decorator also assigns the producer type to the decorated class</span>
+<span class="sd">    as a class-level attribute.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        producer_type (str): The type of the producer to be registered.</span>
-<span class="sd">        config_model (Type[BaseProducerConfig]): The config model for the producer.</span>
+<span class="sd">        producer_type (str): Unique identifier used to register and</span>
+<span class="sd">            reference the producer implementation.</span>
+<span class="sd">        config_model (Type[BaseProducerConfig]): Configuration model class</span>
+<span class="sd">            associated with the producer. Must be a subclass of</span>
+<span class="sd">            :class:`BaseProducerConfig`.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        Callable[[Type[BaseProducer]], Type[BaseProducer]]: A decorator that registers the producer class with the given config model and type.</span>
+<span class="sd">        Callable[[Type[BaseProducer]], Type[BaseProducer]]: A class</span>
+<span class="sd">        decorator that registers the producer.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        AssertionError: If the decorated class is not a subclass of</span>
+<span class="sd">            :class:`BaseProducer`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">decorator</span><span class="p">(</span><span class="n">producer_class</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">BaseProducer</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Type</span><span class="p">[</span><span class="n">BaseProducer</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        A decorator that registers the producer class with the given config model and type.</span>
+<span class="sd">        Decorate and register a producer implementation.</span>
+
+<span class="sd">        This decorator validates the producer class, creates a</span>
+<span class="sd">        :class:`ProducerEntry` linking the producer to its configuration</span>
+<span class="sd">        model, and registers it in the global producer registry under the</span>
+<span class="sd">        specified producer type.</span>
+
+<span class="sd">        The producer type is also assigned to the producer class as a</span>
+<span class="sd">        class-level attribute for later introspection.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            producer_class (Type[BaseProducer]): The producer class to register.</span>
+<span class="sd">            producer_class (Type[BaseProducer]): Concrete producer class</span>
+<span class="sd">                to be registered.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            Type[BaseProducer]: The registered producer class.</span>
+<span class="sd">            Type[BaseProducer]: The original producer class, unmodified</span>
+<span class="sd">            aside from the assigned ``type`` attribute.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            AssertionError: If the provided class does not inherit from</span>
+<span class="sd">                :class:`BaseProducer`.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">assert</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">producer_class</span><span class="p">,</span> <span class="n">BaseProducer</span><span class="p">)</span>
         <span class="n">entry</span> <span class="o">=</span> <span class="n">ProducerEntry</span><span class="p">()</span>

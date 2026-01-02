@@ -41,6 +41,7 @@ class BaseProducer(ABC):
         connect(): Abstract method to establish a connection.
         close(): Abstract method to cleanly close the producer.
         _send(message): Abstract method to send a message to the target system.
+    
     """
     def __init__(self, config: BaseProducerConfig):
         """
@@ -60,6 +61,7 @@ class BaseProducer(ABC):
             - Initializes a daemon thread that runs the `_worker` method for message processing.
             - Sets the `orchestrator` attribute to None (can be assigned later).
             - Logs an informational message indicating the producer has been initialized.
+        
         """
         self.config = config
         self.logger = logging.getLogger("__main__." +__name__)
@@ -82,11 +84,12 @@ class BaseProducer(ABC):
 
         Behavior:
             - Launches the `_worker_thread` which continuously consumes messages
-            from the internal queue and sends them using the `_send` method.
+                from the internal queue and sends them using the `_send` method.
             - Must be called before enqueueing messages for processing.
 
         Raises:
             RuntimeError: If the thread fails to start.
+        
         """
         self._worker_thread.start()
 
@@ -104,6 +107,7 @@ class BaseProducer(ABC):
         Raises:
             Exception: Propagates any exception raised while adding the message to the queue,
                 such as a full queue or other unexpected errors. Logs an error before raising.
+        
         """
         try:
             self._queue.put(message)
@@ -128,6 +132,7 @@ class BaseProducer(ABC):
 
         Notes:
             - Any messages remaining in the queue may not be processed if the timeout is reached.
+        
         """
         self._stop_event.set()
         self._worker_thread.join(timeout=timeout)
@@ -149,7 +154,8 @@ class BaseProducer(ABC):
         Notes:
             - The default implementation returns `False`.
             - Subclasses should implement proper connection checks specific to
-            the underlying system (e.g., Kafka, HTTP, database).
+                the underlying system (e.g., Kafka, HTTP, database).
+        
         """
         return False
 
@@ -167,6 +173,7 @@ class BaseProducer(ABC):
 
         Raises:
             Exception: If the connection attempt fails.
+        
         """
         pass
 
@@ -185,6 +192,7 @@ class BaseProducer(ABC):
 
         Raises:
             Exception: If an error occurs during the cleanup process.
+        
         """
         pass
 
@@ -203,16 +211,17 @@ class BaseProducer(ABC):
             - Checks connection status using `self.orchestrator.ensure_connected()`.
             - Retrieves messages from `_queue` with a 0.5 second timeout.
             - Attempts to send each message; on failure, logs a warning and marks the
-            orchestrator as disconnected.
+                orchestrator as disconnected.
             - Retries failed messages up to `config.max_retries` using exponential
-            backoff with a random jitter.
+                backoff with a random jitter.
             - Raises an exception if the maximum retry count is reached.
             - Calls `_queue.task_done()` after processing each message.
 
         Notes:
             - This method is intended to run in a daemon thread and should not be
-            called directly.
+                called directly.
             - Ensures that messages are retried in a fault-tolerant manner.
+        
         """
         self.orchestrator.ensure_connected()
 
@@ -258,10 +267,11 @@ class BaseProducer(ABC):
         Behavior:
             - Called by the background `_worker` thread for each message in the queue.
             - Should raise an exception if the message cannot be sent successfully,
-            allowing the worker to handle retries.
+                allowing the worker to handle retries.
 
         Raises:
             Exception: If the message cannot be sent.
+        
         """
         pass
     

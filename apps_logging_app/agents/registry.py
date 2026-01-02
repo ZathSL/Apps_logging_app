@@ -18,6 +18,7 @@ class AgentEntry(Generic[C]):
     Attributes:
         config_model (Type[C]): The Pydantic configuration model class for the agent.
         agent_class (Type[BaseAgent]): The agent class itself.
+    
     """
     config_model: Type[C]
     agent_class: Type[BaseAgent]
@@ -49,10 +50,10 @@ def register_agent(
 
     This function returns a decorator that, when applied to a subclass of `BaseAgent`,
     performs the following:
-        1. Validates that the decorated class is a subclass of `BaseAgent`.
-        2. Creates an `AgentEntry` linking the agent class with the provided config model.
-        3. Adds the entry to the `AGENT_REGISTRY` under the given `agent_type`.
-        4. Sets the `type` attribute on the agent class to the specified `agent_type`.
+    1. Validates that the decorated class is a subclass of `BaseAgent`.
+    2. Creates an `AgentEntry` linking the agent class with the provided config model.
+    3. Adds the entry to the `AGENT_REGISTRY` under the given `agent_type`.
+    4. Sets the `type` attribute on the agent class to the specified `agent_type`.
 
     Args:
         agent_type (str): Unique type string to identify the agent in the registry.
@@ -67,6 +68,7 @@ def register_agent(
         >>> class MyAgent(BaseAgent):
         >>>     ...
         >>> assert "my_agent" in AGENT_REGISTRY
+    
     """
     def decorator(agent_class: Type[BaseAgent]) -> Type[BaseAgent]:
         """
@@ -94,6 +96,7 @@ def register_agent(
             >>> class MyAgent(BaseAgent):
             >>>     ...
             >>> # MyAgent is now registered and can be instantiated via AGENT_REGISTRY
+        
         """
         assert issubclass(agent_class, BaseAgent)
         entry = AgentEntry()

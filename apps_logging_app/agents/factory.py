@@ -12,15 +12,12 @@ class AgentFactory:
     The factory performs the following steps:
         1. Retrieves the agent type from the AGENT_REGISTRY.
         2. Validates the raw configuration using the agent's config model.
-        3. Iterates through producer connections and ensures each producer instance
-           can be created.
-        4. For each producer, iterates through its data connections and ensures
-           referenced database instances can be created.
+        3. Iterates through producer connections and ensures each producer instance can be created.
+        4. For each producer, iterates through its data connections and ensure referenced database instances can be created.
         5. Returns an initialized agent instance with the validated configuration.
 
     Raises:
-        ValueError: If the agent type is unknown, or if a producer or database
-                    connection cannot be created.
+        ValueError: If the agent type is unknown, or if a producer or database connection cannot be created.
     """
     @staticmethod
     def create(raw_config: dict):
@@ -34,13 +31,11 @@ class AgentFactory:
             4. Iterates through all producer connections defined in the configuration:
                 - Ensures each producer instance can be created using ProducerFactory.
                 - Iterates through each producer's data connections:
-                    - If a data connection has a destination reference, ensures the
-                    corresponding database instance can be created using DatabaseFactory.
+                    - If a data connection has a destination reference, ensures the corresponding database instance can be created using DatabaseFactory.
             5. Returns an instance of the agent initialized with the validated configuration.
 
         Args:
-            raw_config (dict): Dictionary containing the agent configuration. Must
-                include a "type" key corresponding to a registered agent.
+            raw_config (dict): Dictionary containing the agent configuration. Must include a "type" key corresponding to a registered agent.
 
         Returns:
             object: An instance of the agent class specified in the configuration.

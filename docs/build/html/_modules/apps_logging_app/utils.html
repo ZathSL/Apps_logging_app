@@ -345,16 +345,33 @@
 <div class="viewcode-block" id="get_file_id">
 <a class="viewcode-back" href="../../modules/apps_logging_app.html#apps_logging_app.utils.get_file_id">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_file_id</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Return a tuple of file identifiers for the given path.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return a platform-dependent identifier for a file.</span>
 
-<span class="sd">    On Linux/Darwin, the identifiers are the inode and device number.</span>
-<span class="sd">    On Windows, the identifiers are the file size and creation time.</span>
-<span class="sd">    On other systems, the identifiers are the file size and last modification time.</span>
+<span class="sd">    This function generates a tuple that can be used to identify a file</span>
+<span class="sd">    across executions, using different filesystem attributes depending</span>
+<span class="sd">    on the operating system. The returned identifier is intended for</span>
+<span class="sd">    lightweight file identity checks (e.g. change detection), not for</span>
+<span class="sd">    cryptographic or absolute uniqueness guarantees.</span>
 
-<span class="sd">    :param path: the path to the file</span>
-<span class="sd">    :return: a tuple of file identifiers</span>
-<span class="sd">    :rtype: tuple</span>
+<span class="sd">    Platform-specific behavior:</span>
+
+<span class="sd">    - Linux / macOS (Darwin): Uses inode number and device ID.</span>
+<span class="sd">    - Windows: Uses file size and creation time.</span>
+<span class="sd">    - Other platforms: Uses file size and last modification time.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        path (str): Path to the file.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        tuple: A tuple of filesystem attributes that together act as a</span>
+<span class="sd">        best-effort file identifier. The tuple structure depends on the</span>
+<span class="sd">        operating system.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        FileNotFoundError: If the file does not exist.</span>
+<span class="sd">        PermissionError: If the file cannot be accessed.</span>
+<span class="sd">        OSError: For other operating system-related errors.</span>
+<span class="sd">    </span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">stat</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">stat</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
     <span class="n">system</span> <span class="o">=</span> <span class="n">platform</span><span class="o">.</span><span class="n">system</span><span class="p">()</span>

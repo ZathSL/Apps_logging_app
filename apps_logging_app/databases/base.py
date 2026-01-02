@@ -26,6 +26,7 @@ class BaseDatabase(ABC):
         _executor (ThreadPoolExecutor): Executor for running queries concurrently.
         _dispatcher (Thread): Thread responsible for pulling queries from the queue and dispatching them.
         orchestrator: Reference to an orchestrator managing database connections (set externally).
+    
     """
 
     def __init__(self, config: BaseDatabaseConfig) -> None:
@@ -34,21 +35,18 @@ class BaseDatabase(ABC):
         internal components for asynchronous query handling.
 
         Args:
-            config (BaseDatabaseConfig): Configuration object containing database
-                connection parameters, maximum workers, and retry settings.
+            config (BaseDatabaseConfig): Configuration object containing database connection parameters, maximum workers, and retry settings.
 
         Initializes the following internal components:
             - `logger`: Logger instance scoped to the module for logging database events.
             - `_queue`: Thread-safe queue for pending `Query` objects.
             - `_stop_event`: Event used to signal the dispatcher thread to stop.
-            - `_executor`: ThreadPoolExecutor for concurrent query execution, limited
-            by `config.max_workers`.
-            - `_dispatcher`: Daemon thread responsible for dispatching queries from
-            the queue to the executor.
-            - `orchestrator`: Initially set to None; intended to manage database
-            connection state externally.
+            - `_executor`: ThreadPoolExecutor for concurrent query execution, limited by `config.max_workers`.
+            - `_dispatcher`: Daemon thread responsible for dispatching queries from the queue to the executor.
+            - `orchestrator`: Initially set to None; intended to manage database connection state externally.
 
         Logs an informational message indicating that the database has been initialized.
+        
         """
         self.config = config
         self.logger = logging.getLogger("__main__." +__name__)
@@ -80,8 +78,7 @@ class BaseDatabase(ABC):
         Adds a database query to the internal queue for asynchronous execution.
 
         Args:
-            query (Query): The query object containing the SQL (or equivalent) statement,
-                parameters, and a `Future` to hold the result.
+            query (Query): The query object containing the SQL (or equivalent) statement, parameters, and a `Future` to hold the result.
 
         Returns:
             Future[List[Dict[str, Any]]]: A `Future` object that will eventually
@@ -89,14 +86,12 @@ class BaseDatabase(ABC):
             if the query fails.
 
         Raises:
-            Exception: If the query cannot be added to the queue, e.g., if the
-            queue is full or another error occurs during insertion.
+            Exception: If the query cannot be added to the queue, e.g., if the queue is full or another error occurs during insertion.
 
         Notes:
-            - The query is processed asynchronously by the dispatcher thread and
-            executed using the thread pool executor.
-            - The returned `Future` allows callers to wait for or retrieve the
-            result once the query has been executed.
+            - The query is processed asynchronously by the dispatcher thread and executed using the thread pool executor.
+            - The returned `Future` allows callers to wait for or retrieve the result once the query has been executed.
+        
         """
         try:
             self._queue.put(query)
@@ -118,10 +113,9 @@ class BaseDatabase(ABC):
                 for the dispatcher thread to finish. If `None`, waits indefinitely.
 
         Notes:
-            - After calling this method, the database instance is no longer able
-            to accept new queries until restarted.
-            - Ensures that all pending queries in `_queue` are completed before
-            shutting down the executor and closing the connection.
+            - After calling this method, the database instance is no longer able to accept new queries until restarted.
+            - Ensures that all pending queries in `_queue` are completed before shutting down the executor and closing the connection.
+        
         """
         self._stop_event.set()
         self._dispatcher.join(timeout=timeout)
@@ -143,11 +137,9 @@ class BaseDatabase(ABC):
                 `False` otherwise.
 
         Notes:
-            - This method is intended to be used internally by the dispatcher and
-            orchestrator to ensure that queries are only executed when a valid
-            connection exists.
-            - The default implementation returns `False` but should be overridden
-            in concrete subclasses.
+            - This method is intended to be used internally by the dispatcher and orchestrator to ensure that queries are only executed when a valid connection exists.
+            - The default implementation returns `False` but should be overridden in concrete subclasses.
+
         """
         return False
 
@@ -164,10 +156,9 @@ class BaseDatabase(ABC):
             Exception: If the connection cannot be established.
 
         Notes:
-            - This method is typically called by the orchestrator or the dispatcher
-            to ensure the database is connected before executing queries.
-            - Subclasses should handle connection-specific errors and may implement
-            reconnection logic as needed.
+            - This method is typically called by the orchestrator or the dispatcher to ensure the database is connected before executing queries.
+            - Subclasses should handle connection-specific errors and may implement reconnection logic as needed.
+
         """
         pass
 
@@ -182,10 +173,9 @@ class BaseDatabase(ABC):
 
         Notes:
             - Called automatically by `stop()` to ensure a graceful shutdown.
-            - Subclasses should ensure that all pending operations are completed
-            or safely terminated before closing the connection.
-            - Any exceptions raised during closure should be handled or logged
-            appropriately to avoid disrupting the shutdown process.
+            - Subclasses should ensure that all pending operations are completed or safely terminated before closing the connection.
+            - Any exceptions raised during closure should be handled or logged appropriately to avoid disrupting the shutdown process.
+        
         """
         pass
 
@@ -202,8 +192,7 @@ class BaseDatabase(ABC):
         For each query:
             - Ensures the database connection via the `orchestrator`.
             - Submits the query to `_query` for execution.
-            - Attaches a callback (`_callback`) to handle the result, exceptions,
-            and retry logic.
+            - Attaches a callback (`_callback`) to handle the result, exceptions, and retry logic.
 
         Retry Logic:
             - If a query fails, it checks `task.retries` against `config.max_retries`.
@@ -212,12 +201,10 @@ class BaseDatabase(ABC):
             - Sets the exception on the `Query.future` if maximum retries are reached.
 
         Notes:
-            - This method is intended to be run in a separate thread and should
-            not be called directly by external code.
-            - Query completion, retry handling, and logging are all managed
-            internally via the `_callback` function.
-            - `_queue.task_done()` is called after each query to signal completion
-            to `Queue.join()`.
+            - This method is intended to be run in a separate thread and should not be called directly by external code.
+            - Query completion, retry handling, and logging are all managed internally via the `_callback` function.
+            - `_queue.task_done()` is called after each query to signal completion to `Queue.join()`.
+        
         """
         self.orchestrator.ensure_connected()
 
@@ -246,17 +233,16 @@ class BaseDatabase(ABC):
                     - If the query succeeds, sets the result on `task.future` and logs completion.
                     - If the query fails:
                         - Logs a warning and marks the orchestrator as disconnected.
-                        - Checks if the query can be retried based on `task.retries` and
-                        `config.max_retries`.
+                        - Checks if the query can be retried based on `task.retries` and `config.max_retries`.
                         - Retries the query with exponential backoff plus random jitter.
                         - If maximum retries are reached, sets the exception on `task.future`.
-                    - Calls `_queue.task_done()` in the `finally` block to signal that
-                    the query has been processed, regardless of success or failure.
+                    - Calls `_queue.task_done()` in the `finally` block to signal that the query has been processed, regardless of success or failure.
 
                 Notes:
                     - This function is intended to be used as a callback for `Future.add_done_callback`.
                     - Retry delays use the formula `2 ** retries + random.uniform(0, 10)` seconds.
                     - Ensures that the queue and future are always properly updated.
+                
                 """
                 try:
                     result = f.result()
@@ -304,9 +290,8 @@ class BaseDatabase(ABC):
                 in the dispatcher.
 
         Notes:
-            - This method should not handle retries or queue management; those
-            responsibilities are handled by `_dispatch` and `_callback`.
-            - Must be thread-safe, as it may be executed concurrently in multiple
-            threads by the thread pool executor.
+            - This method should not handle retries or queue management; those responsibilities are handled by `_dispatch` and `_callback`.
+            - Must be thread-safe, as it may be executed concurrently in multiple threads by the thread pool executor.
+        
         """
         pass

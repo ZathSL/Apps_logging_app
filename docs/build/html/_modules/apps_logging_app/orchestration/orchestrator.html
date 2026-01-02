@@ -348,37 +348,42 @@
 <a class="viewcode-back" href="../../../modules/apps_logging_app.orchestration.html#apps_logging_app.orchestration.orchestrator.BaseOrchestrator">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">BaseOrchestrator</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Base class for orchestrators that manage connections to external services.</span>
+<span class="sd">    Abstract base class for orchestrating connection-managed resources with retry logic.</span>
 
-<span class="sd">    This abstract class provides a common interface and connection handling logic</span>
-<span class="sd">    for services such as databases, message queues, or producers. It ensures that</span>
-<span class="sd">    connections are established, retried on failure, and safely marked as disconnected</span>
-<span class="sd">    when necessary.</span>
+<span class="sd">    This class provides a framework for managing connections to resources such as databases,</span>
+<span class="sd">    message queues, or other services that require reliable connectivity. </span>
+<span class="sd">    It handles:</span>
+<span class="sd">    - Thread-safe connection attempts</span>
+<span class="sd">    - Automatic retries with configurable delay</span>
+<span class="sd">    - Logging of connection status and errors</span>
 
-<span class="sd">    The class implements:</span>
-<span class="sd">      - Thread-safe connection management.</span>
-<span class="sd">      - Retry logic with configurable maximum retries and delay.</span>
-<span class="sd">      - Logging for connection attempts and failures.</span>
 
-<span class="sd">    Subclasses must implement the following abstract methods:</span>
-<span class="sd">      - :meth:`_connect` : How to establish the actual connection.</span>
-<span class="sd">      - :meth:`close` : How to close the connection.</span>
-
-<span class="sd">    :param name: A descriptive name for the orchestrator (used in logging).</span>
-<span class="sd">    :type name: str</span>
-<span class="sd">    :param max_retries: Maximum number of connection retries before giving up.</span>
-<span class="sd">    :type max_retries: int</span>
-<span class="sd">    :param retry_delay: Delay in seconds between retries. Default is 5 seconds.</span>
-<span class="sd">    :type retry_delay: int</span>
+<span class="sd">    Subclasses must implement the abstract methods `_is_connected`, `_connect`, and `close`</span>
+<span class="sd">    to provide resource-specific connection handling.</span>
+<span class="sd">    </span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        name (str): Human-readable name of the orchestrator, used in logs.</span>
+<span class="sd">        max_retries (int): Maximum number of attempts to establish a connection.</span>
+<span class="sd">        retry_delay (int): Delay in seconds between retry attempts (default is 5).</span>
+<span class="sd">        logger (logging.Logger): Logger instance for connection events and errors.</span>
+<span class="sd">        _connected (bool): Internal flag indicating whether the resource is currently connected.</span>
+<span class="sd">        _lock (threading.Lock): Thread lock to ensure safe concurrent access during connection attempts.</span>
+<span class="sd">    </span>
+<span class="sd">        </span>
 <span class="sd">    &quot;&quot;&quot;</span>
-
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">max_retries</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">retry_delay</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initializes a BaseOrchestrator object.</span>
+<span class="sd">        Initializes the BaseOrchestrator with connection settings and logging.</span>
 
-<span class="sd">        :param name: The name of the producer.</span>
-<span class="sd">        :param max_retries: The maximum number of retries before giving up.</span>
-<span class="sd">        :param retry_delay: The time to wait in seconds before retrying after a failure.</span>
+<span class="sd">        Sets up the orchestrator&#39;s name, maximum retry attempts, retry delay, logger,</span>
+<span class="sd">        and internal state for managing connections. Also initializes a thread lock</span>
+<span class="sd">        to ensure thread-safe connection operations.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            name (str): Human-readable name of the orchestrator, used in log messages.</span>
+<span class="sd">            max_retries (int): Maximum number of times to retry a failed connection.</span>
+<span class="sd">            retry_delay (int, optional): Number of seconds to wait between retries. Defaults to 5.</span>
+<span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">max_retries</span> <span class="o">=</span> <span class="n">max_retries</span>
@@ -392,12 +397,21 @@
 <a class="viewcode-back" href="../../../modules/apps_logging_app.orchestration.html#apps_logging_app.orchestration.orchestrator.BaseOrchestrator.ensure_connected">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">ensure_connected</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Ensures that the connection to the underlying service is active.</span>
+<span class="sd">        Ensures that the resource is connected, establishing a connection if needed.</span>
 
-<span class="sd">        This method should be called before any other method to ensure that the connection is active.</span>
-<span class="sd">        If the connection is not active, it will try to connect with a retry mechanism.</span>
+<span class="sd">        This method checks the internal `_connected` flag and, if the resource is not</span>
+<span class="sd">        connected, acquires a thread lock to safely attempt a connection. It calls</span>
+<span class="sd">        `_connect_with_retry` to handle retries and logging.</span>
 
-<span class="sd">        :return: None</span>
+<span class="sd">        Thread Safety:</span>
+<span class="sd">            Uses a lock to prevent concurrent connection attempts by multiple threads.</span>
+
+<span class="sd">        Logs:</span>
+<span class="sd">            - Warning if the connection is not active and a retry will be attempted.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            Exception: Propagates any exceptions raised by `_connect_with_retry` if all retry attempts fail.</span>
+<span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connected</span><span class="p">:</span>
             <span class="k">return</span>
@@ -412,12 +426,21 @@
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_connect_with_retry</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Tries to connect to the underlying service with a retry mechanism.</span>
+<span class="sd">        Attempts to establish a connection with retry logic.</span>
 
-<span class="sd">        This method will try to connect up to the specified maximum number of retries.</span>
-<span class="sd">        If the connection fails after the maximum number of retries, it will wait for 120 seconds and then retry.</span>
+<span class="sd">        Tries to connect up to `max_retries` times by calling the abstract `_connect` method.</span>
+<span class="sd">        Logs each attempt, including successes and failures. Waits `retry_delay` seconds</span>
+<span class="sd">        between failed attempts. If all retries fail, waits 120 seconds and recursively</span>
+<span class="sd">        retries until a connection is established.</span>
 
-<span class="sd">        :return: None</span>
+<span class="sd">        Behavior:</span>
+<span class="sd">            - Sets `_connected` to True upon a successful connection.</span>
+<span class="sd">            - Logs info on successful connection and errors on failure.</span>
+<span class="sd">            - Uses a recursive retry strategy after exhausting all attempts.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            Exception: Any exceptions raised by `_connect` are logged but retried. This method may block indefinitely if the connection cannot be established.</span>
+<span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">attempt</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_retries</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
             <span class="k">try</span><span class="p">:</span>
@@ -440,25 +463,54 @@
 <a class="viewcode-back" href="../../../modules/apps_logging_app.orchestration.html#apps_logging_app.orchestration.orchestrator.BaseOrchestrator.mark_disconnected">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">mark_disconnected</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Marks the connection as disconnected.</span>
+<span class="sd">        Marks the resource as disconnected if it is no longer active.</span>
 
-<span class="sd">        This method can be used to manually mark the connection as disconnected, which</span>
-<span class="sd">        will prevent any further attempts to connect or use the connection.</span>
+<span class="sd">        Checks the current connection status using `_is_connected()`. If the resource</span>
+<span class="sd">        is still connected, logs an informational message and does nothing. Otherwise,</span>
+<span class="sd">        sets the internal `_connected` flag to False and logs a warning.</span>
 
-<span class="sd">        :return: None</span>
+<span class="sd">        Logs:</span>
+<span class="sd">            - Info: When the connection is still active and no disconnection occurs.</span>
+<span class="sd">            - Warning: When the resource is marked as disconnected.</span>
+
+<span class="sd">        Side Effects:</span>
+<span class="sd">            - Updates the `_connected` attribute to False if the resource is not connected.</span>
+<span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_connected</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: Connection is still active, not marking as disconnected&quot;</span><span class="p">)</span>
+            <span class="k">return</span> 
+        
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">: Marked as disconnected&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_connected</span> <span class="o">=</span> <span class="kc">False</span></div>
 
 
     <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_is_connected</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Checks whether the resource is currently connected.</span>
+
+<span class="sd">        This abstract method must be implemented by subclasses to return the</span>
+<span class="sd">        connection status of the underlying resource.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            bool: `True` if the resource is connected, `False` otherwise.</span>
+<span class="sd">        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_connect</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Establishes a connection to the underlying service.</span>
+<span class="sd">        Establishes a connection to the resource.</span>
 
-<span class="sd">        This method should be implemented by subclasses to define how to connect to the underlying service.</span>
+<span class="sd">        This abstract method must be implemented by subclasses to handle the</span>
+<span class="sd">        specific logic required to connect to the underlying resource. It is called</span>
+<span class="sd">        by `_connect_with_retry` during connection attempts.</span>
 
-<span class="sd">        :return: None</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            Exception: Any exception raised during the connection attempt should be propagated to allow retry logic to handle it.</span>
+<span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">pass</span>
 
@@ -467,11 +519,15 @@
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Closes the connection to the underlying service.</span>
+<span class="sd">        Closes the connection to the resource and releases any associated resources.</span>
 
-<span class="sd">        This method should be implemented by subclasses to define how to close the connection to the underlying service.</span>
+<span class="sd">        This abstract method must be implemented by subclasses to perform the</span>
+<span class="sd">        necessary cleanup when the orchestrator is finished using the resource.</span>
+<span class="sd">        It ensures that connections are properly terminated and resources are freed.</span>
 
-<span class="sd">        :return: None</span>
+<span class="sd">        Raises:</span>
+<span class="sd">            Exception: Any exception raised during closure should be propagated.</span>
+<span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">pass</span></div>
 </div>

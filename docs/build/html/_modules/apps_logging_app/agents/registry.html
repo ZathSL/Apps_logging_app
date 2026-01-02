@@ -349,33 +349,40 @@
 <a class="viewcode-back" href="../../../modules/apps_logging_app.agents.html#apps_logging_app.agents.registry.AgentEntry">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">AgentEntry</span><span class="p">(</span><span class="n">Generic</span><span class="p">[</span><span class="n">C</span><span class="p">]):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Registry entry describing a registered agent type.</span>
+<span class="sd">    Generic container that pairs an agent class with its configuration model.</span>
 
-<span class="sd">    The :class:`AgentEntry` class represents a single entry in the</span>
-<span class="sd">    global :data:`AGENT_REGISTRY`. It associates an agent type with:</span>
+<span class="sd">    This class is used internally by the agent registry to store the</span>
+<span class="sd">    relationship between a specific agent type and its corresponding</span>
+<span class="sd">    configuration model.</span>
 
-<span class="sd">    - the agent implementation class</span>
-<span class="sd">    - the corresponding configuration model</span>
+<span class="sd">    Type Parameters:</span>
+<span class="sd">        C (BaseAgentConfig): The type of the configuration model associated with the agent.</span>
 
-<span class="sd">    This indirection allows agents to be dynamically instantiated</span>
-<span class="sd">    from raw configuration data, while preserving strong typing</span>
-<span class="sd">    between agent classes and their configuration models.</span>
-
-<span class="sd">    Instances of this class are created internally by the</span>
-<span class="sd">    :func:`register_agent` decorator and should not be instantiated</span>
-<span class="sd">    directly by users.</span>
-
-<span class="sd">    :param config_model: Pydantic model used to validate the agent configuration.</span>
-<span class="sd">    :type config_model: Type[BaseAgentConfig]</span>
-<span class="sd">    :param agent_class: Concrete agent class associated with the entry.</span>
-<span class="sd">    :type agent_class: Type[BaseAgent]</span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        config_model (Type[C]): The Pydantic configuration model class for the agent.</span>
+<span class="sd">        agent_class (Type[BaseAgent]): The agent class itself.</span>
+<span class="sd">    </span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">config_model</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">C</span><span class="p">]</span>
     <span class="n">agent_class</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">BaseAgent</span><span class="p">]</span></div>
 
 
 <span class="n">AGENT_REGISTRY</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">AgentEntry</span><span class="p">[</span><span class="n">BaseAgentConfig</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Central registry mapping agent type strings to their corresponding AgentEntry objects.</span>
 
+<span class="sd">This dictionary is used to look up agent classes and their configuration models</span>
+<span class="sd">by agent type. It is populated using the `register_agent` decorator and is</span>
+<span class="sd">typically used by factories (e.g., `AgentFactory`) to dynamically create</span>
+<span class="sd">agent instances.</span>
+
+<span class="sd">Keys:</span>
+<span class="sd">    str: The unique agent type string.</span>
+
+<span class="sd">Values:</span>
+<span class="sd">    AgentEntry[BaseAgentConfig]: An entry containing the agent class and its</span>
+<span class="sd">        associated configuration model.</span>
+<span class="sd">&quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="register_agent">
 <a class="viewcode-back" href="../../../modules/apps_logging_app.agents.html#apps_logging_app.agents.registry.register_agent">[docs]</a>
@@ -384,26 +391,58 @@
     <span class="n">agent_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">config_model</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">BaseAgentConfig</span><span class="p">],</span>
 <span class="p">):</span>
-
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Registers an agent class with the given config model and type.</span>
+<span class="sd">    Decorator factory to register an agent class with its configuration model.</span>
+
+<span class="sd">    This function returns a decorator that, when applied to a subclass of `BaseAgent`,</span>
+<span class="sd">    performs the following:</span>
+<span class="sd">    1. Validates that the decorated class is a subclass of `BaseAgent`.</span>
+<span class="sd">    2. Creates an `AgentEntry` linking the agent class with the provided config model.</span>
+<span class="sd">    3. Adds the entry to the `AGENT_REGISTRY` under the given `agent_type`.</span>
+<span class="sd">    4. Sets the `type` attribute on the agent class to the specified `agent_type`.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        agent_type (str): The type of the agent.</span>
-<span class="sd">        config_model (Type[BaseAgentConfig]): The config model for the agent.</span>
+<span class="sd">        agent_type (str): Unique type string to identify the agent in the registry.</span>
+<span class="sd">        config_model (Type[BaseAgentConfig]): The Pydantic configuration model</span>
+<span class="sd">            class associated with this agent.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        Type[BaseAgent]: The registered agent class.</span>
+<span class="sd">        Callable[[Type[BaseAgent]], Type[BaseAgent]]: A decorator that registers the agent class.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; @register_agent(agent_type=&quot;my_agent&quot;, config_model=MyAgentConfig)</span>
+<span class="sd">        &gt;&gt;&gt; class MyAgent(BaseAgent):</span>
+<span class="sd">        &gt;&gt;&gt;     ...</span>
+<span class="sd">        &gt;&gt;&gt; assert &quot;my_agent&quot; in AGENT_REGISTRY</span>
+<span class="sd">    </span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">decorator</span><span class="p">(</span><span class="n">agent_class</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">BaseAgent</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Type</span><span class="p">[</span><span class="n">BaseAgent</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        A decorator that registers the agent class with the given config model and type.</span>
+<span class="sd">        Decorator that registers an agent class in the AGENT_REGISTRY.</span>
+
+<span class="sd">        This function is returned by `register_agent` and is applied to a subclass</span>
+<span class="sd">        of `BaseAgent`. It performs the following steps:</span>
+<span class="sd">            1. Verifies that `agent_class` is a subclass of BaseAgent.</span>
+<span class="sd">            2. Creates an `AgentEntry` linking the class with its configuration model.</span>
+<span class="sd">            3. Adds the entry to the global `AGENT_REGISTRY` under the specified `agent_type`.</span>
+<span class="sd">            4. Sets the `type` attribute on the agent class to the specified `agent_type`.</span>
+<span class="sd">            5. Returns the original agent class.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            agent_class (Type[BaseAgent]): The agent class to register.</span>
+<span class="sd">            agent_class (Type[BaseAgent]): The agent class to be registered.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            Type[BaseAgent]: The registered agent class.</span>
+<span class="sd">            Type[BaseAgent]: The same agent class that was passed in, after registration.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            AssertionError: If `agent_class` is not a subclass of BaseAgent.</span>
+
+<span class="sd">        Example:</span>
+<span class="sd">            &gt;&gt;&gt; @register_agent(agent_type=&quot;my_agent&quot;, config_model=MyAgentConfig)</span>
+<span class="sd">            &gt;&gt;&gt; class MyAgent(BaseAgent):</span>
+<span class="sd">            &gt;&gt;&gt;     ...</span>
+<span class="sd">            &gt;&gt;&gt; # MyAgent is now registered and can be instantiated via AGENT_REGISTRY</span>
+<span class="sd">        </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">assert</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">agent_class</span><span class="p">,</span> <span class="n">BaseAgent</span><span class="p">)</span>
         <span class="n">entry</span> <span class="o">=</span> <span class="n">AgentEntry</span><span class="p">()</span>

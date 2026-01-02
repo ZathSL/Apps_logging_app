@@ -349,39 +349,50 @@
 <a class="viewcode-back" href="../../../modules/apps_logging_app.agents.html#apps_logging_app.agents.model.PathFileConfig">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">PathFileConfig</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Configuration model representing a log file to be monitored.</span>
+<span class="sd">    Configuration model for a file path used by an agent.</span>
 
-<span class="sd">    This model defines a file path along with runtime metadata used by</span>
-<span class="sd">    agents to track read position and file rotation.</span>
+<span class="sd">    This model represents a file that the agent will use, including its</span>
+<span class="sd">    name, filesystem path, optional cursor, and optional identifier. It</span>
+<span class="sd">    performs validation to ensure that the name is not None and the path</span>
+<span class="sd">    exists.</span>
 
-<span class="sd">    :param name: Logical name of the path file, used as a reference</span>
-<span class="sd">        in regex configurations.</span>
-<span class="sd">    :type name: str</span>
-<span class="sd">    :param path: Filesystem path to the log file.</span>
-<span class="sd">    :type path: pathlib.Path</span>
-<span class="sd">    :param cursor: Byte position used to track the last read offset.</span>
-<span class="sd">    :type cursor: int</span>
-<span class="sd">    :param id: Identifier of the file used to detect file rotation.</span>
-<span class="sd">    :type id: Optional[int]</span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        name (str): Unique name of the path file. Must not be None.</span>
+<span class="sd">        path (Path): Filesystem path to the file. Must exist and be a Path object.</span>
+<span class="sd">        cursor (int, optional): Optional cursor to track progress within the file. Defaults to 0.</span>
+<span class="sd">        id (int, optional): Optional identifier for the path file.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">path</span><span class="p">:</span> <span class="n">Path</span>
     <span class="n">cursor</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="nb">id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     
-<div class="viewcode-block" id="PathFileConfig.validate_name">
-<a class="viewcode-back" href="../../../modules/apps_logging_app.agents.html#apps_logging_app.agents.model.PathFileConfig.validate_name">[docs]</a>
-    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">validate_name</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Name cannot be None&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">value</span></div>
-
     
 <div class="viewcode-block" id="PathFileConfig.validate_path">
 <a class="viewcode-back" href="../../../modules/apps_logging_app.agents.html#apps_logging_app.agents.model.PathFileConfig.validate_path">[docs]</a>
     <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;path&#39;</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">validate_path</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Validates the `path` field of the PathFileConfig model.</span>
+
+<span class="sd">        Ensures that the `path` attribute:</span>
+<span class="sd">            1. Is not None.</span>
+<span class="sd">            2. Is a `Path` object.</span>
+<span class="sd">            3. Points to an existing file or directory in the filesystem.</span>
+
+<span class="sd">        This validator is automatically called by Pydantic when creating or</span>
+<span class="sd">        updating a PathFileConfig instance.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            cls: The PathFileConfig class.</span>
+<span class="sd">            value (Path): The value of the `path` field to validate.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Path: The validated Path object.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If `path` is None, not a Path object, or does not exist.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Path cannot be None&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">Path</span><span class="p">):</span>
@@ -396,16 +407,15 @@
 <a class="viewcode-back" href="../../../modules/apps_logging_app.agents.html#apps_logging_app.agents.model.RegexPatternConfig">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">RegexPatternConfig</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Configuration model defining a regex pattern applied to a log file.</span>
+<span class="sd">    Configuration model for associating a regex pattern with a specific path file.</span>
 
-<span class="sd">    This model links a regular expression to a specific</span>
-<span class="sd">    :class:`PathFileConfig` via its name. The regex is compiled automatically</span>
-<span class="sd">    if provided as a string.</span>
+<span class="sd">    This model represents a regex pattern that will be applied to the contents</span>
+<span class="sd">    of a file identified by `path_file_name`. The regex pattern is automatically</span>
+<span class="sd">    compiled if provided as a string.</span>
 
-<span class="sd">    :param path_file_name: Name of the path file this regex applies to.</span>
-<span class="sd">    :type path_file_name: str</span>
-<span class="sd">    :param regex_pattern: Compiled regular expression used to extract data.</span>
-<span class="sd">    :type regex_pattern: Pattern[str]</span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        path_file_name (str): Name of the path file that this regex pattern applies to.</span>
+<span class="sd">        regex_pattern (Pattern[str]): Compiled regular expression pattern used for matching.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">path_file_name</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">regex_pattern</span><span class="p">:</span> <span class="n">Pattern</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
@@ -414,6 +424,24 @@
 <a class="viewcode-back" href="../../../modules/apps_logging_app.agents.html#apps_logging_app.agents.model.RegexPatternConfig.compile_regex">[docs]</a>
     <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;regex_pattern&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;before&#39;</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">compile_regex</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Pattern</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Compiles the `regex_pattern` field if it is provided as a string.</span>
+
+<span class="sd">        This validator is executed before standard Pydantic validation (`mode=&#39;before&#39;`),</span>
+<span class="sd">        allowing users to provide regex patterns either as strings or pre-compiled</span>
+<span class="sd">        Pattern objects. If a string is provided, it is compiled into a `Pattern[str]`.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            cls: The RegexPatternConfig class.</span>
+<span class="sd">            v (Union[str, Pattern[str]]): The value of the `regex_pattern` field to validate.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Pattern[str]: The compiled regex pattern.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            None: This validator does not raise exceptions; invalid regex strings will</span>
+<span class="sd">                raise an exception when used later in matching operations.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">v</span></div>
@@ -425,17 +453,16 @@
 <a class="viewcode-back" href="../../../modules/apps_logging_app.agents.html#apps_logging_app.agents.model.QueryConfig">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">QueryConfig</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Configuration model defining a database query destination.</span>
+<span class="sd">    Configuration model for a database query.</span>
 
-<span class="sd">    This model specifies the database type, instance name, and query</span>
-<span class="sd">    template to be executed when a data connection is processed.</span>
+<span class="sd">    This model represents a query that can be executed by an agent</span>
+<span class="sd">    or data pipeline. It includes the database type, a name for the query,</span>
+<span class="sd">    and the query string itself.</span>
 
-<span class="sd">    :param type: Type of the destination database.</span>
-<span class="sd">    :type type: str</span>
-<span class="sd">    :param name: Name of the destination database instance.</span>
-<span class="sd">    :type name: str</span>
-<span class="sd">    :param query: Query string to be executed.</span>
-<span class="sd">    :type query: str</span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        type (str): Type of the database (e.g., &#39;postgres&#39;, &#39;mysql&#39;).</span>
+<span class="sd">        name (str): Unique name for the query.</span>
+<span class="sd">        query (str): The query string to be executed.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
@@ -446,48 +473,51 @@
 <a class="viewcode-back" href="../../../modules/apps_logging_app.agents.html#apps_logging_app.agents.model.DataConnectionConfig">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">DataConnectionConfig</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Configuration model defining a logical data connection.</span>
+<span class="sd">    Configuration model for a data connection within a producer.</span>
 
-<span class="sd">    A data connection links a source (regex match on a log file) to an</span>
-<span class="sd">    optional destination (database query) and defines how extracted</span>
-<span class="sd">    data should be processed and routed.</span>
+<span class="sd">    This model represents a single data flow from a producer to a destination,</span>
+<span class="sd">    including error and warning flags, optional source and destination references,</span>
+<span class="sd">    and an optional expiration time.</span>
 
-<span class="sd">    :param name: Unique name of the data connection.</span>
-<span class="sd">    :type name: str</span>
-<span class="sd">    :param is_error: Whether this data connection represents an error condition.</span>
-<span class="sd">    :type is_error: bool</span>
-<span class="sd">    :param source_ref: Regex-based source configuration.</span>
-<span class="sd">    :type source_ref: Optional[RegexPatternConfig]</span>
-<span class="sd">    :param destination_ref: Query-based destination configuration.</span>
-<span class="sd">    :type destination_ref: Optional[QueryConfig]</span>
-<span class="sd">    :param expired_time_int: Expiration time in minutes for generated data.</span>
-<span class="sd">    :type expired_time_int: Optional[int]</span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        name (str): Unique name of the data connection.</span>
+<span class="sd">        is_error (bool): Indicates whether this connection is used for error handling.</span>
+<span class="sd">        is_warning (bool): Indicates whether this connection is used for warnings.</span>
+<span class="sd">        source_ref (RegexPatternConfig, optional): Optional reference to a regex</span>
+<span class="sd">            pattern applied to a path file, used to extract or filter data.</span>
+<span class="sd">        destination_ref (QueryConfig, optional): Optional reference to a query</span>
+<span class="sd">            representing the destination database or table.</span>
+<span class="sd">        expired_time_int (int, optional): Optional expiration time in seconds</span>
+<span class="sd">            for the data connection.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">is_error</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">is_warning</span><span class="p">:</span> <span class="nb">bool</span>
     <span class="n">source_ref</span><span class="p">:</span> <span class="n">RegexPatternConfig</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">destination_ref</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">QueryConfig</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">expired_time_int</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
 
-    
+
 <div class="viewcode-block" id="ProducerConnectionConfig">
 <a class="viewcode-back" href="../../../modules/apps_logging_app.agents.html#apps_logging_app.agents.model.ProducerConnectionConfig">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ProducerConnectionConfig</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Configuration model defining a producer and its associated data connections.</span>
+<span class="sd">    Configuration model for a producer and its associated data connections.</span>
 
-<span class="sd">    This model groups multiple :class:`DataConnectionConfig` instances</span>
-<span class="sd">    under a single producer definition.</span>
+<span class="sd">    This model represents a producer instance that generates or streams data,</span>
+<span class="sd">    along with all the data connections that it manages. Each data connection</span>
+<span class="sd">    defines how the produced data is routed, filtered, or sent to a destination.</span>
 
-<span class="sd">    :param type: Type of the producer.</span>
-<span class="sd">    :type type: str</span>
-<span class="sd">    :param name: Name of the producer instance.</span>
-<span class="sd">    :type name: str</span>
-<span class="sd">    :param data_connections: List of data connections handled by the producer.</span>
-<span class="sd">    :type data_connections: List[DataConnectionConfig]</span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        type (str): Type of the producer (e.g., Kafka, RabbitMQ, custom).</span>
+<span class="sd">        name (str): Unique name of the producer instance.</span>
+<span class="sd">        topic (str): Messaging topic or stream that the producer writes to.</span>
+<span class="sd">        data_connections (List[DataConnectionConfig]): List of data connections</span>
+<span class="sd">            handled by this producer.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">topic</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">data_connections</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">DataConnectionConfig</span><span class="p">]</span></div>
 
 
@@ -496,29 +526,26 @@
 <a class="viewcode-back" href="../../../modules/apps_logging_app.agents.html#apps_logging_app.agents.model.BaseAgentConfig">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">BaseAgentConfig</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Base configuration model for agent instances.</span>
+<span class="sd">    Base configuration model for an agent.</span>
 
-<span class="sd">    This model defines all common configuration options required by agents,</span>
-<span class="sd">    including file monitoring, buffering behavior, producer connections,</span>
-<span class="sd">    and execution intervals.</span>
+<span class="sd">    This model defines the core settings required to configure an agent,</span>
+<span class="sd">    including its type, name, buffering, file paths, producer connections,</span>
+<span class="sd">    and scheduling intervals for logs and queries. It also includes validation</span>
+<span class="sd">    for buffer sizes, intervals, and references between regex patterns and path files.</span>
 
-<span class="sd">    It also enforces validation rules to ensure consistency between</span>
-<span class="sd">    path files and regex references.</span>
-
-<span class="sd">    :param type: Type identifier of the agent.</span>
-<span class="sd">    :type type: str</span>
-<span class="sd">    :param name: Name of the agent instance.</span>
-<span class="sd">    :type name: str</span>
-<span class="sd">    :param buffer_rows: Number of log lines to read per batch.</span>
-<span class="sd">    :type buffer_rows: int</span>
-<span class="sd">    :param path_files: List of configured log files to monitor.</span>
-<span class="sd">    :type path_files: Optional[List[PathFileConfig]]</span>
-<span class="sd">    :param producer_connections: Producer connections handled by the agent.</span>
-<span class="sd">    :type producer_connections: List[ProducerConnectionConfig]</span>
-<span class="sd">    :param fetch_logs_interval: Interval in seconds between log fetch cycles.</span>
-<span class="sd">    :type fetch_logs_interval: float</span>
-<span class="sd">    :param execute_query_interval: Interval in seconds between query executions.</span>
-<span class="sd">    :type execute_query_interval: float</span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        type (str): The type of the agent.</span>
+<span class="sd">        name (str): Unique name of the agent.</span>
+<span class="sd">        buffer_rows (int, optional): Number of rows to buffer for processing.</span>
+<span class="sd">            Must be greater than 0. Defaults to 500.</span>
+<span class="sd">        path_files (List[PathFileConfig], optional): List of path file configurations</span>
+<span class="sd">            used by the agent.</span>
+<span class="sd">        producer_connections (List[ProducerConnectionConfig]): List of producer</span>
+<span class="sd">            configurations that the agent uses to produce or process data.</span>
+<span class="sd">        fetch_logs_interval (float): Interval in seconds for fetching logs.</span>
+<span class="sd">            Must be greater than 0. Defaults to 120.</span>
+<span class="sd">        execute_query_interval (float): Interval in seconds for executing queries.</span>
+<span class="sd">            Must be greater than 0. Defaults to 600.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
@@ -534,11 +561,21 @@
     <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;buffer_rows&#39;</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">validate_buffer_rows</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Validate the buffer_rows field of the BaseAgentConfig model.</span>
+<span class="sd">        Validates the `buffer_rows` field of the BaseAgentConfig model.</span>
 
-<span class="sd">        :param value: The value of the buffer_rows field.</span>
-<span class="sd">        :raises ValueError: If the buffer_rows is less than or equal to 0.</span>
-<span class="sd">        :return: The validated buffer_rows value.</span>
+<span class="sd">        Ensures that the number of buffer rows is greater than 0. This value</span>
+<span class="sd">        is used by the agent to determine how many rows to process or store</span>
+<span class="sd">        in memory before committing or sending them downstream.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            cls: The BaseAgentConfig class.</span>
+<span class="sd">            value (int): The value of the `buffer_rows` field to validate.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The validated buffer_rows value.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If `buffer_rows` is less than or equal to 0.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">value</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Buffer rows must be greater than 0&quot;</span><span class="p">)</span>
@@ -550,11 +587,21 @@
     <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;fetch_logs_interval&#39;</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">validate_fetch_logs_interval</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Validate the fetch_logs_interval field of the BaseAgentConfig model.</span>
+<span class="sd">        Validates the `fetch_logs_interval` field of the BaseAgentConfig model.</span>
 
-<span class="sd">        :param value: The value of the fetch_logs_interval field.</span>
-<span class="sd">        :raises ValueError: If the fetch_logs_interval is less than or equal to 0.</span>
-<span class="sd">        :return: The validated fetch_logs_interval value.</span>
+<span class="sd">        Ensures that the interval for fetching logs is greater than 0 seconds.</span>
+<span class="sd">        This interval determines how frequently the agent retrieves logs from</span>
+<span class="sd">        producers or other sources.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            cls: The BaseAgentConfig class.</span>
+<span class="sd">            value (float): The value of the `fetch_logs_interval` field to validate.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            float: The validated fetch_logs_interval value.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If `fetch_logs_interval` is less than or equal to 0.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">value</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Pool interval must be greater than 0&quot;</span><span class="p">)</span>
@@ -566,11 +613,25 @@
     <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;execute_query_interval&#39;</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">validate_execute_query_interval</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Validate the execute_query_interval field of the BaseAgentConfig model.</span>
+<span class="sd">        Validates the `execute_query_interval` field of the BaseAgentConfig model.</span>
 
-<span class="sd">        :param value: The value of the execute_query_interval field.</span>
-<span class="sd">        :raises ValueError: If the execute_query_interval is less than or equal to 180.</span>
-<span class="sd">        :return: The validated execute_query_interval value.</span>
+<span class="sd">        Ensures that the interval for executing queries is greater than 0 seconds.</span>
+<span class="sd">        This interval determines how frequently the agent executes queries against</span>
+<span class="sd">        databases or other destinations.</span>
+
+<span class="sd">        Note:</span>
+<span class="sd">            The error message suggests a minimum of 180 seconds, but the current</span>
+<span class="sd">            validation logic only enforces the value to be greater than 0.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            cls: The BaseAgentConfig class.</span>
+<span class="sd">            value (float): The value of the `execute_query_interval` field to validate.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            float: The validated execute_query_interval value.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If `execute_query_interval` is less than or equal to 0.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">value</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Pool interval must be greater than 180&quot;</span><span class="p">)</span>
@@ -583,14 +644,21 @@
     <span class="nd">@model_validator</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;after&#39;</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">validate_regex_path_references</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;BaseAgentConfig&quot;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Validate the regex path references in the BaseAgentConfig model.</span>
+<span class="sd">        Validates that all source references in producer data connections</span>
+<span class="sd">        refer to valid path files defined in `path_files`.</span>
 
-<span class="sd">        This validator checks if the path_file_name referenced in the data_connections</span>
-<span class="sd">        of the producer_connections exist in the path_files of the agent.</span>
+<span class="sd">        This model-level validator runs after standard Pydantic validation</span>
+<span class="sd">        (`mode=&#39;after&#39;`). It ensures that each `source_ref.path_file_name` </span>
+<span class="sd">        in the agent&#39;s producers exists in the `path_files` list. This helps </span>
+<span class="sd">        prevent misconfigurations where a regex pattern references a non-existent</span>
+<span class="sd">        path file.</span>
 
-<span class="sd">        :raises ValueError: If the path_file_name referenced in the data_connections</span>
-<span class="sd">            does not exist in the path_files of the agent.</span>
-<span class="sd">        :return: The validated BaseAgentConfig model.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            BaseAgentConfig: The validated BaseAgentConfig instance.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If any `source_ref.path_file_name` does not match</span>
+<span class="sd">                        a name in `path_files`.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">path_files</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span>

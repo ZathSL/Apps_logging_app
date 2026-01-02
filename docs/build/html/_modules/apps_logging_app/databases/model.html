@@ -349,30 +349,34 @@
 <a class="viewcode-back" href="../../../modules/apps_logging_app.databases.html#apps_logging_app.databases.model.QueryTask">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">QueryTask</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Represents a single database query execution task.</span>
+<span class="sd">    Represents a single database query task that can be executed asynchronously.</span>
 
-<span class="sd">    The :class:`QueryTask` encapsulates a query string, optional parameters,</span>
-<span class="sd">    and a :class:`concurrent.futures.Future` used to retrieve the asynchronous</span>
-<span class="sd">    execution result.</span>
+<span class="sd">    This class encapsulates the query string, optional parameters, </span>
+<span class="sd">    and manages the result through a `Future` object. It also tracks </span>
+<span class="sd">    the number of retry attempts made for the task.</span>
 
-<span class="sd">    Instances of this class are enqueued by :class:`BaseDatabase` and</span>
-<span class="sd">    processed by the database dispatcher and worker threads.</span>
-
-<span class="sd">    :param query: The SQL or database query string to be executed.</span>
-<span class="sd">    :type query: str</span>
-<span class="sd">    :param params: Optional dictionary of parameters to be passed to the query.</span>
-<span class="sd">    :type params: Optional[Dict[str, Any]]</span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        query (str): The SQL query string to be executed.</span>
+<span class="sd">        params (Optional[Dict[str, Any]]): Optional parameters to be used with the query.</span>
+<span class="sd">        future (Future): A `concurrent.futures.Future` object that will hold the result of the query execution.</span>
+<span class="sd">        retries (int): The number of times this query has been retried. Defaults to 0.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Initializes a QueryTask object with a query and optional parameters.</span>
+<span class="sd">        Initializes a QueryTask instance.</span>
 
-<span class="sd">        :param query: The SQL or database query string to be executed.</span>
-<span class="sd">        :type query: str</span>
-<span class="sd">        :param params: Optional dictionary of parameters to be passed to the query.</span>
-<span class="sd">        :type params: Optional[Dict[str, Any]]</span>
-<span class="sd">        :return: A QueryTask object that can be used to enqueue a query and retrieve its result.</span>
-<span class="sd">        :rtype: QueryTask</span>
+<span class="sd">        Args:</span>
+<span class="sd">            query (str): The SQL query string to be executed.</span>
+<span class="sd">            params (Optional[Dict[str, Any]]): Optional dictionary of parameters </span>
+<span class="sd">                to be used with the query. Defaults to None.</span>
+
+<span class="sd">        Attributes:</span>
+<span class="sd">            query (str): Stores the SQL query string.</span>
+<span class="sd">            params (Optional[Dict[str, Any]]): Stores the query parameters.</span>
+<span class="sd">            future (Future): A `concurrent.futures.Future` object that will </span>
+<span class="sd">                eventually hold the result of the query execution.</span>
+<span class="sd">            retries (int): Tracks the number of retry attempts for this task. </span>
+<span class="sd">                Initialized to 0.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">query</span> <span class="o">=</span> <span class="n">query</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">params</span>
@@ -384,18 +388,16 @@
 <a class="viewcode-back" href="../../../modules/apps_logging_app.databases.html#apps_logging_app.databases.model.ConnectionConfig">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ConnectionConfig</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Configuration model defining a database connection endpoint.</span>
+<span class="sd">    Represents the configuration for a single database connection.</span>
 
-<span class="sd">    This model represents connection details for a database instance,</span>
-<span class="sd">    including host, port, and optional service name. It is used for both</span>
-<span class="sd">    primary and replica connections.</span>
+<span class="sd">    This class validates connection parameters such as host, port, and </span>
+<span class="sd">    optional service name. It ensures that the host is a valid hostname </span>
+<span class="sd">    or IP address and that the port is within the valid range.</span>
 
-<span class="sd">    :param host: Hostname or IP address of the database server.</span>
-<span class="sd">    :type host: str</span>
-<span class="sd">    :param port: Network port of the database server.</span>
-<span class="sd">    :type port: int</span>
-<span class="sd">    :param service_name: Optional service or database name.</span>
-<span class="sd">    :type service_name: Optional[str]</span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        host (str): The hostname or IP address of the database server.</span>
+<span class="sd">        port (int): The port number on which the database server is listening.</span>
+<span class="sd">        service_name (Optional[str]): An optional service name for the database.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">host</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">port</span><span class="p">:</span> <span class="nb">int</span>
@@ -406,11 +408,21 @@
     <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;host&#39;</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">validate_host</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Validates the host field of the ConnectionConfig model.</span>
+<span class="sd">        Validates the `host` field of the ConnectionConfig.</span>
 
-<span class="sd">        :param v: The value of the host field.</span>
-<span class="sd">        :raises ValueError: If the host is empty or not a valid hostname or IP address.</span>
-<span class="sd">        :return: The validated host value.</span>
+<span class="sd">        Ensures that the host is not empty and matches a basic pattern for </span>
+<span class="sd">        valid hostnames or IP addresses.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            cls (Type[ConnectionConfig]): The class being validated.</span>
+<span class="sd">            v (str): The host value to validate.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            str: The validated host value.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If the host is empty or does not match a valid </span>
+<span class="sd">                hostname/IP pattern.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">v</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">v</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Host cannot be empty&#39;</span><span class="p">)</span>
@@ -425,11 +437,21 @@
     <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;port&#39;</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">validate_port</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Validates the port field of the ConnectionConfig model.</span>
+<span class="sd">        Validates the `port` field of the ConnectionConfig.</span>
 
-<span class="sd">        :param v: The value of the port field.</span>
-<span class="sd">        :raises ValueError: If the port is not an integer between 1 and 65535.</span>
-<span class="sd">        :return: The validated port value.</span>
+<span class="sd">        Ensures that the port is an integer and falls within the valid </span>
+<span class="sd">        range of 1 to 65535.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            cls (Type[ConnectionConfig]): The class being validated.</span>
+<span class="sd">            v (int): The port value to validate.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The validated port value.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If the port is not an integer or is outside the </span>
+<span class="sd">                range 1-65535.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="mi">1</span> <span class="o">&lt;=</span> <span class="n">v</span> <span class="o">&lt;=</span> <span class="mi">65535</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;Port must be an integer between 1 and 65535&#39;</span><span class="p">)</span>
@@ -441,31 +463,22 @@
 <a class="viewcode-back" href="../../../modules/apps_logging_app.databases.html#apps_logging_app.databases.model.BaseDatabaseConfig">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">BaseDatabaseConfig</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Base configuration model for database instances.</span>
+<span class="sd">    Represents the configuration for a database, including authentication,</span>
+<span class="sd">    primary and optional replica connections, and execution settings.</span>
 
-<span class="sd">    This model defines connection credentials, primary and replica</span>
-<span class="sd">    endpoints, and execution parameters controlling concurrency and</span>
-<span class="sd">    retry behavior.</span>
+<span class="sd">    This class ensures that all critical database parameters are valid</span>
+<span class="sd">    and provides default values for retry and worker limits. It supports</span>
+<span class="sd">    both primary and optional replica connections.</span>
 
-<span class="sd">    It is validated when database instances are created by the</span>
-<span class="sd">    :class:`DatabaseFactory`.</span>
-
-<span class="sd">    :param type: Type identifier of the database.</span>
-<span class="sd">    :type type: str</span>
-<span class="sd">    :param name: Name of the database instance.</span>
-<span class="sd">    :type name: str</span>
-<span class="sd">    :param username: Username used for authentication.</span>
-<span class="sd">    :type username: str</span>
-<span class="sd">    :param password: Password used for authentication.</span>
-<span class="sd">    :type password: str</span>
-<span class="sd">    :param primary: Primary database connection configuration.</span>
-<span class="sd">    :type primary: ConnectionConfig</span>
-<span class="sd">    :param replica: Optional replica database connection configuration.</span>
-<span class="sd">    :type replica: Optional[ConnectionConfig]</span>
-<span class="sd">    :param max_retries: Maximum number of retries for failed queries.</span>
-<span class="sd">    :type max_retries: int</span>
-<span class="sd">    :param max_workers: Maximum number of concurrent worker threads.</span>
-<span class="sd">    :type max_workers: int</span>
+<span class="sd">    Attributes:</span>
+<span class="sd">        type (str): The type of the database (e.g., &quot;PostgreSQL&quot;, &quot;MySQL&quot;).</span>
+<span class="sd">        name (str): The name of the database.</span>
+<span class="sd">        username (str): The username for database authentication.</span>
+<span class="sd">        password (str): The password for database authentication.</span>
+<span class="sd">        primary (ConnectionConfig): Configuration for the primary database connection.</span>
+<span class="sd">        replica (Optional[ConnectionConfig]): Optional configuration for a replica connection. Defaults to None.</span>
+<span class="sd">        max_retries (int): Maximum number of retry attempts for database operations. Defaults to 5.</span>
+<span class="sd">        max_workers (int): Maximum number of concurrent workers for executing queries. Defaults to 10.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
@@ -482,11 +495,19 @@
     <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;max_retries&#39;</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">validate_max_retries</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Validates the max retries field of the BaseDatabaseConfig model.</span>
+<span class="sd">        Validates the `max_retries` field of the BaseDatabaseConfig.</span>
 
-<span class="sd">        :param value: The value of the max retries field.</span>
-<span class="sd">        :raises ValueError: If the max retries is less than or equal to 0.</span>
-<span class="sd">        :return: The validated max retries value.</span>
+<span class="sd">        Ensures that the maximum number of retry attempts is greater than 0.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            cls (Type[BaseDatabaseConfig]): The class being validated.</span>
+<span class="sd">            value (int): The number of maximum retries to validate.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The validated `max_retries` value.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If `max_retries` is less than or equal to 0.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">value</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Max retries must be greater than 0&quot;</span><span class="p">)</span>
@@ -498,11 +519,19 @@
     <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;max_workers&#39;</span><span class="p">)</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">validate_max_workers</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Validates the max workers field of the BaseDatabaseConfig model.</span>
+<span class="sd">        Validates the `max_workers` field of the BaseDatabaseConfig.</span>
 
-<span class="sd">        :param value: The value of the max workers field.</span>
-<span class="sd">        :raises ValueError: If the max workers is less than or equal to 0.</span>
-<span class="sd">        :return: The validated max workers value.</span>
+<span class="sd">        Ensures that the maximum number of concurrent workers is greater than 0.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            cls (Type[BaseDatabaseConfig]): The class being validated.</span>
+<span class="sd">            value (int): The number of maximum workers to validate.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            int: The validated `max_workers` value.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            ValueError: If `max_workers` is less than or equal to 0.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">value</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Max workers must be greater than 0&quot;</span><span class="p">)</span>

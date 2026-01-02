@@ -353,48 +353,26 @@
 <div class="viewcode-block" id="main">
 <a class="viewcode-back" href="../../modules/apps_logging_app.html#apps_logging_app.main.main">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Entry point of the application.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Start and run the application.</span>
 
-<span class="sd">    This function performs the following tasks:</span>
+<span class="sd">    This function serves as the main entry point of the application. It</span>
+<span class="sd">    performs the following steps:</span>
 
-<span class="sd">    1. **Loads the base configuration**  </span>
-<span class="sd">       Reads `configs/base.yaml` to retrieve general application settings such as</span>
-<span class="sd">       application name, version, log directory, and log level.</span>
+<span class="sd">    1. Load the base application configuration from a YAML file.</span>
+<span class="sd">    2. Configure file-based logging with daily rotation.</span>
+<span class="sd">    3. Load agent configuration definitions.</span>
+<span class="sd">    4. Instantiate and start agents using the agent factory.</span>
+<span class="sd">    5. Keep the application alive until a shutdown signal is received.</span>
+<span class="sd">    6. Gracefully stop all running agents on shutdown.</span>
 
-<span class="sd">    2. **Sets up logging**  </span>
-<span class="sd">       Configures a `TimedRotatingFileHandler` to store logs in the specified directory,</span>
-<span class="sd">       rotating logs daily at midnight and keeping the last 7 backups.  </span>
-<span class="sd">       Log messages include the application name, timestamp, logger name, log level, and message.</span>
+<span class="sd">    Agent creation failures are logged and do not prevent the application</span>
+<span class="sd">    from continuing to start other agents.</span>
 
-<span class="sd">    3. **Loads agents configuration**  </span>
-<span class="sd">       Reads `configs/agents.yaml` to get the list of agents to run. Each agent configuration</span>
-<span class="sd">       specifies the agent type and name, along with type-specific configuration.</span>
-
-<span class="sd">    4. **Instantiates and starts agents**  </span>
-<span class="sd">       Iterates over all agent configurations, creating agent instances via `AgentFactory.create()`,</span>
-<span class="sd">       stores them in a `RUNNING_AGENTS` dictionary keyed by `(agent_type, agent_name)`, and calls</span>
-<span class="sd">       `start()` on each agent. Logs success or failure for each agent creation.</span>
-
-<span class="sd">    5. **Keeps the application running**  </span>
-<span class="sd">       Enters a blocking loop that sleeps in 60-second intervals. This keeps the application alive</span>
-<span class="sd">       while agents perform their asynchronous work (e.g., processing messages or database queries).</span>
-
-<span class="sd">    6. **Handles graceful shutdown**  </span>
-<span class="sd">       Listens for `KeyboardInterrupt` (Ctrl+C) to stop all running agents by calling their `stop()`</span>
-<span class="sd">       methods. Logs any errors encountered during agent shutdown.</span>
-
-<span class="sd">    Notes</span>
-<span class="sd">    -----</span>
-<span class="sd">    - This function ensures that all necessary classes (agents, databases, producers) are imported</span>
-<span class="sd">      so they are automatically registered in their respective registries.</span>
-<span class="sd">    - The function is designed to be the main executable entry point for the application.</span>
-
-<span class="sd">    Example</span>
-<span class="sd">    -------</span>
-<span class="sd">    To run the application:</span>
-
-<span class="sd">    &gt;&gt;&gt; python -m your_package_name.main</span>
+<span class="sd">    Raises:</span>
+<span class="sd">        FileNotFoundError: If required configuration files are missing.</span>
+<span class="sd">        yaml.YAMLError: If configuration files contain invalid YAML.</span>
+<span class="sd">        Exception: Propagates unexpected errors during startup that are</span>
+<span class="sd">            not handled explicitly.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">base_config_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s1">&#39;configs&#39;</span> <span class="o">/</span> <span class="s1">&#39;base.yaml&#39;</span>
     <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">base_config_path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
