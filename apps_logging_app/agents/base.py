@@ -352,21 +352,23 @@ class BaseAgent(ABC):
         working_data_connections = self._data_connections_match_regex(path_file, lines)
 
         for wdc in working_data_connections:
-            data_dict_tmp = self._data_connections_transformation_and_filtering(wdc)
             if wdc.query:
-                wdc.data_dict_query_source = data_dict_tmp
+                wdc.data_dict_query_source = self._create_query_source(wdc)
                 wdc.set_ready_status()
-            else:
-                if data_dict_tmp != wdc.data_dict_result:
-                    wdc.data_dict_result = data_dict_tmp
-                    wdc.status = WorkingDataStatus.UPDATED
-                else:
-                    wdc.set_ready_status()
- 
-        self.working_data_connections.extend(working_data_connections)
+
         if self.next_execute_query_time <= datetime.now():
             self._data_connections_execute_queries()
             self.next_execute_query_time = datetime.now() + timedelta(seconds=self.config.execute_query_interval)
+
+        for wdc in working_data_connections:
+            dict_result_tmp = self._create_dict_result(wdc)
+            if dict_result_tmp != wdc.data_dict_result:
+                wdc.data_dict_result = dict_result_tmp
+                wdc.status = WorkingDataStatus.UPDATED
+            else:
+                wdc.set_ready_status()
+
+        self.working_data_connections.extend(working_data_connections)
 
         self._send_messages_to_producers()
         self._clean_working_data_connections()
@@ -415,30 +417,48 @@ class BaseAgent(ABC):
         return working_data_connections
 
     @abstractmethod
-    def _data_connections_transformation_and_filtering(self, working_data_connection: WorkingDataConnection) -> Dict[str, Any]:
+    def _create_query_source(self, wdc: WorkingDataConnection) -> Dict[str, Any]:
         """
-        Transforms and filters the data from a working data connection.
+        Abstract method to create the source data dictionary for a query.
 
-        This abstract method must be implemented by subclasses to define
-        agent-specific logic for processing matched data. It typically involves
-        extracting, transforming, or filtering the `data_dict_match` from the 
-        provided `WorkingDataConnection` and returning the processed data.
+        Given a `WorkingDataConnection`, this method should return a dictionary containing
+        the source data for the query. This data is used to execute the query and
+        retrieve the desired result.
 
         Args:
-            working_data_connection (WorkingDataConnection): The working data 
-                connection containing matched log line data to be transformed.
+            wdc (WorkingDataConnection): The working data connection containing the query.
 
         Returns:
-            Dict[str, Any]: A dictionary with the transformed and filtered data 
-            that will be used for queries, messages, or further processing.
+            Dict[str, Any]: A dictionary containing the source data for the query.
 
         Example:
-            >>> class MyAgent(BaseAgent):
-            ...     def _data_connections_transformation_and_filtering(self, wdc):
-            ...         # Example transformation
-            ...         return {"status": wdc.data_dict_match.get("status")}
+            >>> query_source = agent._create_query_source(wdc)
+            >>> print(query_source)
         """
-        pass
+        return wdc.data_dict_match
+
+    @abstractmethod
+    def _create_dict_result(self, wdc: WorkingDataConnection) -> Dict[str, Any]:
+        """
+        Abstract method to create the result dictionary from a working data connection.
+
+        If the connection has a query and query result, returns the query result.
+        If the connection has a query but no query result, returns an empty dictionary.
+        If the connection has no query, returns the matched data from the connection.
+
+        Args:
+            wdc (WorkingDataConnection): The working data connection to create the result from.
+
+        Returns:
+            Dict[str, Any]: The result dictionary created from the working data connection.
+        """
+        if wdc.query and wdc.data_dict_result:
+            return wdc.data_dict_result
+        elif wdc.query and not wdc.data_dict_result:
+            return {}
+        else:
+            return wdc.data_dict_match
+
 
     def _data_connections_execute_queries(self) -> None:
         """

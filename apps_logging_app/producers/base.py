@@ -2,10 +2,10 @@ from abc import ABC, abstractmethod
 import logging
 from queue import Queue, Empty
 from threading import Thread, Event
-from .model import BaseProducerConfig
 import random 
 import time
 
+from .model import BaseProducerConfig
 from .data import Message
 
 class BaseProducer(ABC):

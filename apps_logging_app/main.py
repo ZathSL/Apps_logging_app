@@ -10,7 +10,8 @@ from .databases.oracle.database import OracleDatabase              # Import requ
 from .producers.kafka_handler.producer import KafkaHandlerProducer # Import required to register agent, database and producer classes
 
 def main():
-    """Start and run the application.
+    """
+    Start and run the application.
 
     This function serves as the main entry point of the application. It
     performs the following steps:

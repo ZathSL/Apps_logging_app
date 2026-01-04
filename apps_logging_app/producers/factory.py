@@ -1,8 +1,9 @@
 import yaml
 from typing import Dict, Tuple, TYPE_CHECKING
 from pathlib import Path
-from .registry import PRODUCER_REGISTRY
 import threading
+
+from .registry import PRODUCER_REGISTRY
 from .orchestrator import ProducerOrchestrator
 
 if TYPE_CHECKING:

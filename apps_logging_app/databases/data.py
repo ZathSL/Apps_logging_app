@@ -33,3 +33,13 @@ class Query:
         self.params = params
         self.retries = 0
         self.future: Future = Future()
+
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__}("
+            f"query={self.query!r}, "
+            f"params={self.params!r}, "
+            f"retries={self.retries!r}, "
+            f"future_done={self.future.done()}"
+            f")"
+        )

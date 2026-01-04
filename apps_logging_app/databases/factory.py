@@ -1,9 +1,10 @@
 import yaml
 from pathlib import Path
-from .registry import DATABASE_REGISTRY
 import threading
-from .orchestrator import DatabaseOrchestrator
 from typing import TYPE_CHECKING, Dict, Tuple
+
+from .orchestrator import DatabaseOrchestrator
+from .registry import DATABASE_REGISTRY
 
 if TYPE_CHECKING:
     from .base import BaseDatabase

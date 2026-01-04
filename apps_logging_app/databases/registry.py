@@ -97,7 +97,7 @@ def register_database(
         entry.database_class = database_class
 
         DATABASE_REGISTRY[database_type] = entry
-        database_class.type = database_type  # type: ignore
+        database_class.type = database_type
         return database_class
     
     return decorator

@@ -36,7 +36,7 @@ def get_file_id(path: str):
     if system in ("Linux", "Darwin"):
         return (stat.st_ino, stat.st_dev)
     elif system == "Windows":
-        return (stat.st_size, stat.st_ctime)
+        return (stat.st_size, stat.st_birthtime)
     else:
         return (stat.st_size, stat.st_mtime)
 

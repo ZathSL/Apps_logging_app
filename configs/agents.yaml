@@ -46,7 +46,7 @@ agents:
             is_warning: false
             source_ref: 
               path_file_name: onprem_direct
-              regex_pattern: 'Error in the stored process or a called macro - vendor code: \d+, message:\s*(.+?)(?:\r?\n|$)'
+              regex_pattern: '(?P<Error>Error in the stored process or a called macro - vendor code: \d+, message:\s*(.+?)(?:\r?\n|$))'
           - name: engagement_single_message
             is_error: false
             is_warning: false
@@ -180,7 +180,7 @@ agents:
       - name: pici_dl_facade
         path: '/var/opt/pici-sas/pici-dl-facade/it/logs/pici-dl-facade-1.0-SNAPSHOT.log'
       - name: pici_feedback_importer
-        path: '/var/opt/pici-sas/pici-pici-feedback-importer/it/logs/pici-feedback-importer-1.0.0-SNAPSHOT.log'
+        path: '/var/opt/pici-sas/pici-feedback-importer/it/logs/pici-feedback-importer-1.0.0-SNAPSHOT.log'
       - name: piciapi_engagement_suite_connector
         path: '/var/opt/pici-sas/piciapi-engagement-suite-connector/it/logs/piciapi-engagement-suite-connector-1.0.0-SNAPSHOT.log'
       - name: piciapi_sas_db_exporter
@@ -195,7 +195,7 @@ agents:
             is_warning: false
             source_ref: 
               path_file_name: pici_dl_facade
-              regex_pattern: '^(\d{2}/\d{2}/\d{4}\s*\d{2}:\d{2}:\d{2},\d{3})\s*\|\|\s*[\w\.\-]+\s*\|\|\s*(?:ERROR)\s*\|\|.*'
+              regex_pattern: '^(\d{2}/\d{2}/\d{4}\s*\d{2}:\d{2}:\d{2},\d{3})\s*\|\|\s*[\w\.\-]+\s*\|\|\s*(?:INFO)\s*\|\|.*'
           - name: warn_pattern
             is_error: false
             is_warning: true
@@ -207,7 +207,7 @@ agents:
             is_warning: false
             source_ref: 
               path_file_name: pici_dl_facade
-              regex_pattern: '^(\d{2}/\d{2}/\d{4}\s*\d{2}:\d{2}:\d{2},\d{3})\s*\|\|\s*[\w\.\-]+\s*\|\|\s*(?:INFO)\s*\|\|.*'
+              regex_pattern: '^(\d{2}/\d{2}/\d{4}\s*\d{2}:\d{2}:\d{2},\d{3})\s*\|\|\s*[\w\.\-]+\s*\|\|\s*(?:ERROR)\s*\|\|.*'
           - name: info_pattern
             is_error: false
             is_warning: false

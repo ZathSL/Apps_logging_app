@@ -1,12 +1,13 @@
 from abc import ABC, abstractmethod
-from typing import Optional, Dict, Any, List
+from typing import Dict, Any, List
 import logging
 from queue import Queue, Empty
 from threading import Thread, Event
 from concurrent.futures import ThreadPoolExecutor, Future
-from .model import BaseDatabaseConfig
 import time
 import random
+
+from .model import BaseDatabaseConfig
 from .data import Query
 
 class BaseDatabase(ABC):
@@ -49,7 +50,7 @@ class BaseDatabase(ABC):
         
         """
         self.config = config
-        self.logger = logging.getLogger("__main__." +__name__)
+        self.logger = logging.getLogger("__main__." + __name__)
         self._queue = Queue()
         self._stop_event = Event()
         self._executor = ThreadPoolExecutor(max_workers=self.config.max_workers)

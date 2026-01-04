@@ -129,6 +129,23 @@ class WorkingDataConnection:
         self.data_dict_result: Optional[List[Dict[str, Any]]] = None
         self.list_data_dict_query_result: Optional[List[Dict[str, Any]]] = None
     
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__}("
+            f"name={self.name!r}, "
+            f"producer_type={self.producer_type!r}, "
+            f"producer_name={self.producer_name!r}, "
+            f"topic={self.topic!r}, "
+            f"database_type={self.database_type!r}, "
+            f"database_name={self.database_name!r}, "
+            f"query={self.query!r}, "
+            f"is_error={self.is_error}, "
+            f"is_warning={self.is_warning}, "
+            f"status={self.status!r}, "
+            f"expired_time={self.expired_time!r}"
+            f")"
+        )
+
     @classmethod
     def from_config(cls, producer_type: str, producer_name: str, topic: str, cfg: DataConnectionConfig) -> "WorkingDataConnection":
         """

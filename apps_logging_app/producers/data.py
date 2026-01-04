@@ -36,3 +36,14 @@ class Message:
         self.is_warning = is_warning
         self.message = message
         self.retries = 0
+
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__}("
+            f"topic={self.topic!r}, "
+            f"is_error={self.is_error!r}, "
+            f"is_warning={self.is_warning!r}, "
+            f"message={self.message!r}, "
+            f"retries={self.retries!r}"
+            f")"
+        )
